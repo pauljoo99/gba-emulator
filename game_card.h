@@ -7,7 +7,7 @@ namespace Emulator::GameCard
 {
 
 struct GameCard {
-  char mem[kSize];
+  unsigned char mem[kSize];
 };
 
 } // namespace Emulator::GameCard

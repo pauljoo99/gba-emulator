@@ -7,7 +7,7 @@ namespace Emulator::Memory
 {
 
 struct Memory {
-  char mem[kSize];
+  unsigned char mem[kSize];
 };
 
 } // namespace Emulator::Memory

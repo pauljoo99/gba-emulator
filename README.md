@@ -3,4 +3,5 @@
 ```
 mkdir build
 make all
+./build/emulator
 ```

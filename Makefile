@@ -4,23 +4,25 @@ CXXFLAGS =-g -std=c++20 -Wall
 
 # Source and object files
 BUILD_DIR = build
-SRC = main.cpp
-OBJ = $(BUILD_DIR)/$(SRC:.cpp=.o)
 EXEC = $(BUILD_DIR)/emulator
 
 # Default target
 all: $(EXEC)
 
 # Link object file to create the executable
-$(EXEC): $(OBJ)
-	$(CXX) $(OBJ) -o $(EXEC)
+$(EXEC): main.o arm968es.o
+	$(CXX) $(BUILD_DIR)/main.o $(BUILD_DIR)/arm968es.o -o $(EXEC)
 
-# Compile source file to object file
-$(OBJ): 
-	$(CXX) $(CXXFLAGS) -c $(SRC) -I. -o $(OBJ)
+# Compile main
+main.o:
+	$(CXX) $(CXXFLAGS) -c main.cpp -I. -o $(BUILD_DIR)/main.o
+
+# Compile main
+arm968es.o:
+	$(CXX) $(CXXFLAGS) -c arm968es.cpp -I. -o $(BUILD_DIR)/arm968es.o
 
 # Clean target to remove object and executable files
 clean:
-	rm -f $(OBJ) $(EXEC) *.gch
+	rm -f $(BUILD_DIR)/main.o $(BUILD_DIR)/arm968es.o $(EXEC) *.gch
 
 .PHONY: all clean
