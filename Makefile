@@ -1,6 +1,7 @@
 # Compiler and flags
 CXX = g++
 CXXFLAGS =-g -std=c++20 -Wall
+DEBUG_CXXFLAGS = -g -std=c++20 -Wall
 
 # Source and object files
 BUILD_DIR = build
@@ -20,6 +21,10 @@ main.o:
 # Compile main
 arm968es.o:
 	$(CXX) $(CXXFLAGS) -c arm968es.cpp -I. -o $(BUILD_DIR)/arm968es.o
+
+# debug target
+debug: CXXFLAGS += -g
+debug: $(EXEC)
 
 # Clean target to remove object and executable files
 clean:

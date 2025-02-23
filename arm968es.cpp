@@ -6,6 +6,10 @@ namespace Emulator::Arm
 
 {
 
+inline uint32_t generateMask(uint8_t a, uint8_t b) {
+  return ((1U << (b - a + 1)) - 1) << a;
+}
+
 enum ConditionCode : uint8_t {
   EQ = 0b0000,
   NE = 0b0001,
@@ -319,6 +323,16 @@ const char *toString(Instr::Instr instr) {
   }
 }
 
+[[nodiscard]] bool get_reg(const uint8_t reg_num, Registers &regs,
+                           uint32_t *&reg) {
+  if (reg_num == 0) {
+    reg = &regs.r0;
+    return true;
+  }
+  printf("Could not find register %u", reg_num);
+  return false;
+}
+
 [[nodiscard]] bool CPU::dispatch(const GameCard::GameCard &game_card,
                                  const Memory::Memory &memory) noexcept {
 
@@ -349,8 +363,25 @@ const char *toString(Instr::Instr instr) {
 
 [[nodiscard]] bool CPU::dispatch_MOV(uint32_t instr,
                                      const Memory::Memory &memory) noexcept {
-  registers.r15 += kInstrSize;
-  return true;
+  if ((instr & generateMask(25, 25)) == 0) {
+    const uint32_t shift = (instr & generateMask(4, 11)) >> 4;
+    const uint32_t rm = instr & generateMask(0, 3);
+    (void)shift;
+    (void)rm;
+    printf("Not yet implemented.");
+    return false;
+  } else {
+    const uint32_t rotate = ((instr & generateMask(8, 11)) >> 8) * 2;
+    const uint8_t lmm = instr & generateMask(0, 7);
+    const uint8_t rotated_lmm = (lmm >> rotate) | (lmm << (8 - rotate));
+    uint32_t *r = nullptr;
+    if (!get_reg((instr & generateMask(12, 15)) >> 12, registers, r)) {
+      return false;
+    }
+    *r = rotated_lmm;
+    registers.r15 += kInstrSize;
+    return true;
+  }
 }
 
 } // namespace Emulator::Arm
