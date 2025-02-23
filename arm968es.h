@@ -8,27 +8,6 @@ namespace Emulator::Arm
 
 {
 
-struct CPSR_Flags {
-  uint32_t M : 5;
-  uint32_t T : 1;
-  uint32_t F : 1;
-  uint32_t I : 1;
-  uint32_t reserve : 20;
-  uint32_t V : 1;
-  uint32_t C : 1;
-  uint32_t Z : 1;
-  uint32_t N : 1;
-};
-
-union CPSR_Register {
-  uint32_t value;
-  CPSR_Flags bits;
-
-  CPSR_Register(uint32_t val = 0) : value(val) {}
-
-  operator uint32_t() const { return value; } // Implicit conversion
-};
-
 struct Registers {
   uint32_t r0;
   uint32_t r1;
@@ -72,7 +51,7 @@ struct Registers {
   uint32_t r14_und;
   uint32_t SPSR_und;
 
-  CPSR_Register CPSR;
+  uint32_t CPSR;
 };
 
 struct CPU {
