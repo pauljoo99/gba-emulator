@@ -106,7 +106,6 @@ enum InstrMask : uint32_t {
 namespace Instr {
 // clang-format off
 enum Instr : uint32_t {
-  UKN = 0,
   ADC = 0b0000'0000'1010'0000'0000'0000'0000'0000,
   ADD = 0b0000'0000'1000'0000'0000'0000'0000'0000,
   AND = 0b0000'0000'0000'0000'0000'0000'0000'0000,
@@ -219,17 +218,16 @@ const char *toString(Instr::Instr instr) {
     return "TEQ";
   case Instr::Instr::TST:
     return "TST";
-  default:
-    return "UKN";
   }
 }
 
-Instr::Instr get_instr(uint32_t instr) {
+[[nodiscard]] bool get_instr_type(uint32_t instr, Instr::Instr &instry_type) {
 
-#define checkInstr(instr_type)                                                 \
-  if ((instr & uint32_t(InstrMask::InstrMask::instr_type)) ==                  \
-      uint32_t(Instr::Instr::instr_type)) {                                    \
-    return Instr::Instr::instr_type;                                           \
+#define checkInstr(instr_type_)                                                \
+  if ((instr & uint32_t(InstrMask::InstrMask::instr_type_)) ==                 \
+      uint32_t(Instr::Instr::instr_type_)) {                                   \
+    instry_type = Instr::Instr::instr_type_;                                   \
+    return true;                                                               \
   }
 
   checkInstr(ADC);
@@ -267,28 +265,44 @@ Instr::Instr get_instr(uint32_t instr) {
   checkInstr(TEQ);
   checkInstr(TST);
 
-  return Instr::Instr::UKN;
+  return false;
 
 #undef checkInstr
 }
 
-[[nodiscard]] bool CPU::dispatch(const GameCard::GameCard &game_card) noexcept {
+[[nodiscard]] bool process_instr(uint32_t instr, Instr::Instr instr_type,
+                                 CPU &cpu) {
 
-  uint32_t instr;
-  memcpy(&instr, (void *)&game_card.mem[pc], kInstrSize);
-
-  printf("Condition: %s, ", toString(process_condition(instr)));
-  printf("Instr: %s, ", toString(get_instr(instr)));
+  printf("Instr: %s, ", toString(instr_type));
   printf("Raw Instr: 0x%08X", instr);
   printf("\n");
 
-  pc += kInstrSize;
+  switch (instr_type) {
+  case Instr::Instr::B:
+    return cpu.dispatch_B(instr);
+    break;
+  default:
+    return false;
+  }
+}
+
+[[nodiscard]] bool CPU::dispatch(const GameCard::GameCard &game_card) noexcept {
 
   if (pc > sizeof(game_card.mem) / sizeof(game_card.mem[0])) {
     return false;
   }
 
-  return true;
+  uint32_t instr;
+  memcpy(&instr, (void *)&game_card.mem[pc], kInstrSize);
+
+  Instr::Instr instr_type;
+  if (!get_instr_type(instr, instr_type)) {
+    return false;
+  }
+
+  return process_instr(instr, instr_type, *this);
 }
+
+[[nodiscard]] bool CPU::dispatch_B(uint32_t instr) noexcept { return false; }
 
 } // namespace Emulator::Arm

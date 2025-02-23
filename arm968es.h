@@ -17,6 +17,8 @@ struct ConditionFlags {
 struct CPU {
   [[nodiscard]] bool dispatch(const GameCard::GameCard &game_card) noexcept;
 
+  [[nodiscard]] bool dispatch_B(uint32_t instr) noexcept;
+
   uint32_t pc = 0;
   ConditionFlags cflags = {};
 };
