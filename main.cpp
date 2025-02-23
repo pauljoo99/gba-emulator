@@ -57,12 +57,9 @@ int main() {
     return 1;
   }
 
-  if (!cpu->dispatch(*game_card)) {
-    printf("Dispatch failed!");
-    return 1;
+  while (cpu->dispatch(*game_card)) {
   }
 
-  printf("Success");
-
-  return 0;
+  printf("Dispatch failed!");
+  return 1;
 }
