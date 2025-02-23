@@ -373,12 +373,11 @@ const char *toString(Instr::Instr instr) {
   } else {
     const uint32_t rotate = ((instr & generateMask(8, 11)) >> 8) * 2;
     const uint8_t lmm = instr & generateMask(0, 7);
-    const uint8_t rotated_lmm = (lmm >> rotate) | (lmm << (8 - rotate));
     uint32_t *r = nullptr;
     if (!get_reg((instr & generateMask(12, 15)) >> 12, registers, r)) {
       return false;
     }
-    *r = rotated_lmm;
+    *r = (lmm >> rotate) | (lmm << (8 - rotate));
     registers.r15 += kInstrSize;
     return true;
   }
