@@ -57,7 +57,7 @@ int main() {
     return 1;
   }
 
-  while (cpu->dispatch(*game_card)) {
+  while (cpu->dispatch(*game_card, *memory)) {
   }
 
   printf("Dispatch failed!");

@@ -144,8 +144,39 @@ enum Instr : uint32_t {
 }
 // clang-format on
 
-ConditionCode process_condition(uint32_t instr) {
-  return ConditionCode(instr >> 28);
+bool evaluate_cond(ConditionCode cond, ConditionFlags &cond_flags) {
+  switch (cond) {
+  case ConditionCode::EQ:
+    return cond_flags.z;
+  case ConditionCode::NE:
+    return !cond_flags.z;
+  case ConditionCode::CS:
+    return cond_flags.c;
+  case ConditionCode::CC:
+    return !cond_flags.c;
+  case ConditionCode::MI:
+    return cond_flags.n;
+  case ConditionCode::PL:
+    return !cond_flags.n;
+  case ConditionCode::VS:
+    return cond_flags.v;
+  case ConditionCode::VC:
+    return !cond_flags.v;
+  case ConditionCode::HI:
+    return cond_flags.c && !cond_flags.z;
+  case ConditionCode::LS:
+    return !cond_flags.c && cond_flags.z;
+  case ConditionCode::GE:
+    return cond_flags.n == cond_flags.v;
+  case ConditionCode::LT:
+    return cond_flags.n != cond_flags.v;
+  case ConditionCode::GT:
+    return !cond_flags.z && cond_flags.n == cond_flags.v;
+  case ConditionCode::LE:
+    return cond_flags.z || cond_flags.n != cond_flags.v;
+  case ConditionCode::AL:
+    return true;
+  }
 }
 
 const char *toString(Instr::Instr instr) {
@@ -271,7 +302,7 @@ const char *toString(Instr::Instr instr) {
 }
 
 [[nodiscard]] bool process_instr(uint32_t instr, Instr::Instr instr_type,
-                                 CPU &cpu) {
+                                 const Memory::Memory &memory, CPU &cpu) {
 
   printf("Instr: %s, ", toString(instr_type));
   printf("Raw Instr: 0x%08X", instr);
@@ -281,12 +312,15 @@ const char *toString(Instr::Instr instr) {
   case Instr::Instr::B:
     return cpu.dispatch_B(instr);
     break;
+  case Instr::Instr::MOV:
+    return cpu.dispatch_MOV(instr, memory);
   default:
     return false;
   }
 }
 
-[[nodiscard]] bool CPU::dispatch(const GameCard::GameCard &game_card) noexcept {
+[[nodiscard]] bool CPU::dispatch(const GameCard::GameCard &game_card,
+                                 const Memory::Memory &memory) noexcept {
 
   if (pc > sizeof(game_card.mem) / sizeof(game_card.mem[0])) {
     return false;
@@ -300,9 +334,23 @@ const char *toString(Instr::Instr instr) {
     return false;
   }
 
-  return process_instr(instr, instr_type, *this);
+  return process_instr(instr, instr_type, memory, *this);
 }
 
-[[nodiscard]] bool CPU::dispatch_B(uint32_t instr) noexcept { return false; }
+[[nodiscard]] bool CPU::dispatch_B(uint32_t instr) noexcept {
+  if (evaluate_cond(ConditionCode(instr >> 28), cond_flags)) {
+    const uint32_t offset = instr & ((1 << 23) - 1);
+    pc += (offset << 2) + 8;
+  } else {
+    pc += kInstrSize;
+  }
+  return true;
+}
+
+[[nodiscard]] bool CPU::dispatch_MOV(uint32_t instr,
+                                     const Memory::Memory &memory) noexcept {
+  pc += kInstrSize;
+  return true;
+}
 
 } // namespace Emulator::Arm
