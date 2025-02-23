@@ -8,11 +8,25 @@ namespace Emulator::Arm
 
 {
 
-struct ConditionFlags {
-  bool z;
-  bool c;
-  bool n;
-  bool v;
+struct CPSR_Flags {
+  uint32_t M : 5;
+  uint32_t T : 1;
+  uint32_t F : 1;
+  uint32_t I : 1;
+  uint32_t reserve : 20;
+  uint32_t V : 1;
+  uint32_t C : 1;
+  uint32_t Z : 1;
+  uint32_t N : 1;
+};
+
+union CPSR_Register {
+  uint32_t value;
+  CPSR_Flags bits;
+
+  CPSR_Register(uint32_t val = 0) : value(val) {}
+
+  operator uint32_t() const { return value; } // Implicit conversion
 };
 
 struct Registers {
@@ -58,7 +72,7 @@ struct Registers {
   uint32_t r14_und;
   uint32_t SPSR_und;
 
-  uint32_t CPSR;
+  CPSR_Register CPSR;
 };
 
 struct CPU {
@@ -69,8 +83,9 @@ struct CPU {
   [[nodiscard]] bool dispatch_B(uint32_t instr) noexcept;
   [[nodiscard]] bool dispatch_MOV(uint32_t instr,
                                   const Memory::Memory &memory) noexcept;
+  [[nodiscard]] bool dispatch_MSR(uint32_t instr,
+                                  const Memory::Memory &memory) noexcept;
 
-  ConditionFlags cond_flags;
   Registers registers;
 };
 

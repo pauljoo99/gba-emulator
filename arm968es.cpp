@@ -148,36 +148,36 @@ enum Instr : uint32_t {
 }
 // clang-format on
 
-bool evaluate_cond(ConditionCode cond, ConditionFlags &cond_flags) {
+bool evaluate_cond(ConditionCode cond, CPSR_Register cpsr) {
   switch (cond) {
   case ConditionCode::EQ:
-    return cond_flags.z;
+    return cpsr.bits.Z;
   case ConditionCode::NE:
-    return !cond_flags.z;
+    return !cpsr.bits.Z;
   case ConditionCode::CS:
-    return cond_flags.c;
+    return cpsr.bits.C;
   case ConditionCode::CC:
-    return !cond_flags.c;
+    return !cpsr.bits.C;
   case ConditionCode::MI:
-    return cond_flags.n;
+    return cpsr.bits.N;
   case ConditionCode::PL:
-    return !cond_flags.n;
+    return !cpsr.bits.N;
   case ConditionCode::VS:
-    return cond_flags.v;
+    return cpsr.bits.V;
   case ConditionCode::VC:
-    return !cond_flags.v;
+    return !cpsr.bits.V;
   case ConditionCode::HI:
-    return cond_flags.c && !cond_flags.z;
+    return cpsr.bits.C && !cpsr.bits.Z;
   case ConditionCode::LS:
-    return !cond_flags.c && cond_flags.z;
+    return !cpsr.bits.C && cpsr.bits.Z;
   case ConditionCode::GE:
-    return cond_flags.n == cond_flags.v;
+    return cpsr.bits.N == cpsr.bits.V;
   case ConditionCode::LT:
-    return cond_flags.n != cond_flags.v;
+    return cpsr.bits.N != cpsr.bits.V;
   case ConditionCode::GT:
-    return !cond_flags.z && cond_flags.n == cond_flags.v;
+    return !cpsr.bits.Z && cpsr.bits.N == cpsr.bits.V;
   case ConditionCode::LE:
-    return cond_flags.z || cond_flags.n != cond_flags.v;
+    return cpsr.bits.Z || cpsr.bits.N != cpsr.bits.V;
   case ConditionCode::AL:
     return true;
   }
@@ -318,6 +318,8 @@ const char *toString(Instr::Instr instr) {
     break;
   case Instr::Instr::MOV:
     return cpu.dispatch_MOV(instr, memory);
+  case Instr::Instr::MSR:
+    return cpu.dispatch_MSR(instr, memory);
   default:
     return false;
   }
@@ -352,7 +354,7 @@ const char *toString(Instr::Instr instr) {
 }
 
 [[nodiscard]] bool CPU::dispatch_B(uint32_t instr) noexcept {
-  if (evaluate_cond(ConditionCode(instr >> 28), cond_flags)) {
+  if (evaluate_cond(ConditionCode(instr >> 28), registers.CPSR)) {
     const uint32_t offset = instr & ((1 << 23) - 1);
     registers.r15 += (offset << 2) + 8;
   } else {
@@ -381,6 +383,11 @@ const char *toString(Instr::Instr instr) {
     registers.r15 += kInstrSize;
     return true;
   }
+}
+
+[[nodiscard]] bool CPU::dispatch_MSR(uint32_t instr,
+                                     const Memory::Memory &memory) noexcept {
+  return false;
 }
 
 } // namespace Emulator::Arm
