@@ -340,20 +340,43 @@ const char *toString(Instr::Instr instr) {
   case Instr::Instr::MOV:
     return cpu.dispatch_MOV(instr, memory);
   case Instr::Instr::MSR:
-    return cpu.dispatch_MSR(instr, memory);
+    return cpu.dispatch_MSR(instr);
   default:
     return false;
   }
 }
 
-[[nodiscard]] bool get_reg(const uint8_t reg_num, Registers &regs,
-                           uint32_t *&reg) {
+[[nodiscard]] bool get_reg(uint8_t reg_num, Registers &regs, uint32_t *&reg) {
   if (reg_num == 0) {
     reg = &regs.r0;
     return true;
   }
   printf("Could not find register %u", reg_num);
   return false;
+}
+
+[[nodiscard]] bool get_spsr_reg(CPSR_Register cpsr, Registers &regs,
+                                uint32_t *&reg) {
+  switch (cpsr.bits.M) {
+  case 0b10001:
+    reg = &regs.SPSR_fiq;
+    break;
+  case 0b10010:
+    reg = &regs.SPSR_irq;
+    break;
+  case 0b10011:
+    reg = &regs.SPSR_svc;
+    break;
+  case 0b10111:
+    reg = &regs.SPSR_abt;
+    break;
+  case 0b11011:
+    reg = &regs.SPSR_und;
+    break;
+  default:
+    return false;
+  }
+  return true;
 }
 
 [[nodiscard]] bool CPU::dispatch(const GameCard::GameCard &game_card,
@@ -375,17 +398,22 @@ const char *toString(Instr::Instr instr) {
 }
 
 [[nodiscard]] bool CPU::dispatch_B(uint32_t instr) noexcept {
-  if (evaluate_cond(ConditionCode(instr >> 28), registers.CPSR)) {
-    const uint32_t offset = instr & ((1 << 23) - 1);
-    registers.r15 += (offset << 2) + 8;
-  } else {
+  if (!evaluate_cond(ConditionCode(instr >> 28), registers.CPSR)) {
     registers.r15 += kInstrSize;
+    return false;
   }
+  const uint32_t offset = instr & ((1 << 23) - 1);
+  registers.r15 += (offset << 2) + 8;
   return true;
 }
 
 [[nodiscard]] bool CPU::dispatch_MOV(uint32_t instr,
                                      const Memory::Memory &memory) noexcept {
+  if (!evaluate_cond(ConditionCode(instr >> 28), registers.CPSR)) {
+    registers.r15 += kInstrSize;
+    return true;
+  }
+
   if ((instr & generateMask(25, 25)) == 0) {
     const uint32_t shift = (instr & generateMask(4, 11)) >> 4;
     const uint32_t rm = instr & generateMask(0, 3);
@@ -406,9 +434,27 @@ const char *toString(Instr::Instr instr) {
   }
 }
 
-[[nodiscard]] bool CPU::dispatch_MSR(uint32_t instr,
-                                     const Memory::Memory &memory) noexcept {
-  return false;
+[[nodiscard]] bool CPU::dispatch_MSR(uint32_t instr) noexcept {
+  if (!evaluate_cond(ConditionCode(instr >> 28), registers.CPSR)) {
+    registers.r15 += kInstrSize;
+    return true;
+  }
+
+  uint32_t *rm = nullptr;
+  if (!get_reg((instr & generateMask(0, 3)) >> 3, registers, rm)) {
+    return false;
+  }
+  if ((instr & generateMask(22, 22)) == 0) {
+    registers.CPSR = *rm;
+  } else {
+    uint32_t *rs = nullptr;
+    if (!get_spsr_reg(registers.CPSR, registers, rs)) {
+      return false;
+    }
+    *rs = *rm;
+  }
+  registers.r15 += kInstrSize;
+  return true;
 }
 
 } // namespace Emulator::Arm
