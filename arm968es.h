@@ -70,8 +70,8 @@ struct CPU {
   [[nodiscard]] bool dispatch_MOV(uint32_t instr,
                                   const Memory::Memory &memory) noexcept;
 
-  uint32_t pc = 0;
-  ConditionFlags cond_flags = {};
+  ConditionFlags cond_flags;
+  Registers registers;
 };
 
 } // namespace Emulator::Arm

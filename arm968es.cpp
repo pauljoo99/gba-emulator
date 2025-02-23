@@ -322,12 +322,12 @@ const char *toString(Instr::Instr instr) {
 [[nodiscard]] bool CPU::dispatch(const GameCard::GameCard &game_card,
                                  const Memory::Memory &memory) noexcept {
 
-  if (pc > sizeof(game_card.mem) / sizeof(game_card.mem[0])) {
+  if (registers.r15 > sizeof(game_card.mem) / sizeof(game_card.mem[0])) {
     return false;
   }
 
   uint32_t instr;
-  memcpy(&instr, (void *)&game_card.mem[pc], kInstrSize);
+  memcpy(&instr, (void *)&game_card.mem[registers.r15], kInstrSize);
 
   Instr::Instr instr_type;
   if (!get_instr_type(instr, instr_type)) {
@@ -340,16 +340,16 @@ const char *toString(Instr::Instr instr) {
 [[nodiscard]] bool CPU::dispatch_B(uint32_t instr) noexcept {
   if (evaluate_cond(ConditionCode(instr >> 28), cond_flags)) {
     const uint32_t offset = instr & ((1 << 23) - 1);
-    pc += (offset << 2) + 8;
+    registers.r15 += (offset << 2) + 8;
   } else {
-    pc += kInstrSize;
+    registers.r15 += kInstrSize;
   }
   return true;
 }
 
 [[nodiscard]] bool CPU::dispatch_MOV(uint32_t instr,
                                      const Memory::Memory &memory) noexcept {
-  pc += kInstrSize;
+  registers.r15 += kInstrSize;
   return true;
 }
 
