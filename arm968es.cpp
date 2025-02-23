@@ -1,4 +1,5 @@
 #include "arm968es.h"
+#include "arm_instructions.h"
 #include <cstring>
 #include <stdio.h>
 
@@ -341,6 +342,8 @@ const char *toString(Instr::Instr instr) {
     return cpu.dispatch_MOV(instr, memory);
   case Instr::Instr::MSR:
     return cpu.dispatch_MSR(instr);
+  case Instr::Instr::LDR:
+    return cpu.dispatch_LDR(instr);
   default:
     return false;
   }
@@ -397,24 +400,26 @@ const char *toString(Instr::Instr instr) {
   return process_instr(instr, instr_type, memory, *this);
 }
 
-[[nodiscard]] bool CPU::dispatch_B(uint32_t instr) noexcept {
-  if (!evaluate_cond(ConditionCode(instr >> 28), registers.CPSR)) {
+[[nodiscard]] bool CPU::dispatch_B(uint32_t instr_) noexcept {
+  const BranchInstr instr(instr_);
+  if (!evaluate_cond(ConditionCode(instr.fields.cond), registers.CPSR)) {
     registers.r15 += kInstrSize;
     return false;
   }
-  const uint32_t offset = instr & ((1 << 23) - 1);
-  registers.r15 += (offset << 2) + 8;
+  registers.r15 += (instr.fields.offset << 2) + 8;
   return true;
 }
 
-[[nodiscard]] bool CPU::dispatch_MOV(uint32_t instr,
+[[nodiscard]] bool CPU::dispatch_MOV(uint32_t instr_,
                                      const Memory::Memory &memory) noexcept {
-  if (!evaluate_cond(ConditionCode(instr >> 28), registers.CPSR)) {
+  const DataProcessingInstr instr(instr_);
+
+  if (!evaluate_cond(ConditionCode(instr.fields.cond), registers.CPSR)) {
     registers.r15 += kInstrSize;
     return true;
   }
 
-  if ((instr & generateMask(25, 25)) == 0) {
+  if (!instr.fields.i) {
     const uint32_t shift = (instr & generateMask(4, 11)) >> 4;
     const uint32_t rm = instr & generateMask(0, 3);
     (void)shift;
@@ -422,10 +427,11 @@ const char *toString(Instr::Instr instr) {
     printf("Not yet implemented.");
     return false;
   } else {
-    const uint32_t rotate = ((instr & generateMask(8, 11)) >> 8) * 2;
-    const uint8_t lmm = instr & generateMask(0, 7);
+    const uint32_t rotate =
+        ((instr.fields.operand_2 & generateMask(8, 11)) >> 8) * 2;
+    const uint8_t lmm = instr.fields.operand_2 & generateMask(0, 7);
     uint32_t *r = nullptr;
-    if (!get_reg((instr & generateMask(12, 15)) >> 12, registers, r)) {
+    if (!get_reg(instr.fields.rd, registers, r)) {
       return false;
     }
     *r = (lmm >> rotate) | (lmm << (8 - rotate));
@@ -434,17 +440,19 @@ const char *toString(Instr::Instr instr) {
   }
 }
 
-[[nodiscard]] bool CPU::dispatch_MSR(uint32_t instr) noexcept {
-  if (!evaluate_cond(ConditionCode(instr >> 28), registers.CPSR)) {
+[[nodiscard]] bool CPU::dispatch_MSR(uint32_t instr_) noexcept {
+  const MSRInstr instr(instr_);
+
+  if (!evaluate_cond(ConditionCode(instr.fields.cond), registers.CPSR)) {
     registers.r15 += kInstrSize;
     return true;
   }
 
   uint32_t *rm = nullptr;
-  if (!get_reg((instr & generateMask(0, 3)) >> 3, registers, rm)) {
+  if (!get_reg(instr.fields.rm, registers, rm)) {
     return false;
   }
-  if ((instr & generateMask(22, 22)) == 0) {
+  if (!instr.fields.dest_psr) {
     registers.CPSR = *rm;
   } else {
     uint32_t *rs = nullptr;
@@ -456,5 +464,7 @@ const char *toString(Instr::Instr instr) {
   registers.r15 += kInstrSize;
   return true;
 }
+
+[[nodiscard]] bool CPU::dispatch_LDR(uint32_t instr) noexcept { return false; }
 
 } // namespace Emulator::Arm
