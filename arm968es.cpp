@@ -465,6 +465,14 @@ const char *toString(Instr::Instr instr) {
   return true;
 }
 
-[[nodiscard]] bool CPU::dispatch_LDR(uint32_t instr) noexcept { return false; }
+[[nodiscard]] bool CPU::dispatch_LDR(uint32_t instr_) noexcept {
+  const SingleDataTransferInstr instr{instr_};
+  if (!evaluate_cond(ConditionCode(instr.fields.cond), registers.CPSR)) {
+    registers.r15 += kInstrSize;
+    return true;
+  }
+
+  return false;
+}
 
 } // namespace Emulator::Arm

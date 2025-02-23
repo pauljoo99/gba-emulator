@@ -2,6 +2,29 @@
 
 #include <cstdint>
 
+struct SingleDataTransferInstrFields {
+  uint32_t offset : 12;
+  uint32_t rd : 4;
+  uint32_t rn : 4;
+  uint32_t l : 1;
+  uint32_t w : 1;
+  uint32_t b : 1;
+  uint32_t u : 1;
+  uint32_t p : 1;
+  uint32_t i : 1;
+  uint32_t : 2;
+  uint32_t cond : 4;
+};
+
+union SingleDataTransferInstr {
+  uint32_t value;
+  SingleDataTransferInstrFields fields;
+
+  SingleDataTransferInstr(uint32_t val = 0) : value(val) {}
+
+  operator uint32_t() const { return value; } // Implicit conversion
+};
+
 struct MSRInstrFields {
   uint32_t rm : 4;
   uint32_t : 8;
@@ -21,7 +44,7 @@ union MSRInstr {
 };
 
 struct DataProcessingInstrFields {
-  uint32_t operand_2 : 11;
+  uint32_t operand_2 : 12;
   uint32_t rd : 4;
   uint32_t rn : 4;
   uint32_t s : 1;
