@@ -343,19 +343,67 @@ const char *toString(Instr::Instr instr) {
   case Instr::Instr::MSR:
     return cpu.dispatch_MSR(instr);
   case Instr::Instr::LDR:
-    return cpu.dispatch_LDR(instr);
+    return cpu.dispatch_LDR(instr, memory);
   default:
     return false;
   }
 }
 
 [[nodiscard]] bool get_reg(uint8_t reg_num, Registers &regs, uint32_t *&reg) {
-  if (reg_num == 0) {
+
+  switch (reg_num) {
+  case 0:
     reg = &regs.r0;
     return true;
+  case 1:
+    reg = &regs.r1;
+    return true;
+  case 2:
+    reg = &regs.r2;
+    return true;
+  case 3:
+    reg = &regs.r3;
+    return true;
+  case 4:
+    reg = &regs.r4;
+    return true;
+  case 5:
+    reg = &regs.r5;
+    return true;
+  case 6:
+    reg = &regs.r6;
+    return true;
+  case 7:
+    reg = &regs.r7;
+    return true;
+  case 8:
+    reg = &regs.r8;
+    return true;
+  case 9:
+    reg = &regs.r9;
+    return true;
+  case 10:
+    reg = &regs.r10;
+    return true;
+  case 11:
+    reg = &regs.r11;
+    return true;
+  case 12:
+    reg = &regs.r12;
+    return true;
+  case 13:
+    reg = &regs.r13;
+    return true;
+  case 14:
+    reg = &regs.r14;
+    return true;
+  case 15:
+    reg = &regs.r15;
+    return true;
+  default:
+    printf("Could not find register %u", reg_num);
+    return false;
   }
-  printf("Could not find register %u", reg_num);
-  return false;
 }
 
 [[nodiscard]] bool get_spsr_reg(CPSR_Register cpsr, Registers &regs,
@@ -465,14 +513,48 @@ const char *toString(Instr::Instr instr) {
   return true;
 }
 
-[[nodiscard]] bool CPU::dispatch_LDR(uint32_t instr_) noexcept {
+[[nodiscard]] bool CPU::dispatch_LDR(uint32_t instr_,
+                                     const Memory::Memory &memory) noexcept {
   const SingleDataTransferInstr instr{instr_};
   if (!evaluate_cond(ConditionCode(instr.fields.cond), registers.CPSR)) {
     registers.r15 += kInstrSize;
     return true;
   }
 
-  return false;
+  uint32_t *rd = nullptr;
+  if (!get_reg(instr.fields.rd, registers, rd)) {
+    printf("Could not get rd");
+    return false;
+  }
+
+  uint32_t *rn = nullptr;
+  if (!get_reg(instr.fields.rn, registers, rn)) {
+    printf("Could not get rn");
+    return false;
+  }
+
+  uint32_t offset;
+  if (instr.fields.i == 0) {
+    offset = instr.fields.offset;
+  } else {
+    printf("Not implemented");
+    return false;
+  }
+
+  const uint32_t old_rn = *rn;
+  if (instr.fields.p) {
+    *rn += (instr.fields.u ? 1 : -1) * offset;
+    memcpy(rd, (void *)&memory.mem[*rn], (instr.fields.u ? 1 : 4));
+  } else {
+    memcpy(rd, (void *)&memory.mem[*rn], (instr.fields.u ? 1 : 4));
+    *rn += (instr.fields.u ? 1 : -1) * offset;
+  }
+
+  if (instr.fields.w) {
+    *rn = old_rn;
+  }
+
+  return true;
 }
 
 } // namespace Emulator::Arm
