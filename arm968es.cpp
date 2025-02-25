@@ -337,13 +337,18 @@ const char *toString(Instr::Instr instr) {
   switch (instr_type) {
   case Instr::Instr::B:
     return cpu.dispatch_B(instr);
-    break;
+  case Instr::Instr::BX:
+    return cpu.dispatch_BX(instr);
   case Instr::Instr::MOV:
     return cpu.dispatch_MOV(instr, memory);
   case Instr::Instr::MSR:
     return cpu.dispatch_MSR(instr);
   case Instr::Instr::LDR:
     return cpu.dispatch_LDR(instr, memory);
+  case Instr::Instr::ADD:
+    return cpu.dispatch_ADD(instr);
+  case Instr::Instr::STR:
+    return cpu.dispatch_STR(instr, memory);
   default:
     return false;
   }
@@ -452,9 +457,71 @@ const char *toString(Instr::Instr instr) {
   const BranchInstr instr(instr_);
   if (!evaluate_cond(ConditionCode(instr.fields.cond), registers.CPSR)) {
     registers.r15 += kInstrSize;
-    return false;
+    return true;
   }
   registers.r15 += (instr.fields.offset << 2) + 8;
+  return true;
+}
+
+[[nodiscard]] bool CPU::dispatch_BX(uint32_t instr_) noexcept {
+  const BranchAndExchangeInstr instr(instr_);
+  if (!evaluate_cond(ConditionCode(instr.fields.cond), registers.CPSR)) {
+    registers.r15 += kInstrSize;
+    return true;
+  }
+  thumb_instr = instr.fields.rn & 1;
+  uint32_t *rn;
+  if (!get_reg(instr.fields.rn, registers, rn)) {
+    return false;
+  }
+  registers.r15 = *rn & ~1;
+  return true;
+}
+
+[[nodiscard]] bool op2_register(uint32_t op2, Registers &registers,
+                                bool &carry_out, uint32_t &op2_val) {
+
+  uint32_t *rm;
+  if (!get_reg(op2 & 0b1111, registers, rm)) {
+    return false;
+  }
+
+  uint32_t shift_type = (op2 >> 5) & 0b11;
+  uint32_t shift_amount;
+  if ((op2 >> 4) & 1) {
+    uint32_t *rs;
+    if (!get_reg(op2 >> 8, registers, rs)) {
+      return false;
+    }
+    shift_amount = *rs & 0xFF;
+  } else {
+    shift_amount = op2 >> 7;
+  }
+
+  uint32_t sign;
+  switch (shift_type) {
+  case 0:
+    carry_out = *rm >> (32 - shift_amount) & 1;
+    op2_val = *rm << shift_amount;
+    break;
+  case 1:
+    carry_out = *rm >> (shift_amount - 1) & 1;
+    op2_val = *rm >> shift_amount;
+    break;
+  case 2:
+    carry_out = *rm >> (shift_amount - 1) & 1;
+    sign = (*rm >> 31) & 1;
+    op2_val = (*rm >> shift_amount) |
+              (((sign << shift_amount) - 1) << (32 - shift_amount));
+    break;
+  case 3:
+    printf("No implemented");
+    return false;
+  default:
+    printf("Not a recognized shift type");
+    return false;
+  }
+
   return true;
 }
 
@@ -467,25 +534,73 @@ const char *toString(Instr::Instr instr) {
     return true;
   }
 
-  if (!instr.fields.i) {
-    const uint32_t shift = (instr & generateMask(4, 11)) >> 4;
-    const uint32_t rm = instr & generateMask(0, 3);
-    (void)shift;
-    (void)rm;
-    printf("Not yet implemented.");
+  uint32_t *r = nullptr;
+  if (!get_reg(instr.fields.rd, registers, r)) {
     return false;
+  }
+
+  if (!instr.fields.i) {
+    uint32_t op2;
+    bool carry_out = 0;
+    if (!op2_register(instr.fields.operand_2, registers, carry_out, op2)) {
+      return false;
+    }
+    *r = op2;
   } else {
     const uint32_t rotate =
         ((instr.fields.operand_2 & generateMask(8, 11)) >> 8) * 2;
     const uint8_t lmm = instr.fields.operand_2 & generateMask(0, 7);
-    uint32_t *r = nullptr;
-    if (!get_reg(instr.fields.rd, registers, r)) {
-      return false;
-    }
     *r = (lmm >> rotate) | (lmm << (8 - rotate));
+  }
+  registers.r15 += kInstrSize;
+  return true;
+}
+
+[[nodiscard]] bool CPU::dispatch_ADD(uint32_t instr_) noexcept {
+  const DataProcessingInstr instr(instr_);
+
+  if (!evaluate_cond(ConditionCode(instr.fields.cond), registers.CPSR)) {
     registers.r15 += kInstrSize;
     return true;
   }
+
+  uint32_t op2;
+  bool carry_out = 0;
+  if (!instr.fields.i) {
+    if (!op2_register(instr.fields.operand_2, registers, carry_out, op2)) {
+      return false;
+    }
+  } else {
+    const uint32_t rotate =
+        ((instr.fields.operand_2 & generateMask(8, 11)) >> 8) * 2;
+    const uint8_t lmm = instr.fields.operand_2 & generateMask(0, 7);
+    op2 = (lmm >> rotate) | (lmm << (8 - rotate));
+    carry_out = (lmm >> (rotate - 1)) & 1;
+  }
+
+  uint32_t *rn = nullptr;
+  if (!get_reg(instr.fields.rn, registers, rn)) {
+    return false;
+  }
+
+  uint32_t *rd = nullptr;
+  if (!get_reg(instr.fields.rd, registers, rd)) {
+    return false;
+  }
+
+  *rd = *rn + op2;
+
+  if (instr.fields.s) {
+    CPSR_Register tmp_cprs = registers.CPSR;
+    tmp_cprs.bits.V = *rd < *rn || *rd < op2;
+    tmp_cprs.bits.C = carry_out;
+    tmp_cprs.bits.Z = *rd == 0;
+    tmp_cprs.bits.N = (*rd >> 31) & 1;
+    registers.CPSR = tmp_cprs;
+  }
+
+  registers.r15 += kInstrSize;
+  return true;
 }
 
 [[nodiscard]] bool CPU::dispatch_MSR(uint32_t instr_) noexcept {
@@ -550,10 +665,56 @@ const char *toString(Instr::Instr instr) {
     *rn += (instr.fields.u ? 1 : -1) * offset;
   }
 
-  if (instr.fields.w) {
+  if (!instr.fields.w) {
     *rn = old_rn;
   }
 
+  registers.r15 += kInstrSize;
+  return true;
+}
+
+[[nodiscard]] bool CPU::dispatch_STR(uint32_t instr_,
+                                     const Memory::Memory &memory) noexcept {
+  const SingleDataTransferInstr instr{instr_};
+  if (!evaluate_cond(ConditionCode(instr.fields.cond), registers.CPSR)) {
+    registers.r15 += kInstrSize;
+    return true;
+  }
+
+  uint32_t *rd = nullptr;
+  if (!get_reg(instr.fields.rd, registers, rd)) {
+    printf("Could not get rd");
+    return false;
+  }
+
+  uint32_t *rn = nullptr;
+  if (!get_reg(instr.fields.rn, registers, rn)) {
+    printf("Could not get rn");
+    return false;
+  }
+
+  uint32_t offset;
+  if (instr.fields.i == 0) {
+    offset = instr.fields.offset;
+  } else {
+    printf("Not implemented");
+    return false;
+  }
+
+  const uint32_t old_rn = *rn;
+  if (instr.fields.p) {
+    *rn += (instr.fields.u ? 1 : -1) * offset;
+    memcpy((void *)&memory.mem[*rd], rn, (instr.fields.u ? 1 : 4));
+  } else {
+    memcpy((void *)&memory.mem[*rd], rn, (instr.fields.u ? 1 : 4));
+    *rn += (instr.fields.u ? 1 : -1) * offset;
+  }
+
+  if (!instr.fields.w) {
+    *rn = old_rn;
+  }
+
+  registers.r15 += kInstrSize;
   return true;
 }
 

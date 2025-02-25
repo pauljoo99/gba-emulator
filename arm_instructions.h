@@ -78,3 +78,18 @@ union BranchInstr {
 
   operator uint32_t() const { return value; } // Implicit conversion
 };
+
+struct BranchAndExchangeInstrFields {
+  uint32_t rn : 4;
+  uint32_t : 24;
+  uint32_t cond : 4;
+};
+
+union BranchAndExchangeInstr {
+  uint32_t value;
+  BranchAndExchangeInstrFields fields;
+
+  BranchAndExchangeInstr(uint32_t val = 0) : value(val) {}
+
+  operator uint32_t() const { return value; } // Implicit conversion
+};

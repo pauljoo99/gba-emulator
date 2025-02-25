@@ -60,13 +60,18 @@ struct CPU {
                               const Memory::Memory &memory) noexcept;
 
   [[nodiscard]] bool dispatch_B(uint32_t instr) noexcept;
+  [[nodiscard]] bool dispatch_BX(uint32_t instr) noexcept;
   [[nodiscard]] bool dispatch_MOV(uint32_t instr,
                                   const Memory::Memory &memory) noexcept;
   [[nodiscard]] bool dispatch_MSR(uint32_t instr) noexcept;
   [[nodiscard]] bool dispatch_LDR(uint32_t instr,
                                   const Memory::Memory &memory) noexcept;
+  [[nodiscard]] bool dispatch_ADD(uint32_t instr) noexcept;
+  [[nodiscard]] bool dispatch_STR(uint32_t instr_,
+                                  const Memory::Memory &memory) noexcept;
 
   Registers registers;
+  bool thumb_instr = 0;
 };
 
 } // namespace Emulator::Arm
