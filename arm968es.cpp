@@ -59,63 +59,6 @@ union CPSR_Register {
   }
 }
 
-[[nodiscard]] bool get_reg(uint8_t reg_num, Registers &regs, uint32_t *&reg) {
-
-  switch (reg_num) {
-  case 0:
-    reg = &regs.r0;
-    return true;
-  case 1:
-    reg = &regs.r1;
-    return true;
-  case 2:
-    reg = &regs.r2;
-    return true;
-  case 3:
-    reg = &regs.r3;
-    return true;
-  case 4:
-    reg = &regs.r4;
-    return true;
-  case 5:
-    reg = &regs.r5;
-    return true;
-  case 6:
-    reg = &regs.r6;
-    return true;
-  case 7:
-    reg = &regs.r7;
-    return true;
-  case 8:
-    reg = &regs.r8;
-    return true;
-  case 9:
-    reg = &regs.r9;
-    return true;
-  case 10:
-    reg = &regs.r10;
-    return true;
-  case 11:
-    reg = &regs.r11;
-    return true;
-  case 12:
-    reg = &regs.r12;
-    return true;
-  case 13:
-    reg = &regs.r13;
-    return true;
-  case 14:
-    reg = &regs.r14;
-    return true;
-  case 15:
-    reg = &regs.r15;
-    return true;
-  default:
-    printf("Could not find register %u", reg_num);
-    return false;
-  }
-}
-
 bool evaluate_cond(ConditionCode cond, CPSR_Register cpsr) {
   switch (cond) {
   case ConditionCode::EQ:
@@ -178,12 +121,12 @@ bool evaluate_cond(ConditionCode cond, CPSR_Register cpsr) {
 [[nodiscard]] bool CPU::dispatch(const GameCard::GameCard &game_card,
                                  const Memory::Memory &memory) noexcept {
 
-  if (registers.r15 > sizeof(game_card.mem) / sizeof(game_card.mem[0])) {
+  if (registers.r[15] > sizeof(game_card.mem) / sizeof(game_card.mem[0])) {
     return false;
   }
 
   uint32_t instr;
-  memcpy(&instr, (void *)&game_card.mem[registers.r15], kInstrSize);
+  memcpy(&instr, (void *)&game_card.mem[registers.r[15]], kInstrSize);
 
   Instr::Instr instr_type;
   if (!get_instr_type(instr, instr_type)) {
@@ -196,44 +139,35 @@ bool evaluate_cond(ConditionCode cond, CPSR_Register cpsr) {
 [[nodiscard]] bool CPU::dispatch_B(uint32_t instr_) noexcept {
   const BranchInstr instr(instr_);
   if (!evaluate_cond(ConditionCode(instr.fields.cond), registers.CPSR)) {
-    registers.r15 += kInstrSize;
+    registers.r[15] += kInstrSize;
     return true;
   }
-  registers.r15 += (instr.fields.offset << 2) + 8;
+  registers.r[15] += (instr.fields.offset << 2) + 8;
   return true;
 }
 
 [[nodiscard]] bool CPU::dispatch_BX(uint32_t instr_) noexcept {
   const BranchAndExchangeInstr instr(instr_);
   if (!evaluate_cond(ConditionCode(instr.fields.cond), registers.CPSR)) {
-    registers.r15 += kInstrSize;
+    registers.r[15] += kInstrSize;
     return true;
   }
   thumb_instr = instr.fields.rn & 1;
-  uint32_t *rn;
-  if (!get_reg(instr.fields.rn, registers, rn)) {
-    return false;
-  }
-  registers.r15 = *rn & ~1;
+  uint32_t &rn = registers.r[instr.fields.rn];
+  registers.r[15] = rn & ~1;
   return true;
 }
 
 [[nodiscard]] bool op2_register(uint32_t op2, Registers &registers,
                                 bool &carry_out, uint32_t &op2_val) {
 
-  uint32_t *rm;
-  if (!get_reg(op2 & 0b1111, registers, rm)) {
-    return false;
-  }
+  uint32_t &rm = registers.r[op2 & 0b1111];
 
   uint32_t shift_type = (op2 >> 5) & 0b11;
   uint32_t shift_amount;
   if ((op2 >> 4) & 1) {
-    uint32_t *rs;
-    if (!get_reg(op2 >> 8, registers, rs)) {
-      return false;
-    }
-    shift_amount = *rs & 0xFF;
+    uint32_t &rs = registers.r[op2 >> 8];
+    shift_amount = rs & 0xFF;
   } else {
     shift_amount = op2 >> 7;
   }
@@ -241,17 +175,17 @@ bool evaluate_cond(ConditionCode cond, CPSR_Register cpsr) {
   uint32_t sign;
   switch (shift_type) {
   case 0:
-    carry_out = *rm >> (32 - shift_amount) & 1;
-    op2_val = *rm << shift_amount;
+    carry_out = rm >> (32 - shift_amount) & 1;
+    op2_val = rm << shift_amount;
     break;
   case 1:
-    carry_out = *rm >> (shift_amount - 1) & 1;
-    op2_val = *rm >> shift_amount;
+    carry_out = rm >> (shift_amount - 1) & 1;
+    op2_val = rm >> shift_amount;
     break;
   case 2:
-    carry_out = *rm >> (shift_amount - 1) & 1;
-    sign = (*rm >> 31) & 1;
-    op2_val = (*rm >> shift_amount) |
+    carry_out = rm >> (shift_amount - 1) & 1;
+    sign = (rm >> 31) & 1;
+    op2_val = (rm >> shift_amount) |
               (((sign << shift_amount) - 1) << (32 - shift_amount));
     break;
   case 3:
@@ -270,29 +204,25 @@ bool evaluate_cond(ConditionCode cond, CPSR_Register cpsr) {
   const DataProcessingInstr instr(instr_);
 
   if (!evaluate_cond(ConditionCode(instr.fields.cond), registers.CPSR)) {
-    registers.r15 += kInstrSize;
+    registers.r[15] += kInstrSize;
     return true;
   }
 
-  uint32_t *r = nullptr;
-  if (!get_reg(instr.fields.rd, registers, r)) {
-    return false;
-  }
-
+  uint32_t &r = registers.r[instr.fields.rd];
   if (!instr.fields.i) {
     uint32_t op2;
     bool carry_out = 0;
     if (!op2_register(instr.fields.operand_2, registers, carry_out, op2)) {
       return false;
     }
-    *r = op2;
+    r = op2;
   } else {
     const uint32_t rotate =
         ((instr.fields.operand_2 & generateMask(8, 11)) >> 8) * 2;
     const uint8_t lmm = instr.fields.operand_2 & generateMask(0, 7);
-    *r = (lmm >> rotate) | (lmm << (8 - rotate));
+    r = (lmm >> rotate) | (lmm << (8 - rotate));
   }
-  registers.r15 += kInstrSize;
+  registers.r[15] += kInstrSize;
   return true;
 }
 
@@ -300,7 +230,7 @@ bool evaluate_cond(ConditionCode cond, CPSR_Register cpsr) {
   const DataProcessingInstr instr(instr_);
 
   if (!evaluate_cond(ConditionCode(instr.fields.cond), registers.CPSR)) {
-    registers.r15 += kInstrSize;
+    registers.r[15] += kInstrSize;
     return true;
   }
 
@@ -318,28 +248,21 @@ bool evaluate_cond(ConditionCode cond, CPSR_Register cpsr) {
     carry_out = (lmm >> (rotate - 1)) & 1;
   }
 
-  uint32_t *rn = nullptr;
-  if (!get_reg(instr.fields.rn, registers, rn)) {
-    return false;
-  }
+  uint32_t &rn = registers.r[instr.fields.rn];
+  uint32_t &rd = registers.r[instr.fields.rd];
 
-  uint32_t *rd = nullptr;
-  if (!get_reg(instr.fields.rd, registers, rd)) {
-    return false;
-  }
-
-  *rd = *rn + op2;
+  rd = rn + op2;
 
   if (instr.fields.s) {
     CPSR_Register tmp_cprs = registers.CPSR;
-    tmp_cprs.bits.V = *rd < *rn || *rd < op2;
+    tmp_cprs.bits.V = rd < rn || rd < op2;
     tmp_cprs.bits.C = carry_out;
-    tmp_cprs.bits.Z = *rd == 0;
-    tmp_cprs.bits.N = (*rd >> 31) & 1;
+    tmp_cprs.bits.Z = rd == 0;
+    tmp_cprs.bits.N = (rd >> 31) & 1;
     registers.CPSR = tmp_cprs;
   }
 
-  registers.r15 += kInstrSize;
+  registers.r[15] += kInstrSize;
   return true;
 }
 
@@ -347,24 +270,21 @@ bool evaluate_cond(ConditionCode cond, CPSR_Register cpsr) {
   const MSRInstr instr(instr_);
 
   if (!evaluate_cond(ConditionCode(instr.fields.cond), registers.CPSR)) {
-    registers.r15 += kInstrSize;
+    registers.r[15] += kInstrSize;
     return true;
   }
 
-  uint32_t *rm = nullptr;
-  if (!get_reg(instr.fields.rm, registers, rm)) {
-    return false;
-  }
+  uint32_t &rm = registers.r[instr.fields.rm];
   if (!instr.fields.dest_psr) {
-    registers.CPSR = *rm;
+    registers.CPSR = rm;
   } else {
     uint32_t *rs = nullptr;
     if (!get_spsr_reg(registers.CPSR, registers, rs)) {
       return false;
     }
-    *rs = *rm;
+    *rs = rm;
   }
-  registers.r15 += kInstrSize;
+  registers.r[15] += kInstrSize;
   return true;
 }
 
@@ -372,21 +292,12 @@ bool evaluate_cond(ConditionCode cond, CPSR_Register cpsr) {
                                      const Memory::Memory &memory) noexcept {
   const SingleDataTransferInstr instr{instr_};
   if (!evaluate_cond(ConditionCode(instr.fields.cond), registers.CPSR)) {
-    registers.r15 += kInstrSize;
+    registers.r[15] += kInstrSize;
     return true;
   }
 
-  uint32_t *rd = nullptr;
-  if (!get_reg(instr.fields.rd, registers, rd)) {
-    printf("Could not get rd");
-    return false;
-  }
-
-  uint32_t *rn = nullptr;
-  if (!get_reg(instr.fields.rn, registers, rn)) {
-    printf("Could not get rn");
-    return false;
-  }
+  uint32_t &rd = registers.r[instr.fields.rd];
+  uint32_t &rn = registers.r[instr.fields.rn];
 
   uint32_t offset;
   if (instr.fields.i == 0) {
@@ -396,20 +307,20 @@ bool evaluate_cond(ConditionCode cond, CPSR_Register cpsr) {
     return false;
   }
 
-  const uint32_t old_rn = *rn;
+  const uint32_t old_rn = rn;
   if (instr.fields.p) {
-    *rn += (instr.fields.u ? 1 : -1) * offset;
-    memcpy(rd, (void *)&memory.mem[*rn], (instr.fields.u ? 1 : 4));
+    rn += (instr.fields.u ? 1 : -1) * offset;
+    memcpy(&rd, (void *)&memory.mem[rn], (instr.fields.u ? 1 : 4));
   } else {
-    memcpy(rd, (void *)&memory.mem[*rn], (instr.fields.u ? 1 : 4));
-    *rn += (instr.fields.u ? 1 : -1) * offset;
+    memcpy(&rd, (void *)&memory.mem[rn], (instr.fields.u ? 1 : 4));
+    rn += (instr.fields.u ? 1 : -1) * offset;
   }
 
   if (!instr.fields.w) {
-    *rn = old_rn;
+    rn = old_rn;
   }
 
-  registers.r15 += kInstrSize;
+  registers.r[15] += kInstrSize;
   return true;
 }
 
@@ -417,21 +328,12 @@ bool evaluate_cond(ConditionCode cond, CPSR_Register cpsr) {
                                      const Memory::Memory &memory) noexcept {
   const SingleDataTransferInstr instr{instr_};
   if (!evaluate_cond(ConditionCode(instr.fields.cond), registers.CPSR)) {
-    registers.r15 += kInstrSize;
+    registers.r[15] += kInstrSize;
     return true;
   }
 
-  uint32_t *rd = nullptr;
-  if (!get_reg(instr.fields.rd, registers, rd)) {
-    printf("Could not get rd");
-    return false;
-  }
-
-  uint32_t *rn = nullptr;
-  if (!get_reg(instr.fields.rn, registers, rn)) {
-    printf("Could not get rn");
-    return false;
-  }
+  uint32_t &rd = registers.r[instr.fields.rd];
+  uint32_t &rn = registers.r[instr.fields.rn];
 
   uint32_t offset;
   if (instr.fields.i == 0) {
@@ -441,20 +343,20 @@ bool evaluate_cond(ConditionCode cond, CPSR_Register cpsr) {
     return false;
   }
 
-  const uint32_t old_rn = *rn;
+  const uint32_t old_rn = rn;
   if (instr.fields.p) {
-    *rn += (instr.fields.u ? 1 : -1) * offset;
-    memcpy((void *)&memory.mem[*rd], rn, (instr.fields.u ? 1 : 4));
+    rn += (instr.fields.u ? 1 : -1) * offset;
+    memcpy((void *)&memory.mem[rd], &rn, (instr.fields.u ? 1 : 4));
   } else {
-    memcpy((void *)&memory.mem[*rd], rn, (instr.fields.u ? 1 : 4));
-    *rn += (instr.fields.u ? 1 : -1) * offset;
+    memcpy((void *)&memory.mem[rd], &rn, (instr.fields.u ? 1 : 4));
+    rn += (instr.fields.u ? 1 : -1) * offset;
   }
 
   if (!instr.fields.w) {
-    *rn = old_rn;
+    rn = old_rn;
   }
 
-  registers.r15 += kInstrSize;
+  registers.r[15] += kInstrSize;
   return true;
 }
 
