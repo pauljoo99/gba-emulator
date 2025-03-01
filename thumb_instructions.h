@@ -169,4 +169,123 @@ union UnconditionalBranch {
   operator uint16_t() const { return value; }
 };
 
+enum class ThumbOpcode {
+  ADC,      // Add with Carry
+  ADD,      // Add
+  AND,      // AND
+  ASR,      // Arithmetic Shift Right
+  B,        // Unconditional Branch
+  BXX,      // Conditional Branch
+  BIC,      // Bit Clear
+  BL,       // Branch and Link
+  BX,       // Branch and Exchange
+  CMN,      // Compare Negative
+  CMP,      // Compare
+  EOR,      // EOR
+  LDMIA,    // Load Multiple
+  LDR,      // Load Word
+  LDRB,     // Load Byte
+  LDRH,     // Load Halfword
+  LSL,      // Logical Shift Left
+  LDSB,     // Load Sign-Extended Byte
+  LDSH,     // Load Sign-Extended Halfword
+  LSR,      // Logical Shift Right
+  MOV,      // Move Register
+  MUL,      // Multiply
+  MVN,      // Move Negative Register
+  NEG,      // Negate
+  ORR,      // OR
+  POP,      // Pop Registers
+  PUSH,     // Push Registers
+  ROR,      // Rotate Right
+  SBC,      // Subtract with Carry
+  STMIA,    // Store Multiple
+  STR,      // Store Word
+  STRB,     // Store Byte
+  STRH,     // Store Halfword
+  SWI,      // Software Interrupt
+  SUB,      // Subtract
+  TST,      // Test Bits
+  UNDEFINED // Placeholder for unknown instructions
+};
+
+const char *toString(ThumbOpcode cc) {
+  switch (cc) {
+  case ThumbOpcode::ADC:
+    return "Add with Carry";
+  case ThumbOpcode::ADD:
+    return "Add";
+  case ThumbOpcode::AND:
+    return "AND";
+  case ThumbOpcode::ASR:
+    return "Arithmetic Shift Right";
+  case ThumbOpcode::B:
+    return "Unconditional Branch";
+  case ThumbOpcode::BXX:
+    return "Conditional Branch";
+  case ThumbOpcode::BIC:
+    return "Bit Clear";
+  case ThumbOpcode::BL:
+    return "Branch and Link";
+  case ThumbOpcode::BX:
+    return "Branch and Exchange";
+  case ThumbOpcode::CMN:
+    return "Compare Negative";
+  case ThumbOpcode::CMP:
+    return "Compare";
+  case ThumbOpcode::EOR:
+    return "EOR";
+  case ThumbOpcode::LDMIA:
+    return "Load Multiple";
+  case ThumbOpcode::LDR:
+    return "Load Word";
+  case ThumbOpcode::LDRB:
+    return "Load Byte";
+  case ThumbOpcode::LDRH:
+    return "Load Halfword";
+  case ThumbOpcode::LSL:
+    return "Logical Shift Left";
+  case ThumbOpcode::LDSB:
+    return "Load Sign-Extended Byte";
+  case ThumbOpcode::LDSH:
+    return "Load Sign-Extended Halfword";
+  case ThumbOpcode::LSR:
+    return "Logical Shift Right";
+  case ThumbOpcode::MOV:
+    return "Move Register";
+  case ThumbOpcode::MUL:
+    return "Multiply";
+  case ThumbOpcode::MVN:
+    return "Move Negative Register";
+  case ThumbOpcode::NEG:
+    return "Negate";
+  case ThumbOpcode::ORR:
+    return "OR";
+  case ThumbOpcode::POP:
+    return "Pop Registers";
+  case ThumbOpcode::PUSH:
+    return "Push Registers";
+  case ThumbOpcode::ROR:
+    return "Rotate Right";
+  case ThumbOpcode::SBC:
+    return "Subtract with Carry";
+  case ThumbOpcode::STMIA:
+    return "Store Multiple";
+  case ThumbOpcode::STR:
+    return "Store Word";
+  case ThumbOpcode::STRB:
+    return "Store Byte";
+  case ThumbOpcode::STRH:
+    return "Store Halfword";
+  case ThumbOpcode::SWI:
+    return "Software Interrupt";
+  case ThumbOpcode::SUB:
+    return "Subtract";
+  case ThumbOpcode::TST:
+    return "Test Bits";
+  case ThumbOpcode::UNDEFINED:
+    return "Placeholder for unknown instructions";
+  }
+};
+
 } // namespace Emulator::Thumb

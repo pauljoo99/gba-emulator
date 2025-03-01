@@ -1,11 +1,191 @@
 #include "arm968es.h"
 #include "arm_instructions.h"
+#include "thumb_instructions.h"
 #include <cstring>
 #include <stdio.h>
 
 namespace Emulator::Arm
 
 {
+
+Thumb::ThumbOpcode get_thumb_instruction(uint16_t instr) {
+  switch (instr >> 13) {
+  case (0):
+    switch ((instr >> 11) & 0b11) {
+    case (0b00):
+      return Thumb::ThumbOpcode::LSL;
+    case (0b01):
+      return Thumb::ThumbOpcode::LSR;
+    case (0b10):
+      return Thumb::ThumbOpcode::ASR;
+    case (0b11):
+      if (instr >> 10 == 0) {
+        return Thumb::ThumbOpcode::ADD;
+      } else {
+        return Thumb::ThumbOpcode::SUB;
+      }
+    }
+
+  case (1):
+    switch ((instr >> 11) & 0b11) {
+    case (0b00):
+      return Thumb::ThumbOpcode::MOV;
+    case (0b01):
+      return Thumb::ThumbOpcode::CMP;
+    case (0b10):
+      return Thumb::ThumbOpcode::ADD;
+    case (0b11):
+      return Thumb::ThumbOpcode::SUB;
+    }
+
+  case (2):
+    switch ((instr >> 10) & 0b111) {
+    case (0b000):
+      switch ((instr >> 6) & 0b1111) {
+      case (0b0000):
+        return Thumb::ThumbOpcode::AND;
+      case (0b0001):
+        return Thumb::ThumbOpcode::EOR;
+      case (0b0010):
+        return Thumb::ThumbOpcode::LSL;
+      case (0b0011):
+        return Thumb::ThumbOpcode::LSR;
+      case (0b0100):
+        return Thumb::ThumbOpcode::ASR;
+      case (0b0101):
+        return Thumb::ThumbOpcode::ADC;
+      case (0b0110):
+        return Thumb::ThumbOpcode::SBC;
+      case (0b0111):
+        return Thumb::ThumbOpcode::ROR;
+      case (0b1000):
+        return Thumb::ThumbOpcode::TST;
+      case (0b1001):
+        return Thumb::ThumbOpcode::NEG;
+      case (0b1010):
+        return Thumb::ThumbOpcode::CMP;
+      case (0b1011):
+        return Thumb::ThumbOpcode::CMN;
+      case (0b1100):
+        return Thumb::ThumbOpcode::ORR;
+      case (0b1101):
+        return Thumb::ThumbOpcode::MUL;
+      case (0b1110):
+        return Thumb::ThumbOpcode::BIC;
+      case (0b1111):
+        return Thumb::ThumbOpcode::MVN;
+      }
+    case (0b001):
+      switch ((instr >> 8) & 0b11) {
+      case (0b00):
+        return Thumb::ThumbOpcode::ADD;
+      case (0b01):
+        return Thumb::ThumbOpcode::CMP;
+      case (0b10):
+        return Thumb::ThumbOpcode::MOV;
+      case (0b11):
+        return Thumb::ThumbOpcode::BX;
+      }
+    case (0b010):
+    case (0b011):
+      return Thumb::ThumbOpcode::LDR;
+    case (0b100):
+    case (0b101):
+    case (0b110):
+    case (0b111):
+      switch ((instr >> 9) & 0b111) {
+      case (0b000):
+        return Thumb::ThumbOpcode::STR;
+      case (0b010):
+        return Thumb::ThumbOpcode::STRB;
+      case (0b100):
+        return Thumb::ThumbOpcode::LDR;
+      case (0b110):
+        return Thumb::ThumbOpcode::LDRB;
+      case (0b001):
+        return Thumb::ThumbOpcode::STRH;
+      case (0b011):
+        return Thumb::ThumbOpcode::LDRH;
+      case (0b101):
+        return Thumb::ThumbOpcode::LDSB;
+      case (0b111):
+        return Thumb::ThumbOpcode::LDSH;
+      }
+    }
+
+  case (3):
+    switch ((instr >> 11) & 0b11) {
+    case (0b00):
+      return Thumb::ThumbOpcode::STR;
+    case (0b10):
+      return Thumb::ThumbOpcode::LDR;
+    case (0b01):
+      return Thumb::ThumbOpcode::STRB;
+    case (0b11):
+      return Thumb::ThumbOpcode::LDRB;
+    }
+
+  case (4):
+    switch ((instr >> 11) & 0b11) {
+    case (0b00):
+      return Thumb::ThumbOpcode::STRH;
+    case (0b01):
+      return Thumb::ThumbOpcode::LDRH;
+    case (0b10):
+      return Thumb::ThumbOpcode::STR;
+    case (0b11):
+      return Thumb::ThumbOpcode::LDR;
+    }
+
+  case (5):
+    switch ((instr >> 11) & 0b11) {
+    case (0b00):
+      return Thumb::ThumbOpcode::ADD;
+    case (0b01):
+      return Thumb::ThumbOpcode::ADD;
+    case (0b10):
+      if (((instr >> 8) & 0b1111) == 0) {
+        return Thumb::ThumbOpcode::ADD;
+      } else if (((instr >> 8) & 0b1111) == 0b1010) {
+        return Thumb::ThumbOpcode::PUSH;
+      } else if (((instr >> 8) & 0b1111) == 0b1110) {
+        return Thumb::ThumbOpcode::POP;
+      }
+    default:
+      break;
+    }
+
+  case (6):
+    switch ((instr >> 11) & 0b11) {
+    case (0b00):
+      return Thumb::ThumbOpcode::STMIA;
+    case (0b01):
+      return Thumb::ThumbOpcode::LDMIA;
+    case (0b10):
+    case (0b11):
+      if (((instr >> 8) & 0b11111) == 0b11111) {
+        return Thumb::ThumbOpcode::SWI;
+      }
+      return Thumb::ThumbOpcode::BXX;
+    default:
+      break;
+    }
+
+  case (7):
+    switch ((instr >> 11) & 0b11) {
+    case (0b00):
+      return Thumb::ThumbOpcode::B;
+    case (0b10):
+    case (0b11):
+      return Thumb::ThumbOpcode::BL;
+    default:
+      break;
+    }
+  default:
+    break;
+  }
+  return Thumb::ThumbOpcode::UNDEFINED;
+}
 
 inline uint32_t generateMask(uint8_t a, uint8_t b) {
   return ((1U << (b - a + 1)) - 1) << a;
@@ -54,6 +234,24 @@ union CPSR_Register {
     return cpu.dispatch_ADD(instr);
   case Instr::Instr::STR:
     return cpu.dispatch_STR(instr, memory);
+  default:
+    return false;
+  }
+}
+
+[[nodiscard]] bool process_thumb(uint16_t instr, const Memory::Memory &memory,
+                                 CPU &cpu) {
+
+  printf("Raw Instr: 0x%04X, ", instr);
+
+  Thumb::ThumbOpcode opcode = get_thumb_instruction(instr);
+
+  printf("Instr: %s", toString(opcode));
+  printf("\n");
+
+  switch (opcode) {
+  case (Thumb::ThumbOpcode::LSL):
+    return cpu.dispatch_thumb_LSL(instr);
   default:
     return false;
   }
@@ -125,15 +323,19 @@ bool evaluate_cond(ConditionCode cond, CPSR_Register cpsr) {
     return false;
   }
 
-  uint32_t instr;
-  memcpy(&instr, (void *)&game_card.mem[registers.r[15]], kInstrSize);
-
-  Instr::Instr instr_type;
-  if (!get_instr_type(instr, instr_type)) {
-    return false;
+  if (thumb_instr) {
+    uint16_t instr;
+    memcpy(&instr, (void *)&game_card.mem[registers.r[15]], kThumbInstrSize);
+    return process_thumb(instr, memory, *this);
+  } else {
+    uint32_t instr;
+    memcpy(&instr, (void *)&game_card.mem[registers.r[15]], kInstrSize);
+    Instr::Instr instr_type;
+    if (!get_instr_type(instr, instr_type)) {
+      return false;
+    }
+    return process_instr(instr, instr_type, memory, *this);
   }
-
-  return process_instr(instr, instr_type, memory, *this);
 }
 
 [[nodiscard]] bool CPU::dispatch_B(uint32_t instr_) noexcept {
@@ -358,6 +560,16 @@ bool evaluate_cond(ConditionCode cond, CPSR_Register cpsr) {
 
   registers.r[15] += kInstrSize;
   return true;
+}
+
+[[nodiscard]] bool CPU::dispatch_thumb_LSL(uint16_t instr_) noexcept {
+  if (((instr_ >> 13) & 0b111) == 0b000) {
+    const Thumb::MoveShiftedRegister instr{instr_};
+    registers.r[instr.fields.rd] = instr.fields.rs << instr.fields.offset5;
+    registers.r[15] += kThumbInstrSize;
+    return true;
+  }
+  return false;
 }
 
 } // namespace Emulator::Arm

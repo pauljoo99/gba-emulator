@@ -55,6 +55,8 @@ struct CPU {
   [[nodiscard]] bool dispatch_STR(uint32_t instr_,
                                   const Memory::Memory &memory) noexcept;
 
+  [[nodiscard]] bool dispatch_thumb_LSL(uint16_t instr) noexcept;
+
   Registers registers;
   bool thumb_instr = 0;
 };
