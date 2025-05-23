@@ -4,7 +4,6 @@ function readHex(hex) {
 
 // Helper to convert number to zero-padded 8-digit uppercase hex
 function toHex(value) {
-	console.log(value);
 	return '0x' + value.toString(16).toUpperCase().padStart(8, '0');
 }
 
