@@ -11,16 +11,20 @@ EXEC = $(BUILD_DIR)/emulator
 all: $(EXEC)
 
 # Link object file to create the executable
-$(EXEC): main.o arm968es.o
-	$(CXX) $(BUILD_DIR)/main.o $(BUILD_DIR)/arm968es.o -o $(EXEC)
+$(EXEC): main.o snapshot.o arm968es.o
+	$(CXX) $(BUILD_DIR)/main.o $(BUILD_DIR)/arm968es.o $(BUILD_DIR)/snapshot.o  -o $(EXEC)
 
 # Compile main
 main.o:
 	$(CXX) $(CXXFLAGS) -c main.cpp -I. -o $(BUILD_DIR)/main.o
 
-# Compile main
+# Compile arm
 arm968es.o:
 	$(CXX) $(CXXFLAGS) -c arm968es.cpp -I. -o $(BUILD_DIR)/arm968es.o
+
+# Compile snapshot
+snapshot.o:
+	$(CXX) $(CXXFLAGS) -c snapshot.cpp -I. -o $(BUILD_DIR)/snapshot.o
 
 # debug target
 debug: CXXFLAGS += -g

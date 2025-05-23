@@ -90,8 +90,6 @@ function decodeRegisters(buffer) {
 }
 
 function Generate() {
-	alert('Hello, world!');
-
 	fetch('data/registers.bin')
 		.then((res) => res.arrayBuffer())
 		.then((buffer) => {

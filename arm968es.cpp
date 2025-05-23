@@ -1,5 +1,6 @@
 #include "arm968es.h"
 #include "arm_instructions.h"
+#include "snapshot.h"
 #include "thumb2_instructions.h"
 #include "thumb_instructions.h"
 #include <cstring>
@@ -331,7 +332,11 @@ bool evaluate_cond(ConditionCode cond, CPSR_Register cpsr) {
   if (thumb_instr) {
     uint16_t instr;
     memcpy(&instr, (void *)&game_card.mem[registers.r[15]], kThumbInstrSize);
-    return process_thumb(instr, memory, *this);
+    bool success = process_thumb(instr, memory, *this);
+    if (!success) {
+      Debug::debug_snapshot(registers, memory, game_card);
+    }
+    return success;
   } else {
     uint32_t instr;
     memcpy(&instr, (void *)&game_card.mem[registers.r[15]], kInstrSize);
