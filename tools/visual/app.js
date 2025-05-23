@@ -1,5 +1,10 @@
+function readHex(hex) {
+	return parseInt(hex);
+}
+
 // Helper to convert number to zero-padded 8-digit uppercase hex
 function toHex(value) {
+	console.log(value);
 	return '0x' + value.toString(16).toUpperCase().padStart(8, '0');
 }
 
@@ -10,6 +15,18 @@ function parseUint32Array(buffer) {
 
 	for (let i = 0; i < length; i++) {
 		result[i] = dataView.getUint32(i * 4, true); // true = little-endian
+	}
+
+	return result;
+}
+
+function parseCharArray(buffer) {
+	const dataView = new DataView(buffer);
+	const length = buffer.byteLength;
+	const result = new Uint8Array(length);
+
+	for (let i = 0; i < length; i++) {
+		result[i] = dataView.getUint8(i, true); // true = little-endian
 	}
 
 	return result;
@@ -73,7 +90,7 @@ function decodeRegisters(buffer) {
 	return result;
 }
 
-function sayHello() {
+function Generate() {
 	alert('Hello, world!');
 
 	fetch('data/registers.bin')
@@ -83,6 +100,7 @@ function sayHello() {
 			const registers = decodeRegisters(buffer);
 
 			const tbodyRegisters = document.querySelector('#registersTable tbody');
+			tbodyRegisters.innerHTML = '';
 
 			// Add r[0] ... r[15] rows first
 			registers.r.forEach((val, i) => {
@@ -109,10 +127,22 @@ function sayHello() {
 			const program = parseUint32Array(buffer);
 
 			const tbodyProgram = document.querySelector('#programTable tbody');
+			tbodyProgram.innerHTML = '';
 
-			program.reverse().forEach((val, i) => {
+			const program_start = document.getElementById('program_start_address').value;
+			const program_end = document.getElementById('program_end_address').value;
+
+			const program_start_i = readHex(program_start) / 4;
+			const program_end_i = Math.min(readHex(program_end) / 4, program.length);
+
+			const table_values = [];
+			for (let i = program_start_i; i < program_end_i; i++) {
+				table_values.push([i, program[i]]);
+			}
+
+			table_values.reverse().forEach((val) => {
 				const tr = document.createElement('tr');
-				tr.innerHTML = `<td>${toHex((program.length - i - 1) * 4)}</td><td>${toHex(val)}</td>`;
+				tr.innerHTML = `<td>${toHex(val[0] * 4)}</td><td>${toHex(val[1])}</td>`;
 				tbodyProgram.appendChild(tr);
 			});
 		})
@@ -122,13 +152,25 @@ function sayHello() {
 		.then((res) => res.arrayBuffer())
 		.then((buffer) => {
 			// Memory
-			const memory = parseUint32Array(buffer);
+			const memory = parseCharArray(buffer);
 
 			const tbodyMemory = document.querySelector('#memoryTable tbody');
+			tbodyMemory.innerHTML = '';
 
-			memory.reverse().forEach((val, i) => {
+			const mem_start = document.getElementById('memory_start_address').value;
+			const mem_end = document.getElementById('memory_end_address').value;
+
+			const mem_start_i = readHex(mem_start);
+			const mem_end_i = Math.min(readHex(mem_end), memory.length);
+
+			const table_values = [];
+			for (let i = mem_start_i; i < mem_end_i; i++) {
+				table_values.push([i, memory[i]]);
+			}
+
+			table_values.reverse().forEach((val) => {
 				const tr = document.createElement('tr');
-				tr.innerHTML = `<td>${toHex((memory.length - i - 1) * 4)}</td><td>${toHex(val)}</td>`;
+				tr.innerHTML = `<td>${toHex(val[0])}</td><td>${toHex(val[1])}</td>`;
 				tbodyMemory.appendChild(tr);
 			});
 		})
