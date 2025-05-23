@@ -178,6 +178,7 @@ enum class ThumbOpcode {
   BXX,      // Conditional Branch
   BIC,      // Bit Clear
   BL,       // Branch and Link
+  BLX,      // Branch with Link and Exchange
   BX,       // Branch and Exchange
   CMN,      // Compare Negative
   CMP,      // Compare
@@ -227,6 +228,8 @@ const char *toString(ThumbOpcode cc) {
     return "Bit Clear";
   case ThumbOpcode::BL:
     return "Branch and Link";
+  case ThumbOpcode::BLX:
+    return "Branch with Link and Exchange";
   case ThumbOpcode::BX:
     return "Branch and Exchange";
   case ThumbOpcode::CMN:

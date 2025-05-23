@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <script src="app.js"></script>
+
+    <style>
+        table {
+            border-collapse: collapse;
+            width: 400px;
+            margin: 20px auto;
+        }
+
+        th,
+        td {
+            border: 1px solid #444;
+            padding: 8px 12px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #ddd;
+        }
+    </style>
+
+
+    <title>Split Screen Half</title>
+    <style>
+        /* Reset body margin and padding */
+        body,
+        html {
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+            /* full viewport height */
+            overflow: hidden;
+            /* no scroll */
+            font-family: Arial, sans-serif;
+        }
+
+        .split {
+            height: 100vh;
+            /* full height */
+            width: 33.33%;
+            /* half width */
+            position: fixed;
+            /* fix to viewport */
+            top: 0;
+            overflow: auto;
+            /* scroll content if needed */
+        }
+
+        .left {
+            left: 0;
+            background-color: #f0f0f0;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        .middle {
+            left: 33.33%;
+            background-color: #f5d2d2;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        .right {
+            left: 66.66%;
+            background-color: #f8a3a3;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="split left">
+        <button onclick="sayHello()">Click me</button>
+        <h2>Registers</h2>
+        <table id="registersTable">
+            <thead>
+                <tr>
+                    <th>Register</th>
+                    <th>Value</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+    </div>
+
+    <div class="split middle">
+        <h2>Program</h2>
+
+        <table id="programTable">
+            <thead>
+                <tr>
+                    <th>Address</th>
+                    <th>Value</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+
+    </div>
+
+    <div class="split right">
+        <h2>Memory</h2>
+
+        <table id="memoryTable">
+            <thead>
+                <tr>
+                    <th>Address</th>
+                    <th>Value</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+
+    </div>
+
+</body>
+
+</html>

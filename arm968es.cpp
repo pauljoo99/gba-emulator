@@ -1,5 +1,6 @@
 #include "arm968es.h"
 #include "arm_instructions.h"
+#include "thumb2_instructions.h"
 #include "thumb_instructions.h"
 #include <cstring>
 #include <stdio.h>
@@ -175,6 +176,8 @@ Thumb::ThumbOpcode get_thumb_instruction(uint16_t instr) {
     switch ((instr >> 11) & 0b11) {
     case (0b00):
       return Thumb::ThumbOpcode::B;
+    case (0b01):
+      return Thumb::ThumbOpcode::BLX;
     case (0b10):
     case (0b11):
       return Thumb::ThumbOpcode::BL;
@@ -252,6 +255,8 @@ union CPSR_Register {
   switch (opcode) {
   case (Thumb::ThumbOpcode::LSL):
     return cpu.dispatch_thumb_LSL(instr);
+  case (Thumb::ThumbOpcode::BLX):
+    return cpu.dispatch_thumb_BLX(instr);
   default:
     return false;
   }
@@ -569,6 +574,14 @@ bool evaluate_cond(ConditionCode cond, CPSR_Register cpsr) {
     registers.r[15] += kThumbInstrSize;
     return true;
   }
+  return false;
+}
+
+[[nodiscard]] bool CPU::dispatch_thumb_BLX(uint16_t instr_) noexcept {
+  const Thumb::UnconditionalBranch instr(instr_);
+  int32_t offset = static_cast<int32_t>(uint32_t(instr.fields.offset11)
+                                        << 12); // TODO: Sign Extend
+
   return false;
 }
 

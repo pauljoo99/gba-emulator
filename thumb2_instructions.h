@@ -25,6 +25,26 @@ union Instruction {
   operator uint32_t() const { return value; } // Implicit conversion
 };
 
+struct CoprocessorSIMDFloatingFields {
+  uint32_t : 4;
+  uint32_t op : 1;
+  uint32_t : 3;
+  uint32_t coproc : 4;
+  uint32_t : 4;
+  uint32_t rn : 3;
+  uint32_t op1 : 6;
+  uint32_t : 6;
+};
+
+union CoprocessorSIMDFloatingInstr {
+  uint32_t value;
+  CoprocessorSIMDFloatingFields fields;
+
+  CoprocessorSIMDFloatingInstr(uint32_t val = 0) : value(val) {}
+
+  operator uint32_t() const { return value; } // Implicit conversion
+};
+
 // clang-format off
 enum class InstructionClass {
     LoadStoreMultiple,          // 01 00xx0xx - Load/store multiple (A6-235)
@@ -47,7 +67,7 @@ enum class InstructionClass {
 // clang-format on
 
 // clang-format off
-char* toString(InstructionClass instr) {
+const char* toString(InstructionClass instr) {
     switch (instr) {
         case InstructionClass::LoadStoreMultiple:        return "Load/Store Multiple";
         case InstructionClass::LoadStoreDualExclusive:   return "Load/Store Dual/Exclusive, Table Branch";
@@ -71,11 +91,11 @@ char* toString(InstructionClass instr) {
 // clang-format on
 
 inline InstructionClass get_instr_class(uint32_t instr_) {
-  if ((instr_ >> 13) != 0b111) {
+  if (((instr_ >> 13) & 0b111) != 0b111) {
     printf("%i is not a Thumb2 instruction", instr_);
     exit(0);
   }
-  Instruction instr(instr);
+  Instruction instr(instr_);
   if (instr.fields.op1 == 0b01) {
     if ((instr.fields.op2 & 0b1100100) == 0b0000000) {
       return InstructionClass::LoadStoreMultiple;

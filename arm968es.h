@@ -56,6 +56,7 @@ struct CPU {
                                   const Memory::Memory &memory) noexcept;
 
   [[nodiscard]] bool dispatch_thumb_LSL(uint16_t instr) noexcept;
+  [[nodiscard]] bool dispatch_thumb_BLX(uint16_t instr) noexcept;
 
   Registers registers;
   bool thumb_instr = 0;
