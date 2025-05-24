@@ -1,12 +1,18 @@
 #include <fstream>
+#include <iostream>
+#include <stdio.h>
+#include <sys/stat.h>
 
 #include "snapshot.h"
 
 namespace Emulator::Arm::Debug {
 
-void write_registers(const Registers &registers) {
+void write_registers(const Registers &registers, const char *path) {
   // Open file in binary mode
-  std::ofstream outFile(registers_bin, std::ios::binary);
+  char file[MAX_PATH_LENGHT];
+  strcpy(file, path);
+  strcat(file, registers_bin);
+  std::ofstream outFile(file, std::ios::binary);
 
   if (!outFile) {
     // Handle error
@@ -18,9 +24,12 @@ void write_registers(const Registers &registers) {
   outFile.close();
 }
 
-void write_memory(const Emulator::Memory::Memory &mem) {
+void write_memory(const Emulator::Memory::Memory &mem, const char *path) {
   // Open file in binary mode
-  std::ofstream outFile(memory_bin, std::ios::binary);
+  char file[MAX_PATH_LENGHT];
+  strcpy(file, path);
+  strcat(file, memory_bin);
+  std::ofstream outFile(file, std::ios::binary);
 
   if (!outFile) {
     // Handle error
@@ -32,9 +41,12 @@ void write_memory(const Emulator::Memory::Memory &mem) {
   outFile.close();
 }
 
-void write_program(const Emulator::GameCard::GameCard &card) {
+void write_program(const Emulator::GameCard::GameCard &card, const char *path) {
   // Open file in binary mode
-  std::ofstream outFile(program_bin, std::ios::binary);
+  char file[MAX_PATH_LENGHT];
+  strcpy(file, path);
+  strcat(file, program_bin);
+  std::ofstream outFile(file, std::ios::binary);
 
   if (!outFile) {
     // Handle error
@@ -44,6 +56,25 @@ void write_program(const Emulator::GameCard::GameCard &card) {
   // Write bytes to file
   outFile.write(reinterpret_cast<const char *>(&card.mem), sizeof(card.mem));
   outFile.close();
+}
+
+void debug_snapshot(const Registers &registers,
+                    const Emulator::Memory::Memory &mem,
+                    const Emulator::GameCard::GameCard &card,
+                    const char *path) {
+  static uint32_t snapshot_num = 0;
+
+  char snapshot_path[MAX_PATH_LENGHT];
+  snprintf(snapshot_path, sizeof(snapshot_path), "%s%s_%u/", path, snapshot_dir,
+           snapshot_num++);
+
+  if (mkdir(snapshot_path, 0777) != -1 && errno != EEXIST) {
+    perror("mkdir");
+  }
+
+  write_registers(registers, snapshot_path);
+  write_memory(mem, snapshot_path);
+  write_program(card, snapshot_path);
 }
 
 } // namespace Emulator::Arm::Debug

@@ -5,22 +5,22 @@
 
 namespace Emulator::Arm::Debug {
 
-static constexpr char registers_bin[] = "tools/visual/data/registers.bin";
-static constexpr char memory_bin[] = "tools/visual/data/memory.bin";
-static constexpr char program_bin[] = "tools/visual/data/program.bin";
+static constexpr uint32_t MAX_PATH_LENGHT = 100;
 
-void write_registers(const Registers &registers);
+static constexpr char snapshot_dir[] = "snapshot";
 
-void write_memory(const Emulator::Memory::Memory &mem);
+static constexpr char registers_bin[] = "registers.bin";
+static constexpr char memory_bin[] = "memory.bin";
+static constexpr char program_bin[] = "program.bin";
 
-void write_program(const Emulator::GameCard::GameCard &card);
+void write_registers(const Registers &registers, const char *path);
 
-inline void debug_snapshot(const Registers &registers,
-                           const Emulator::Memory::Memory &mem,
-                           const Emulator::GameCard::GameCard &card) {
-  write_registers(registers);
-  write_memory(mem);
-  write_program(card);
-}
+void write_memory(const Emulator::Memory::Memory &mem, const char *path);
+
+void write_program(const Emulator::GameCard::GameCard &card, const char *path);
+
+void debug_snapshot(const Registers &registers,
+                    const Emulator::Memory::Memory &mem,
+                    const Emulator::GameCard::GameCard &card, const char *path);
 
 } // namespace Emulator::Arm::Debug

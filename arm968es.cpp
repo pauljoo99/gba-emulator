@@ -325,6 +325,8 @@ bool evaluate_cond(ConditionCode cond, CPSR_Register cpsr) {
 [[nodiscard]] bool CPU::dispatch(const GameCard::GameCard &game_card,
                                  const Memory::Memory &memory) noexcept {
 
+  Debug::debug_snapshot(registers, memory, game_card, "tools/visual/data/");
+
   if (registers.r[15] > sizeof(game_card.mem) / sizeof(game_card.mem[0])) {
     return false;
   }
@@ -332,11 +334,7 @@ bool evaluate_cond(ConditionCode cond, CPSR_Register cpsr) {
   if (thumb_instr) {
     uint16_t instr;
     memcpy(&instr, (void *)&game_card.mem[registers.r[15]], kThumbInstrSize);
-    bool success = process_thumb(instr, memory, *this);
-    if (!success) {
-      Debug::debug_snapshot(registers, memory, game_card);
-    }
-    return success;
+    return process_thumb(instr, memory, *this);
   } else {
     uint32_t instr;
     memcpy(&instr, (void *)&game_card.mem[registers.r[15]], kInstrSize);
