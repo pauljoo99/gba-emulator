@@ -1,102 +1,103 @@
 #pragma once
 
+#include "datatypes.h"
 #include <cstdint>
 
 namespace Emulator::Arm {
 
 struct SingleDataTransferInstrFields {
-  uint32_t offset : 12;
-  uint32_t rd : 4;
-  uint32_t rn : 4;
-  uint32_t l : 1;
-  uint32_t w : 1;
-  uint32_t b : 1;
-  uint32_t u : 1;
-  uint32_t p : 1;
-  uint32_t i : 1;
-  uint32_t : 2;
-  uint32_t cond : 4;
+  U32 offset : 12;
+  U32 rd : 4;
+  U32 rn : 4;
+  U32 l : 1;
+  U32 w : 1;
+  U32 b : 1;
+  U32 u : 1;
+  U32 p : 1;
+  U32 i : 1;
+  U32 : 2;
+  U32 cond : 4;
 };
 
 union SingleDataTransferInstr {
-  uint32_t value;
+  U32 value;
   SingleDataTransferInstrFields fields;
 
-  SingleDataTransferInstr(uint32_t val = 0) : value(val) {}
+  SingleDataTransferInstr(U32 val = 0) : value(val) {}
 
-  operator uint32_t() const { return value; } // Implicit conversion
+  operator U32() const { return value; } // Implicit conversion
 };
 
 struct MSRInstrFields {
-  uint32_t rm : 4;
-  uint32_t : 8;
-  uint32_t : 10;
-  uint32_t dest_psr : 1;
-  uint32_t : 5;
-  uint32_t cond : 4;
+  U32 rm : 4;
+  U32 : 8;
+  U32 : 10;
+  U32 dest_psr : 1;
+  U32 : 5;
+  U32 cond : 4;
 };
 
 union MSRInstr {
-  uint32_t value;
+  U32 value;
   MSRInstrFields fields;
 
-  MSRInstr(uint32_t val = 0) : value(val) {}
+  MSRInstr(U32 val = 0) : value(val) {}
 
-  operator uint32_t() const { return value; } // Implicit conversion
+  operator U32() const { return value; } // Implicit conversion
 };
 
 struct DataProcessingInstrFields {
-  uint32_t operand_2 : 12;
-  uint32_t rd : 4;
-  uint32_t rn : 4;
-  uint32_t s : 1;
-  uint32_t opcode : 4;
-  uint32_t i : 1;
-  uint32_t : 2;
-  uint32_t cond : 4;
+  U32 operand_2 : 12;
+  U32 rd : 4;
+  U32 rn : 4;
+  U32 s : 1;
+  U32 opcode : 4;
+  U32 i : 1;
+  U32 : 2;
+  U32 cond : 4;
 };
 
 union DataProcessingInstr {
-  uint32_t value;
+  U32 value;
   DataProcessingInstrFields fields;
 
-  DataProcessingInstr(uint32_t val = 0) : value(val) {}
+  DataProcessingInstr(U32 val = 0) : value(val) {}
 
-  operator uint32_t() const { return value; } // Implicit conversion
+  operator U32() const { return value; } // Implicit conversion
 };
 
 struct BranchInstrFields {
-  uint32_t offset : 24;
-  uint32_t link_bit : 1;
-  uint32_t : 3;
-  uint32_t cond : 4;
+  U32 offset : 24;
+  U32 link_bit : 1;
+  U32 : 3;
+  U32 cond : 4;
 };
 
 union BranchInstr {
-  uint32_t value;
+  U32 value;
   BranchInstrFields fields;
 
-  BranchInstr(uint32_t val = 0) : value(val) {}
+  BranchInstr(U32 val = 0) : value(val) {}
 
-  operator uint32_t() const { return value; } // Implicit conversion
+  operator U32() const { return value; } // Implicit conversion
 };
 
 struct BranchAndExchangeInstrFields {
-  uint32_t rn : 4;
-  uint32_t : 24;
-  uint32_t cond : 4;
+  U32 rn : 4;
+  U32 : 24;
+  U32 cond : 4;
 };
 
 union BranchAndExchangeInstr {
-  uint32_t value;
+  U32 value;
   BranchAndExchangeInstrFields fields;
 
-  BranchAndExchangeInstr(uint32_t val = 0) : value(val) {}
+  BranchAndExchangeInstr(U32 val = 0) : value(val) {}
 
-  operator uint32_t() const { return value; } // Implicit conversion
+  operator U32() const { return value; } // Implicit conversion
 };
 
-enum ConditionCode : uint8_t {
+enum ConditionCode : U8 {
   EQ = 0b0000,
   NE = 0b0001,
   CS = 0b0010,
@@ -153,7 +154,7 @@ const char *toString(ConditionCode cc) {
 
 namespace InstrMask {
 // clang-format off
-enum InstrMask : uint32_t {
+enum InstrMask : U32 {
   ADC = 0b0000'1101'1110'0000'0000'0000'0000'0000,
   ADD = 0b0000'1101'1110'0000'0000'0000'0000'0000,
   AND = 0b0000'1101'1110'0000'0000'0000'0000'0000,
@@ -195,7 +196,7 @@ enum InstrMask : uint32_t {
 
 namespace Instr {
 // clang-format off
-enum Instr : uint32_t {
+enum Instr : U32 {
   ADC = 0b0000'0000'1010'0000'0000'0000'0000'0000,
   ADD = 0b0000'0000'1000'0000'0000'0000'0000'0000,
   AND = 0b0000'0000'0000'0000'0000'0000'0000'0000,
@@ -307,11 +308,11 @@ const char *toString(Instr::Instr instr) {
   }
 }
 
-[[nodiscard]] bool get_instr_type(uint32_t instr, Instr::Instr &instry_type) {
+[[nodiscard]] bool get_instr_type(U32 instr, Instr::Instr &instry_type) {
 
 #define checkInstr(instr_type_)                                                \
-  if ((instr & uint32_t(InstrMask::InstrMask::instr_type_)) ==                 \
-      uint32_t(Instr::Instr::instr_type_)) {                                   \
+  if ((instr & U32(InstrMask::InstrMask::instr_type_)) ==                      \
+      U32(Instr::Instr::instr_type_)) {                                        \
     instry_type = Instr::Instr::instr_type_;                                   \
     return true;                                                               \
   }

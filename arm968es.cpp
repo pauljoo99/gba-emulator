@@ -10,7 +10,7 @@ namespace Emulator::Arm
 
 {
 
-Thumb::ThumbOpcode get_thumb_instruction(uint16_t instr) {
+Thumb::ThumbOpcode get_thumb_instruction(U16 instr) {
   switch (instr >> 13) {
   case (0):
     switch ((instr >> 11) & 0b11) {
@@ -191,32 +191,30 @@ Thumb::ThumbOpcode get_thumb_instruction(uint16_t instr) {
   return Thumb::ThumbOpcode::UNDEFINED;
 }
 
-inline uint32_t generateMask(uint8_t a, uint8_t b) {
-  return ((1U << (b - a + 1)) - 1) << a;
-}
+inline U32 generateMask(U8 a, U8 b) { return ((1U << (b - a + 1)) - 1) << a; }
 
 struct CPSR_Flags {
-  uint32_t M : 5;
-  uint32_t T : 1;
-  uint32_t F : 1;
-  uint32_t I : 1;
-  uint32_t reserve : 20;
-  uint32_t V : 1;
-  uint32_t C : 1;
-  uint32_t Z : 1;
-  uint32_t N : 1;
+  U32 M : 5;
+  U32 T : 1;
+  U32 F : 1;
+  U32 I : 1;
+  U32 reserve : 20;
+  U32 V : 1;
+  U32 C : 1;
+  U32 Z : 1;
+  U32 N : 1;
 };
 
 union CPSR_Register {
-  uint32_t value;
+  U32 value;
   CPSR_Flags bits;
 
-  CPSR_Register(uint32_t val = 0) : value(val) {}
+  CPSR_Register(U32 val = 0) : value(val) {}
 
-  operator uint32_t() const { return value; } // Implicit conversion
+  operator U32() const { return value; } // Implicit conversion
 };
 
-[[nodiscard]] bool process_instr(uint32_t instr, Instr::Instr instr_type,
+[[nodiscard]] bool process_instr(U32 instr, Instr::Instr instr_type,
                                  const Memory::Memory &memory, CPU &cpu) {
 
   printf("Instr: %s, ", toString(instr_type));
@@ -243,7 +241,7 @@ union CPSR_Register {
   }
 }
 
-[[nodiscard]] bool process_thumb(uint16_t instr, const Memory::Memory &memory,
+[[nodiscard]] bool process_thumb(U16 instr, const Memory::Memory &memory,
                                  CPU &cpu) {
 
   printf("Raw Instr: 0x%04X, ", instr);
@@ -299,7 +297,7 @@ bool evaluate_cond(ConditionCode cond, CPSR_Register cpsr) {
 }
 
 [[nodiscard]] bool get_spsr_reg(CPSR_Register cpsr, Registers &regs,
-                                uint32_t *&reg) {
+                                U32 *&reg) {
   switch (cpsr.bits.M) {
   case 0b10001:
     reg = &regs.SPSR_fiq;
@@ -332,11 +330,11 @@ bool evaluate_cond(ConditionCode cond, CPSR_Register cpsr) {
   }
 
   if (thumb_instr) {
-    uint16_t instr;
+    U16 instr;
     memcpy(&instr, (void *)&game_card.mem[registers.r[15]], kThumbInstrSize);
     return process_thumb(instr, memory, *this);
   } else {
-    uint32_t instr;
+    U32 instr;
     memcpy(&instr, (void *)&game_card.mem[registers.r[15]], kInstrSize);
     Instr::Instr instr_type;
     if (!get_instr_type(instr, instr_type)) {
@@ -346,7 +344,7 @@ bool evaluate_cond(ConditionCode cond, CPSR_Register cpsr) {
   }
 }
 
-[[nodiscard]] bool CPU::dispatch_B(uint32_t instr_) noexcept {
+[[nodiscard]] bool CPU::dispatch_B(U32 instr_) noexcept {
   const BranchInstr instr(instr_);
   if (!evaluate_cond(ConditionCode(instr.fields.cond), registers.CPSR)) {
     registers.r[15] += kInstrSize;
@@ -356,33 +354,33 @@ bool evaluate_cond(ConditionCode cond, CPSR_Register cpsr) {
   return true;
 }
 
-[[nodiscard]] bool CPU::dispatch_BX(uint32_t instr_) noexcept {
+[[nodiscard]] bool CPU::dispatch_BX(U32 instr_) noexcept {
   const BranchAndExchangeInstr instr(instr_);
   if (!evaluate_cond(ConditionCode(instr.fields.cond), registers.CPSR)) {
     registers.r[15] += kInstrSize;
     return true;
   }
   thumb_instr = instr.fields.rn & 1;
-  uint32_t &rn = registers.r[instr.fields.rn];
+  U32 &rn = registers.r[instr.fields.rn];
   registers.r[15] = rn & ~1;
   return true;
 }
 
-[[nodiscard]] bool op2_register(uint32_t op2, Registers &registers,
-                                bool &carry_out, uint32_t &op2_val) {
+[[nodiscard]] bool op2_register(U32 op2, Registers &registers, bool &carry_out,
+                                U32 &op2_val) {
 
-  uint32_t &rm = registers.r[op2 & 0b1111];
+  U32 &rm = registers.r[op2 & 0b1111];
 
-  uint32_t shift_type = (op2 >> 5) & 0b11;
-  uint32_t shift_amount;
+  U32 shift_type = (op2 >> 5) & 0b11;
+  U32 shift_amount;
   if ((op2 >> 4) & 1) {
-    uint32_t &rs = registers.r[op2 >> 8];
+    U32 &rs = registers.r[op2 >> 8];
     shift_amount = rs & 0xFF;
   } else {
     shift_amount = op2 >> 7;
   }
 
-  uint32_t sign;
+  U32 sign;
   switch (shift_type) {
   case 0:
     carry_out = rm >> (32 - shift_amount) & 1;
@@ -409,7 +407,7 @@ bool evaluate_cond(ConditionCode cond, CPSR_Register cpsr) {
   return true;
 }
 
-[[nodiscard]] bool CPU::dispatch_MOV(uint32_t instr_,
+[[nodiscard]] bool CPU::dispatch_MOV(U32 instr_,
                                      const Memory::Memory &memory) noexcept {
   const DataProcessingInstr instr(instr_);
 
@@ -418,25 +416,25 @@ bool evaluate_cond(ConditionCode cond, CPSR_Register cpsr) {
     return true;
   }
 
-  uint32_t &r = registers.r[instr.fields.rd];
+  U32 &r = registers.r[instr.fields.rd];
   if (!instr.fields.i) {
-    uint32_t op2;
+    U32 op2;
     bool carry_out = 0;
     if (!op2_register(instr.fields.operand_2, registers, carry_out, op2)) {
       return false;
     }
     r = op2;
   } else {
-    const uint32_t rotate =
+    const U32 rotate =
         ((instr.fields.operand_2 & generateMask(8, 11)) >> 8) * 2;
-    const uint8_t lmm = instr.fields.operand_2 & generateMask(0, 7);
+    const U8 lmm = instr.fields.operand_2 & generateMask(0, 7);
     r = (lmm >> rotate) | (lmm << (8 - rotate));
   }
   registers.r[15] += kInstrSize;
   return true;
 }
 
-[[nodiscard]] bool CPU::dispatch_ADD(uint32_t instr_) noexcept {
+[[nodiscard]] bool CPU::dispatch_ADD(U32 instr_) noexcept {
   const DataProcessingInstr instr(instr_);
 
   if (!evaluate_cond(ConditionCode(instr.fields.cond), registers.CPSR)) {
@@ -444,22 +442,22 @@ bool evaluate_cond(ConditionCode cond, CPSR_Register cpsr) {
     return true;
   }
 
-  uint32_t op2;
+  U32 op2;
   bool carry_out = 0;
   if (!instr.fields.i) {
     if (!op2_register(instr.fields.operand_2, registers, carry_out, op2)) {
       return false;
     }
   } else {
-    const uint32_t rotate =
+    const U32 rotate =
         ((instr.fields.operand_2 & generateMask(8, 11)) >> 8) * 2;
-    const uint8_t lmm = instr.fields.operand_2 & generateMask(0, 7);
+    const U8 lmm = instr.fields.operand_2 & generateMask(0, 7);
     op2 = (lmm >> rotate) | (lmm << (8 - rotate));
     carry_out = (lmm >> (rotate - 1)) & 1;
   }
 
-  uint32_t &rn = registers.r[instr.fields.rn];
-  uint32_t &rd = registers.r[instr.fields.rd];
+  U32 &rn = registers.r[instr.fields.rn];
+  U32 &rd = registers.r[instr.fields.rd];
 
   rd = rn + op2;
 
@@ -476,7 +474,7 @@ bool evaluate_cond(ConditionCode cond, CPSR_Register cpsr) {
   return true;
 }
 
-[[nodiscard]] bool CPU::dispatch_MSR(uint32_t instr_) noexcept {
+[[nodiscard]] bool CPU::dispatch_MSR(U32 instr_) noexcept {
   const MSRInstr instr(instr_);
 
   if (!evaluate_cond(ConditionCode(instr.fields.cond), registers.CPSR)) {
@@ -484,11 +482,11 @@ bool evaluate_cond(ConditionCode cond, CPSR_Register cpsr) {
     return true;
   }
 
-  uint32_t &rm = registers.r[instr.fields.rm];
+  U32 &rm = registers.r[instr.fields.rm];
   if (!instr.fields.dest_psr) {
     registers.CPSR = rm;
   } else {
-    uint32_t *rs = nullptr;
+    U32 *rs = nullptr;
     if (!get_spsr_reg(registers.CPSR, registers, rs)) {
       return false;
     }
@@ -498,7 +496,7 @@ bool evaluate_cond(ConditionCode cond, CPSR_Register cpsr) {
   return true;
 }
 
-[[nodiscard]] bool CPU::dispatch_LDR(uint32_t instr_,
+[[nodiscard]] bool CPU::dispatch_LDR(U32 instr_,
                                      const Memory::Memory &memory) noexcept {
   const SingleDataTransferInstr instr{instr_};
   if (!evaluate_cond(ConditionCode(instr.fields.cond), registers.CPSR)) {
@@ -506,10 +504,10 @@ bool evaluate_cond(ConditionCode cond, CPSR_Register cpsr) {
     return true;
   }
 
-  uint32_t &rd = registers.r[instr.fields.rd];
-  uint32_t &rn = registers.r[instr.fields.rn];
+  U32 &rd = registers.r[instr.fields.rd];
+  U32 &rn = registers.r[instr.fields.rn];
 
-  uint32_t offset;
+  U32 offset;
   if (instr.fields.i == 0) {
     offset = instr.fields.offset;
   } else {
@@ -517,7 +515,7 @@ bool evaluate_cond(ConditionCode cond, CPSR_Register cpsr) {
     return false;
   }
 
-  const uint32_t old_rn = rn;
+  const U32 old_rn = rn;
   if (instr.fields.p) {
     rn += (instr.fields.u ? 1 : -1) * offset;
     memcpy(&rd, (void *)&memory.mem[rn], (instr.fields.u ? 1 : 4));
@@ -534,7 +532,7 @@ bool evaluate_cond(ConditionCode cond, CPSR_Register cpsr) {
   return true;
 }
 
-[[nodiscard]] bool CPU::dispatch_STR(uint32_t instr_,
+[[nodiscard]] bool CPU::dispatch_STR(U32 instr_,
                                      const Memory::Memory &memory) noexcept {
   const SingleDataTransferInstr instr{instr_};
   if (!evaluate_cond(ConditionCode(instr.fields.cond), registers.CPSR)) {
@@ -542,10 +540,10 @@ bool evaluate_cond(ConditionCode cond, CPSR_Register cpsr) {
     return true;
   }
 
-  uint32_t &rd = registers.r[instr.fields.rd];
-  uint32_t &rn = registers.r[instr.fields.rn];
+  U32 &rd = registers.r[instr.fields.rd];
+  U32 &rn = registers.r[instr.fields.rn];
 
-  uint32_t offset;
+  U32 offset;
   if (instr.fields.i == 0) {
     offset = instr.fields.offset;
   } else {
@@ -553,7 +551,7 @@ bool evaluate_cond(ConditionCode cond, CPSR_Register cpsr) {
     return false;
   }
 
-  const uint32_t old_rn = rn;
+  const U32 old_rn = rn;
   if (instr.fields.p) {
     rn += (instr.fields.u ? 1 : -1) * offset;
     memcpy((void *)&memory.mem[rd], &rn, (instr.fields.u ? 1 : 4));
@@ -570,7 +568,7 @@ bool evaluate_cond(ConditionCode cond, CPSR_Register cpsr) {
   return true;
 }
 
-[[nodiscard]] bool CPU::dispatch_thumb_LSL(uint16_t instr_) noexcept {
+[[nodiscard]] bool CPU::dispatch_thumb_LSL(U16 instr_) noexcept {
   if (((instr_ >> 13) & 0b111) == 0b000) {
     const Thumb::MoveShiftedRegister instr{instr_};
     registers.r[instr.fields.rd] = instr.fields.rs << instr.fields.offset5;
@@ -580,9 +578,9 @@ bool evaluate_cond(ConditionCode cond, CPSR_Register cpsr) {
   return false;
 }
 
-[[nodiscard]] bool CPU::dispatch_thumb_BLX(uint16_t instr_) noexcept {
+[[nodiscard]] bool CPU::dispatch_thumb_BLX(U16 instr_) noexcept {
   const Thumb::UnconditionalBranch instr(instr_);
-  int32_t offset = static_cast<int32_t>(uint32_t(instr.fields.offset11)
+  int32_t offset = static_cast<int32_t>(U32(instr.fields.offset11)
                                         << 12); // TODO: Sign Extend
 
   return false;

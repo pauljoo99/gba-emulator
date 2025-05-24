@@ -1,48 +1,49 @@
 #pragma once
 
 #include <cstdint>
+#include <cstdlib>
 #include <stdio.h>
 
-#include <cstdlib>
+#include "datatypes.h"
 
 namespace Emulator::Thumb2 {
 
 struct InstructionFields {
-  uint32_t : 15;
-  uint32_t op : 1;
-  uint32_t : 4;
-  uint32_t op2 : 7;
-  uint32_t op1 : 2;
-  uint32_t : 3;
+  U32 : 15;
+  U32 op : 1;
+  U32 : 4;
+  U32 op2 : 7;
+  U32 op1 : 2;
+  U32 : 3;
 };
 
 union Instruction {
-  uint32_t value;
+  U32 value;
   InstructionFields fields;
 
-  Instruction(uint32_t val = 0) : value(val) {}
+  Instruction(U32 val = 0) : value(val) {}
 
-  operator uint32_t() const { return value; } // Implicit conversion
+  operator U32() const { return value; } // Implicit conversion
 };
 
 struct CoprocessorSIMDFloatingFields {
-  uint32_t : 4;
-  uint32_t op : 1;
-  uint32_t : 3;
-  uint32_t coproc : 4;
-  uint32_t : 4;
-  uint32_t rn : 3;
-  uint32_t op1 : 6;
-  uint32_t : 6;
+  U32 : 4;
+  U32 op : 1;
+  U32 : 3;
+  U32 coproc : 4;
+  U32 : 4;
+  U32 rn : 3;
+  U32 op1 : 6;
+  U32 : 6;
 };
 
 union CoprocessorSIMDFloatingInstr {
-  uint32_t value;
+  U32 value;
   CoprocessorSIMDFloatingFields fields;
 
-  CoprocessorSIMDFloatingInstr(uint32_t val = 0) : value(val) {}
+  CoprocessorSIMDFloatingInstr(U32 val = 0) : value(val) {}
 
-  operator uint32_t() const { return value; } // Implicit conversion
+  operator U32() const { return value; } // Implicit conversion
 };
 
 // clang-format off
@@ -90,7 +91,7 @@ const char* toString(InstructionClass instr) {
 }
 // clang-format on
 
-inline InstructionClass get_instr_class(uint32_t instr_) {
+inline InstructionClass get_instr_class(U32 instr_) {
   if (((instr_ >> 13) & 0b111) != 0b111) {
     printf("%i is not a Thumb2 instruction", instr_);
     exit(0);

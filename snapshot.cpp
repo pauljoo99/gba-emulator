@@ -62,7 +62,7 @@ void debug_snapshot(const Registers &registers,
                     const Emulator::Memory::Memory &mem,
                     const Emulator::GameCard::GameCard &card,
                     const char *path) {
-  static uint32_t snapshot_num = 0;
+  static U32 snapshot_num = 0;
 
   char snapshot_path[MAX_PATH_LENGHT];
   snprintf(snapshot_path, sizeof(snapshot_path), "%s%s_%u/", path, snapshot_dir,

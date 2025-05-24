@@ -2,34 +2,34 @@
 #include <fstream>
 
 struct Registers {
-  uint32_t r[16];
+  U32 r[16];
 
-  uint32_t r8_fiq;
-  uint32_t r9_fiq;
-  uint32_t r10_fiq;
-  uint32_t r11_fiq;
-  uint32_t r12_fiq;
-  uint32_t r13_fiq;
-  uint32_t r14_fiq;
-  uint32_t SPSR_fiq;
+  U32 r8_fiq;
+  U32 r9_fiq;
+  U32 r10_fiq;
+  U32 r11_fiq;
+  U32 r12_fiq;
+  U32 r13_fiq;
+  U32 r14_fiq;
+  U32 SPSR_fiq;
 
-  uint32_t r13_svc;
-  uint32_t r14_svc;
-  uint32_t SPSR_svc;
+  U32 r13_svc;
+  U32 r14_svc;
+  U32 SPSR_svc;
 
-  uint32_t r13_abt;
-  uint32_t r14_abt;
-  uint32_t SPSR_abt;
+  U32 r13_abt;
+  U32 r14_abt;
+  U32 SPSR_abt;
 
-  uint32_t r13_irq;
-  uint32_t r14_irq;
-  uint32_t SPSR_irq;
+  U32 r13_irq;
+  U32 r14_irq;
+  U32 SPSR_irq;
 
-  uint32_t r13_und;
-  uint32_t r14_und;
-  uint32_t SPSR_und;
+  U32 r13_und;
+  U32 r14_und;
+  U32 SPSR_und;
 
-  uint32_t CPSR;
+  U32 CPSR;
 };
 
 void write_registers() {
@@ -72,7 +72,7 @@ void write_registers() {
 }
 
 void write_memory() {
-  uint32_t mem[] = {1, 2, 3, 4, 5, 6, 7};
+  U32 mem[] = {1, 2, 3, 4, 5, 6, 7};
 
   // Open file in binary mode
   std::ofstream outFile("data/memory.bin", std::ios::binary);
@@ -88,7 +88,7 @@ void write_memory() {
 }
 
 void write_program() {
-  uint32_t program[] = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
+  U32 program[] = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
 
   // Open file in binary mode
   std::ofstream outFile("data/program.bin", std::ios::binary);

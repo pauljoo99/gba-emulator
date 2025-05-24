@@ -1,11 +1,12 @@
 #include "arm968es.h"
+#include "datatypes.h"
 #include "memory.h"
 
 #pragma once
 
 namespace Emulator::Arm::Debug {
 
-static constexpr uint32_t MAX_PATH_LENGHT = 100;
+static constexpr U32 MAX_PATH_LENGHT = 100;
 
 static constexpr char snapshot_dir[] = "snapshot";
 

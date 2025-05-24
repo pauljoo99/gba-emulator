@@ -1,5 +1,6 @@
 #pragma once
 
+#include "datatypes.h"
 #include <cstdint>
 
 namespace Emulator::Arm
@@ -7,12 +8,12 @@ namespace Emulator::Arm
 {
 
 // Instruction size in bytes
-constexpr uint8_t kInstrSize = 4;
+constexpr U8 kInstrSize = 4;
 
 // Instruction size in bytes
-constexpr uint8_t kThumbInstrSize = 2;
+constexpr U8 kThumbInstrSize = 2;
 
 // Instruction size in bytes
-constexpr uint8_t kThumb2InstrSize = 4;
+constexpr U8 kThumb2InstrSize = 4;
 
 } // namespace Emulator::Arm

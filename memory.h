@@ -1,5 +1,6 @@
 #pragma once
 
+#include "datatypes.h"
 #include "memory_constants.h"
 
 namespace Emulator::Memory
