@@ -1,7 +1,6 @@
 #pragma once
 
 #include "datatypes.h"
-#include <cstdint>
 
 namespace Emulator::Thumb {
 
