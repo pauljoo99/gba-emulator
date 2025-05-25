@@ -1,5 +1,6 @@
 #include "arm968es.h"
 #include "arm_instructions.h"
+#include "logging.h"
 #include "snapshot.h"
 #include "thumb2_instructions.h"
 #include "thumb_instructions.h"
@@ -217,9 +218,7 @@ union CPSR_Register {
 [[nodiscard]] bool process_instr(U32 instr, Instr::Instr instr_type,
                                  const Memory::Memory &memory, CPU &cpu) {
 
-  printf("Instr: %s, ", toString(instr_type));
-  printf("Raw Instr: 0x%08X", instr);
-  printf("\n");
+  LOG("Instr: %s, Raw Instr: 0x%08X", toString(instr_type), instr);
 
   switch (instr_type) {
   case Instr::Instr::B:
@@ -244,12 +243,9 @@ union CPSR_Register {
 [[nodiscard]] bool process_thumb(U16 instr, const Memory::Memory &memory,
                                  CPU &cpu) {
 
-  printf("Raw Instr: 0x%04X, ", instr);
-
   Thumb::ThumbOpcode opcode = get_thumb_instruction(instr);
 
-  printf("Instr: %s", toString(opcode));
-  printf("\n");
+  LOG("Raw Instr: 0x%04X, Instr: %s", instr, toString(opcode));
 
   switch (opcode) {
   case (Thumb::ThumbOpcode::LSL):
@@ -397,10 +393,10 @@ bool evaluate_cond(ConditionCode cond, CPSR_Register cpsr) {
               (((sign << shift_amount) - 1) << (32 - shift_amount));
     break;
   case 3:
-    printf("No implemented");
+    LOG("No implemented");
     return false;
   default:
-    printf("Not a recognized shift type");
+    LOG("Not a recognized shift type");
     return false;
   }
 
@@ -511,7 +507,7 @@ bool evaluate_cond(ConditionCode cond, CPSR_Register cpsr) {
   if (instr.fields.i == 0) {
     offset = instr.fields.offset;
   } else {
-    printf("Not implemented");
+    LOG("Not implemented");
     return false;
   }
 
@@ -547,7 +543,7 @@ bool evaluate_cond(ConditionCode cond, CPSR_Register cpsr) {
   if (instr.fields.i == 0) {
     offset = instr.fields.offset;
   } else {
-    printf("Not implemented");
+    LOG("Not implemented");
     return false;
   }
 

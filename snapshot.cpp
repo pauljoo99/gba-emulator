@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <sys/stat.h>
 
+#include "logging.h"
 #include "snapshot.h"
 
 namespace Emulator::Arm::Debug {
@@ -63,6 +64,8 @@ void debug_snapshot(const Registers &registers,
                     const Emulator::GameCard::GameCard &card,
                     const char *path) {
   static U32 snapshot_num = 0;
+
+  LOG("Writing Snapshot: %u", snapshot_num);
 
   char snapshot_path[MAX_PATH_LENGHT];
   snprintf(snapshot_path, sizeof(snapshot_path), "%s%s_%u/", path, snapshot_dir,

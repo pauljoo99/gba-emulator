@@ -4,6 +4,7 @@
 #include <stdio.h>
 
 #include "datatypes.h"
+#include "logging.h"
 
 namespace Emulator::Thumb2 {
 
@@ -92,7 +93,7 @@ const char* toString(InstructionClass instr) {
 
 inline InstructionClass get_instr_class(U32 instr_) {
   if (((instr_ >> 13) & 0b111) != 0b111) {
-    printf("%i is not a Thumb2 instruction", instr_);
+    LOG("%i is not a Thumb2 instruction", instr_);
     exit(0);
   }
   Instruction instr(instr_);
@@ -106,7 +107,7 @@ inline InstructionClass get_instr_class(U32 instr_) {
     } else if ((instr.fields.op2 & 0b1000000) == 0b1000000) {
       return InstructionClass::CoprocessorSIMDFloating;
     } else {
-      printf("%i is not a Thumb2 instruction", instr_);
+      LOG("%i is not a Thumb2 instruction", instr_);
       exit(0);
     }
   } else if (instr.fields.op1 == 0b10) {
@@ -137,11 +138,11 @@ inline InstructionClass get_instr_class(U32 instr_) {
     } else if ((instr.fields.op2 & 0b1000000) == 0b1000000) {
       return InstructionClass::CoprocessorSIMDFloating;
     } else {
-      printf("%i is not a Thumb2 instruction", instr_);
+      LOG("%i is not a Thumb2 instruction", instr_);
       exit(0);
     }
   }
-  printf("%i is not a Thumb2 instruction", instr_);
+  LOG("%i is not a Thumb2 instruction", instr_);
   exit(0);
 }
 

@@ -4,6 +4,7 @@
 
 #include "arm968es.h"
 #include "game_card.h"
+#include "logging.h"
 #include "memory.h"
 
 using namespace Emulator;
@@ -25,7 +26,7 @@ static char game_file[] = "games/Pokemon - Emerald Version (U).gba";
   file_size = ftell(file_pointer);
   rewind(file_pointer);
   if (file_size > GameCard::kSize) {
-    printf("File is too large %li", file_size);
+    LOG("File is too large %li", file_size);
     fclose(file_pointer);
     return false;
   }
@@ -53,13 +54,13 @@ int main() {
   std::unique_ptr<Memory::Memory> memory = std::make_unique<Memory::Memory>();
 
   if (!load_file(*game_card)) {
-    printf("Could not load game!");
+    LOG("Could not load game!");
     return 1;
   }
 
   while (cpu->dispatch(*game_card, *memory)) {
   }
 
-  printf("Dispatch failed!");
+  LOG("Dispatch failed!");
   return 1;
 }
