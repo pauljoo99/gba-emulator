@@ -114,6 +114,28 @@
             flex: 1; /* input grows to fill space if needed */
         }
 
+        .arrow-button {
+            display: inline-flex;
+            align-items: center;
+            padding: 10px 20px;
+            font-size: 16px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+
+        .arrow-button:hover {
+            background-color: #45a049;
+        }
+
+        .arrow-button .arrow {
+            margin-left: 10px;
+            font-size: 18px;
+        }
+
     </style>
 </head>
 
@@ -143,7 +165,15 @@
             </div>
         </div>
 
-        <button onclick="Generate()">Generate</button>
+        <button class="arrow-button" onclick="GeneratePrevSnapshot()">
+            Prev <span class="arrow"></span>
+        </button>
+
+        <input type="text" id="snapshotNum" value="0">
+
+        <button class="arrow-button" onclick="GenerateNextSnapshot()">
+            Next <span class="arrow"></span>
+        </button>
     </div>
       
 
@@ -189,6 +219,10 @@
         </table>
 
     </div>
+
+    <script>
+        Generate(0);
+    </script>
 
 </body>
 

@@ -98,8 +98,10 @@ function decodeRegisters(buffer) {
   return result;
 }
 
-function Generate() {
-  fetch("data/registers.bin")
+function Generate(snapshotNum) {
+  let dir = "data/snapshot_" + snapshotNum + "/";
+
+  fetch(dir + "registers.bin")
     .then((res) => res.arrayBuffer())
     .then((buffer) => {
       // Registers
@@ -126,7 +128,7 @@ function Generate() {
     })
     .catch(console.error);
 
-  fetch("data/program.bin")
+  fetch(dir + "program.bin")
     .then((res) => res.arrayBuffer())
     .then((buffer) => {
       // Program
@@ -156,7 +158,7 @@ function Generate() {
     })
     .catch(console.error);
 
-  fetch("data/memory.bin")
+  fetch(dir + "memory.bin")
     .then((res) => res.arrayBuffer())
     .then((buffer) => {
       // Memory
@@ -183,4 +185,22 @@ function Generate() {
       });
     })
     .catch(console.error);
+}
+
+function GenerateNextSnapshot() {
+  let snapshotNum = document.getElementById("snapshotNum");
+  nextSnapshotNum = parseInt(snapshotNum.value) + 1;
+
+  Generate(nextSnapshotNum);
+
+  snapshotNum.value = nextSnapshotNum;
+}
+
+function GeneratePrevSnapshot() {
+  let snapshotNum = document.getElementById("snapshotNum");
+  prevSnapshotNum = parseInt(snapshotNum.value) - 1;
+
+  Generate(prevSnapshotNum);
+
+  snapshotNum.value = prevSnapshotNum;
 }
