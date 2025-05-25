@@ -2,7 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "arm968es.h"
+#include "arm7tdmi.h"
 #include "game_card.h"
 #include "logging.h"
 #include "memory.h"

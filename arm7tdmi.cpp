@@ -1,4 +1,4 @@
-#include "arm968es.h"
+#include "arm7tdmi.h"
 #include "arm_instructions.h"
 #include "logging.h"
 #include "snapshot.h"

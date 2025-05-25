@@ -1,6 +1,6 @@
 #pragma once
 
-#include "arm968es_constants.h"
+#include "arm7tdmi_constants.h"
 #include "datatypes.h"
 #include "game_card.h"
 #include "memory.h"

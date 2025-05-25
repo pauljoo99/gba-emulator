@@ -1,4 +1,4 @@
-#include "arm968es.h"
+#include "arm7tdmi.h"
 #include "datatypes.h"
 #include "memory.h"
 
