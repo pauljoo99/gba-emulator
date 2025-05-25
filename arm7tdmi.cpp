@@ -1,11 +1,12 @@
+#include <cstring>
+#include <stdio.h>
+
 #include "arm7tdmi.h"
 #include "arm_instructions.h"
 #include "logging.h"
 #include "snapshot.h"
 #include "thumb2_instructions.h"
 #include "thumb_instructions.h"
-#include <cstring>
-#include <stdio.h>
 
 namespace Emulator::Arm
 

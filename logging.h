@@ -1,3 +1,5 @@
+#include <stdio.h>
+
 #pragma once
 
 #define LOG(fmt, ...)                                                          \

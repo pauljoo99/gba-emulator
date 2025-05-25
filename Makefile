@@ -30,8 +30,15 @@ snapshot.o:
 debug: CXXFLAGS += -g
 debug: $(EXEC)
 
+# make all tests
+tests: bitutils_test
+
+# bitutils tests
+bitutils_test:
+	$(CXX) $(CXXFLAGS) bitutils_test.cpp -I. -o $(BUILD_DIR)/bitutils_test
+
 # Clean target to remove object and executable files
 clean:
-	rm -f $(BUILD_DIR)/main.o $(BUILD_DIR)/arm7tdmi.o $(EXEC) *.gch
+	rm -f $(BUILD_DIR)/main.o $(BUILD_DIR)/arm7tdmi.o $(BUILD_DIR)/snapshot.o $(EXEC) *.gch
 
 .PHONY: all clean
