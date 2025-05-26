@@ -3,14 +3,41 @@
 
 #include "arm7tdmi.h"
 #include "arm_instructions.h"
+#include "bitutils.h"
 #include "logging.h"
 #include "snapshot.h"
 #include "thumb2_instructions.h"
 #include "thumb_instructions.h"
 
-namespace Emulator::Arm
+namespace Emulator::Arm {
 
-{
+using namespace BitUtils;
+
+bool CPU::advance_pipeline(U32 instr) noexcept {
+  pipeline.execute = pipeline.decode;
+  pipeline.decode = pipeline.fetch;
+  pipeline.fetch = instr;
+  return pipeline.execute != U32(-1);
+}
+
+bool CPU::advance_pipeline(U16 instr) noexcept {
+  pipeline.execute = pipeline.decode;
+  pipeline.decode = pipeline.fetch;
+  pipeline.fetch = instr;
+  return pipeline_thumb.execute != U16(-1);
+}
+
+void CPU::clearPipeline() noexcept {
+  pipeline.fetch = U32(-1);
+  pipeline.decode = U32(-1);
+  pipeline.execute = U32(-1);
+}
+
+void CPU::clearPipelineThumb() noexcept {
+  pipeline.fetch = U16(-1);
+  pipeline.decode = U16(-1);
+  pipeline.execute = U16(-1);
+}
 
 Thumb::ThumbOpcode get_thumb_instruction(U16 instr) {
   switch (instr >> 13) {
@@ -329,16 +356,29 @@ bool evaluate_cond(ConditionCode cond, CPSR_Register cpsr) {
   if (thumb_instr) {
     U16 instr;
     memcpy(&instr, (void *)&game_card.mem[registers.r[15]], kThumbInstrSize);
-    return process_thumb(instr, memory, *this);
+    if (advance_pipeline(instr)) {
+      if (!process_thumb(pipeline_thumb.execute, memory, *this)) {
+        return false;
+      }
+    } else {
+      registers.r[15] += 2;
+    }
   } else {
     U32 instr;
     memcpy(&instr, (void *)&game_card.mem[registers.r[15]], kInstrSize);
-    Instr::Instr instr_type;
-    if (!get_instr_type(instr, instr_type)) {
-      return false;
+    if (advance_pipeline(instr)) {
+      Instr::Instr instr_type;
+      if (!get_instr_type(pipeline.execute, instr_type)) {
+        return false;
+      }
+      if (!process_instr(pipeline.execute, instr_type, memory, *this)) {
+        return false;
+      }
+    } else {
+      registers.r[15] += 4;
     }
-    return process_instr(instr, instr_type, memory, *this);
   }
+  return true;
 }
 
 [[nodiscard]] bool CPU::dispatch_B(U32 instr_) noexcept {
@@ -347,7 +387,8 @@ bool evaluate_cond(ConditionCode cond, CPSR_Register cpsr) {
     registers.r[15] += kInstrSize;
     return true;
   }
-  registers.r[15] += (instr.fields.offset << 2) + 8;
+  registers.r[15] += SignExtend(ConcatBits(instr.fields.offset, 0, 2), 26);
+  clearPipeline();
   return true;
 }
 

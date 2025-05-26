@@ -40,6 +40,18 @@ struct Registers {
   U32 CPSR;
 };
 
+struct Pipeline {
+  U32 fetch = U32(-1);
+  U32 decode = U32(-1);
+  U32 execute = U32(-1);
+};
+
+struct PipelineThumb {
+  U16 fetch = U16(-1);
+  U16 decode = U16(-1);
+  U16 execute = U16(-1);
+};
+
 struct CPU {
 
   [[nodiscard]] bool dispatch(const GameCard::GameCard &game_card,
@@ -59,7 +71,15 @@ struct CPU {
   [[nodiscard]] bool dispatch_thumb_LSL(U16 instr) noexcept;
   [[nodiscard]] bool dispatch_thumb_BLX(U16 instr) noexcept;
 
+  [[nodiscard]] bool advance_pipeline(U32 instr) noexcept;
+  [[nodiscard]] bool advance_pipeline(U16 instr) noexcept;
+
+  void clearPipeline() noexcept;
+  void clearPipelineThumb() noexcept;
+
   Registers registers;
+  Pipeline pipeline;
+  PipelineThumb pipeline_thumb;
   bool thumb_instr = 0;
 };
 
