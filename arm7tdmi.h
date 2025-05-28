@@ -1,6 +1,7 @@
 #pragma once
 
 #include "arm7tdmi_constants.h"
+#include "arm_instructions.h"
 #include "datatypes.h"
 #include "game_card.h"
 #include "memory.h"
@@ -52,6 +53,7 @@ struct PipelineThumb {
   U16 execute = U16(-1);
 };
 
+/* Based on ARM DDI 0100E */
 struct CPU {
 
   [[nodiscard]] bool dispatch(const GameCard::GameCard &game_card,
@@ -73,6 +75,17 @@ struct CPU {
 
   [[nodiscard]] bool advance_pipeline(U32 instr) noexcept;
   [[nodiscard]] bool advance_pipeline(U16 instr) noexcept;
+
+  ShifterOperandResult ShifterOperand(DataProcessingInstr instr) noexcept;
+
+  ShifterOperandResult
+  ShifterOperandImmediate(DataProcessingInstrImmediate operand_2) noexcept;
+  ShifterOperandResult
+  ShifterOperandRegister(DataProcessingInstrRegister operand_2) noexcept;
+  ShifterOperandResult ShifterOperandLogicalShiftLeftByImm(
+      DataProcessingInstrLogicalShiftLeftByImm operand_2) noexcept;
+  ShifterOperandResult ShifterOperandLogicalShiftLeftByRegister(
+      DataProcessingInstrLogicalShiftLeftByRegister operand_2) noexcept;
 
   void clearPipeline() noexcept;
   void clearPipelineThumb() noexcept;

@@ -45,6 +45,68 @@ union MSRInstr {
   operator U32() const { return value; } // Implicit conversion
 };
 
+struct ShifterOperandResult {
+  U32 shifter_operand;
+  U32 shifter_carry_out;
+};
+
+struct DataProcessingInstrImmediateFields {
+  U32 immed_8 : 8;
+  U32 rotate_imm : 4;
+};
+
+union DataProcessingInstrImmediate {
+  U32 value;
+  DataProcessingInstrImmediateFields fields;
+
+  DataProcessingInstrImmediate(U32 val = 0) : value(val) {}
+
+  operator U32() const { return value; } // Implicit conversion
+};
+
+struct DataProcessingInstrRegisterFields {
+  U32 rm : 4;
+};
+
+union DataProcessingInstrRegister {
+  U32 value;
+  DataProcessingInstrRegisterFields fields;
+
+  DataProcessingInstrRegister(U32 val = 0) : value(val) {}
+
+  operator U32() const { return value; } // Implicit conversion
+};
+
+struct DataProcessingInstrLogicalShiftLeftByImmFields {
+  U32 rm : 4;
+  U32 : 3;
+  U32 shift_imm : 5;
+};
+
+union DataProcessingInstrLogicalShiftLeftByImm {
+  U32 value;
+  DataProcessingInstrLogicalShiftLeftByImmFields fields;
+
+  DataProcessingInstrLogicalShiftLeftByImm(U32 val = 0) : value(val) {}
+
+  operator U32() const { return value; } // Implicit conversion
+};
+
+struct DataProcessingInstrLogicalShiftLeftByRegisterFields {
+  U32 rm : 4;
+  U32 : 4;
+  U32 rs : 4;
+};
+
+union DataProcessingInstrLogicalShiftLeftByRegister {
+  U32 value;
+  DataProcessingInstrLogicalShiftLeftByRegisterFields fields;
+
+  DataProcessingInstrLogicalShiftLeftByRegister(U32 val = 0) : value(val) {}
+
+  operator U32() const { return value; } // Implicit conversion
+};
+
 struct DataProcessingInstrFields {
   U32 operand_2 : 12;
   U32 rd : 4;
@@ -114,7 +176,7 @@ enum ConditionCode : U8 {
   AL = 0b1110,
 };
 
-const char *toString(ConditionCode cc) {
+inline const char *toString(ConditionCode cc) {
   switch (cc) {
   case EQ:
     return "EQ";
@@ -234,7 +296,7 @@ enum Instr : U32 {
 }
 // clang-format on
 
-const char *toString(Instr::Instr instr) {
+inline const char *toString(Instr::Instr instr) {
   switch (instr) {
   case Instr::Instr::ADC:
     return "ADC";
@@ -307,7 +369,8 @@ const char *toString(Instr::Instr instr) {
   }
 }
 
-[[nodiscard]] bool get_instr_type(U32 instr, Instr::Instr &instry_type) {
+[[nodiscard]] __inline bool get_instr_type(U32 instr,
+                                           Instr::Instr &instry_type) {
 
 #define checkInstr(instr_type_)                                                \
   if ((instr & U32(InstrMask::InstrMask::instr_type_)) ==                      \

@@ -13,6 +13,92 @@ namespace Emulator::Arm {
 
 using namespace BitUtils;
 
+struct CPSR_Flags {
+  U32 M : 5;
+  U32 T : 1;
+  U32 F : 1;
+  U32 I : 1;
+  U32 reserve : 20;
+  U32 V : 1;
+  U32 C : 1;
+  U32 Z : 1;
+  U32 N : 1;
+};
+
+union CPSR_Register {
+  U32 value;
+  CPSR_Flags bits;
+
+  CPSR_Register(U32 val = 0) : value(val) {}
+
+  operator U32() const { return value; } // Implicit conversion
+};
+
+ShifterOperandResult CPU::ShifterOperand(DataProcessingInstr instr) noexcept {
+  if (instr.fields.i) {
+    return ShifterOperandImmediate(instr.fields.operand_2);
+  }
+  return {};
+}
+
+ShifterOperandResult
+CPU::ShifterOperandImmediate(DataProcessingInstrImmediate operand_2) noexcept {
+  ShifterOperandResult result{};
+  CPSR_Register cpsr(registers.CPSR);
+  result.shifter_operand =
+      RotateRight(operand_2.fields.immed_8, operand_2.fields.rotate_imm * 2);
+  if (operand_2.fields.rotate_imm == 0) {
+    result.shifter_carry_out = cpsr.bits.C;
+  } else {
+    result.shifter_carry_out = GetBit(result.shifter_operand, 31);
+  }
+  return result;
+}
+
+ShifterOperandResult
+CPU::ShifterOperandRegister(DataProcessingInstrRegister operand_2) noexcept {
+  ShifterOperandResult result{};
+  result.shifter_operand = registers.r[operand_2.fields.rm];
+  result.shifter_carry_out = CPSR_Register(registers.CPSR).bits.C;
+  return result;
+}
+
+ShifterOperandResult CPU::ShifterOperandLogicalShiftLeftByImm(
+    DataProcessingInstrLogicalShiftLeftByImm operand_2) noexcept {
+  ShifterOperandResult result{};
+  CPSR_Register cpsr(registers.CPSR);
+  if (operand_2.fields.shift_imm == 0) {
+    result.shifter_carry_out = cpsr.bits.C;
+  } else {
+    result.shifter_carry_out = GetBit(registers.r[operand_2.fields.rm],
+                                      32 - operand_2.fields.shift_imm);
+  }
+  result.shifter_operand = LogicalShiftLeft(registers.r[operand_2.fields.rm],
+                                            operand_2.fields.shift_imm);
+  return result;
+}
+
+ShifterOperandResult CPU::ShifterOperandLogicalShiftLeftByRegister(
+    DataProcessingInstrLogicalShiftLeftByRegister operand_2) noexcept {
+  ShifterOperandResult result{};
+  U8 rs(registers.r[operand_2.fields.rs]);
+  U32 rm(registers.r[operand_2.fields.rm]);
+  if (rs == 0) {
+    result.shifter_operand = rm;
+    result.shifter_carry_out = CPSR_Register(registers.CPSR).bits.C;
+  } else if (rs < 32) {
+    result.shifter_operand = LogicalShiftLeft(rm, rs);
+    result.shifter_carry_out = GetBit(rm, 32 - rs);
+  } else if (rs == 32) {
+    result.shifter_operand = 0;
+    result.shifter_carry_out = GetBit(rm, 0);
+  } else {
+    result.shifter_operand = 0;
+    result.shifter_carry_out = 0;
+  }
+  return result;
+}
+
 bool CPU::advance_pipeline(U32 instr) noexcept {
   pipeline.execute = pipeline.decode;
   pipeline.decode = pipeline.fetch;
@@ -222,27 +308,6 @@ Thumb::ThumbOpcode get_thumb_instruction(U16 instr) {
 
 inline U32 generateMask(U8 a, U8 b) { return ((1U << (b - a + 1)) - 1) << a; }
 
-struct CPSR_Flags {
-  U32 M : 5;
-  U32 T : 1;
-  U32 F : 1;
-  U32 I : 1;
-  U32 reserve : 20;
-  U32 V : 1;
-  U32 C : 1;
-  U32 Z : 1;
-  U32 N : 1;
-};
-
-union CPSR_Register {
-  U32 value;
-  CPSR_Flags bits;
-
-  CPSR_Register(U32 val = 0) : value(val) {}
-
-  operator U32() const { return value; } // Implicit conversion
-};
-
 [[nodiscard]] bool process_instr(U32 instr, Instr::Instr instr_type,
                                  const Memory::Memory &memory, CPU &cpu) {
 
@@ -387,7 +452,8 @@ bool evaluate_cond(ConditionCode cond, CPSR_Register cpsr) {
     registers.r[15] += kInstrSize;
     return true;
   }
-  registers.r[15] += SignExtend(ConcatBits(instr.fields.offset, 0, 2), 26);
+  registers.r[15] = static_cast<I32>(registers.r[15]) +
+                    SignExtend(ConcatBits(instr.fields.offset, 0, 2), 26);
   clearPipeline();
   return true;
 }
@@ -449,27 +515,11 @@ bool evaluate_cond(ConditionCode cond, CPSR_Register cpsr) {
                                      const Memory::Memory &memory) noexcept {
   const DataProcessingInstr instr(instr_);
 
-  if (!evaluate_cond(ConditionCode(instr.fields.cond), registers.CPSR)) {
-    registers.r[15] += kInstrSize;
-    return true;
-  }
-
-  U32 &r = registers.r[instr.fields.rd];
-  if (!instr.fields.i) {
-    U32 op2;
-    bool carry_out = 0;
-    if (!op2_register(instr.fields.operand_2, registers, carry_out, op2)) {
-      return false;
-    }
-    r = op2;
-  } else {
-    const U32 rotate =
-        ((instr.fields.operand_2 & generateMask(8, 11)) >> 8) * 2;
-    const U8 lmm = instr.fields.operand_2 & generateMask(0, 7);
-    r = (lmm >> rotate) | (lmm << (8 - rotate));
+  if (evaluate_cond(ConditionCode(instr.fields.cond), registers.CPSR)) {
+    return false;
   }
   registers.r[15] += kInstrSize;
-  return true;
+  return false;
 }
 
 [[nodiscard]] bool CPU::dispatch_ADD(U32 instr_) noexcept {
