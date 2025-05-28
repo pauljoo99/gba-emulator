@@ -83,9 +83,13 @@ struct CPU {
   ShifterOperandResult
   ShifterOperandRegister(DataProcessingInstrRegister operand_2) noexcept;
   ShifterOperandResult ShifterOperandLogicalShiftLeftByImm(
-      DataProcessingInstrLogicalShiftLeftByImm operand_2) noexcept;
+      DataProcessingInstrLogicalShiftByImm operand_2) noexcept;
   ShifterOperandResult ShifterOperandLogicalShiftLeftByRegister(
-      DataProcessingInstrLogicalShiftLeftByRegister operand_2) noexcept;
+      DataProcessingInstrLogicalShiftByRegister operand_2) noexcept;
+  ShifterOperandResult ShifterOperandLogicalShiftRightByImm(
+      DataProcessingInstrLogicalShiftByImm operand_2) noexcept;
+  ShifterOperandResult ShifterOperandLogicalShiftRightByRegister(
+      DataProcessingInstrLogicalShiftByRegister operand_2) noexcept;
 
   void clearPipeline() noexcept;
   void clearPipelineThumb() noexcept;

@@ -77,32 +77,32 @@ union DataProcessingInstrRegister {
   operator U32() const { return value; } // Implicit conversion
 };
 
-struct DataProcessingInstrLogicalShiftLeftByImmFields {
+struct DataProcessingInstrLogicalShiftByImmFields {
   U32 rm : 4;
   U32 : 3;
   U32 shift_imm : 5;
 };
 
-union DataProcessingInstrLogicalShiftLeftByImm {
+union DataProcessingInstrLogicalShiftByImm {
   U32 value;
-  DataProcessingInstrLogicalShiftLeftByImmFields fields;
+  DataProcessingInstrLogicalShiftByImmFields fields;
 
-  DataProcessingInstrLogicalShiftLeftByImm(U32 val = 0) : value(val) {}
+  DataProcessingInstrLogicalShiftByImm(U32 val = 0) : value(val) {}
 
   operator U32() const { return value; } // Implicit conversion
 };
 
-struct DataProcessingInstrLogicalShiftLeftByRegisterFields {
+struct DataProcessingInstrLogicalShiftByRegisterFields {
   U32 rm : 4;
   U32 : 4;
   U32 rs : 4;
 };
 
-union DataProcessingInstrLogicalShiftLeftByRegister {
+union DataProcessingInstrLogicalShiftByRegister {
   U32 value;
-  DataProcessingInstrLogicalShiftLeftByRegisterFields fields;
+  DataProcessingInstrLogicalShiftByRegisterFields fields;
 
-  DataProcessingInstrLogicalShiftLeftByRegister(U32 val = 0) : value(val) {}
+  DataProcessingInstrLogicalShiftByRegister(U32 val = 0) : value(val) {}
 
   operator U32() const { return value; } // Implicit conversion
 };

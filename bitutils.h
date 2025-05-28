@@ -33,5 +33,6 @@ inline U32 RotateRight(U32 imm, U8 num_bits) {
 }
 
 inline U32 LogicalShiftLeft(U32 imm, U8 num_bits) { return imm << num_bits; }
+inline U32 LogicalShiftRight(U32 imm, U8 num_bits) { return imm >> num_bits; }
 
 } // namespace Emulator::BitUtils
