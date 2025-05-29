@@ -10,6 +10,27 @@ namespace Emulator::Arm
 
 {
 
+struct CPSR_Flags {
+  U32 M : 5;
+  U32 T : 1;
+  U32 F : 1;
+  U32 I : 1;
+  U32 reserve : 20;
+  U32 V : 1;
+  U32 C : 1;
+  U32 Z : 1;
+  U32 N : 1;
+};
+
+union CPSR_Register {
+  U32 value;
+  CPSR_Flags bits;
+
+  CPSR_Register(U32 val = 0) : value(val) {}
+
+  operator U32() const { return value; } // Implicit conversion
+};
+
 enum Mode {
   USER,
   SYSTEM,
@@ -119,21 +140,20 @@ struct CPU {
   Mode mode;
 
   inline U32 *GetSPRS() {
-    switch (mode) {
-    case USER:
-      return nullptr;
-    case SYSTEM:
-      return nullptr;
-    case SUPERVISOR:
-      return &registers.SPSR_svc;
-    case ABORT:
-      return &registers.SPSR_abt;
-    case UNDEFINED:
-      return &registers.SPSR_und;
-    case INTERRUPT:
-      return &registers.SPSR_irq;
-    case FAST_INTERRUPT:
+    CPSR_Register cpsr(registers.CPSR);
+    switch (cpsr.bits.M) {
+    case 0b10001:
       return &registers.SPSR_fiq;
+    case 0b10010:
+      return &registers.SPSR_irq;
+    case 0b10011:
+      return &registers.SPSR_svc;
+    case 0b10111:
+      return &registers.SPSR_abt;
+    case 0b11011:
+      return &registers.SPSR_und;
+    default:
+      return nullptr;
     }
   }
 };

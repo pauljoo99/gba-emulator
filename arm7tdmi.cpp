@@ -14,27 +14,6 @@ namespace Emulator::Arm {
 
 using namespace BitUtils;
 
-struct CPSR_Flags {
-  U32 M : 5;
-  U32 T : 1;
-  U32 F : 1;
-  U32 I : 1;
-  U32 reserve : 20;
-  U32 V : 1;
-  U32 C : 1;
-  U32 Z : 1;
-  U32 N : 1;
-};
-
-union CPSR_Register {
-  U32 value;
-  CPSR_Flags bits;
-
-  CPSR_Register(U32 val = 0) : value(val) {}
-
-  operator U32() const { return value; } // Implicit conversion
-};
-
 ShifterOperandResult CPU::ShifterOperand(DataProcessingInstr instr) noexcept {
   if (instr.fields.i) {
     return ShifterOperandImmediate(instr.fields.operand_2);
@@ -513,8 +492,7 @@ bool evaluate_cond(ConditionCode cond, CPSR_Register cpsr) {
   }
 }
 
-[[nodiscard]] bool get_spsr_reg(CPSR_Register cpsr, Registers &regs,
-                                U32 *&reg) {
+inline U32 *GetSPRS(CPSR_Register cpsr, Registers &regs, U32 *&reg) {
   switch (cpsr.bits.M) {
   case 0b10001:
     reg = &regs.SPSR_fiq;
@@ -532,9 +510,9 @@ bool evaluate_cond(ConditionCode cond, CPSR_Register cpsr) {
     reg = &regs.SPSR_und;
     break;
   default:
-    return false;
+    return nullptr;
   }
-  return true;
+  return nullptr;
 }
 
 [[nodiscard]] bool CPU::dispatch(const GameCard::GameCard &game_card,
@@ -546,7 +524,8 @@ bool evaluate_cond(ConditionCode cond, CPSR_Register cpsr) {
     return false;
   }
 
-  if (thumb_instr) {
+  CPSR_Register cpsr(registers.CPSR);
+  if (cpsr.bits.T) {
     U16 instr;
     memcpy(&instr, (void *)&game_card.mem[registers.r[15]], kThumbInstrSize);
     if (advance_pipeline(instr)) {
@@ -620,22 +599,52 @@ bool evaluate_cond(ConditionCode cond, CPSR_Register cpsr) {
 }
 
 [[nodiscard]] bool CPU::dispatch_MSR(U32 instr_) noexcept {
-  const MSRInstr instr(instr_);
-
-  if (!evaluate_cond(ConditionCode(instr.fields.cond), registers.CPSR)) {
-    registers.r[15] += kInstrSize;
-    return true;
-  }
-
-  U32 &rm = registers.r[instr.fields.rm];
-  if (!instr.fields.dest_psr) {
-    registers.CPSR = rm;
-  } else {
-    U32 *rs = nullptr;
-    if (!get_spsr_reg(registers.CPSR, registers, rs)) {
-      return false;
+  MSRImmInstr instr(instr_);
+  if (evaluate_cond(ConditionCode(instr_ >> 28), registers.CPSR)) {
+    U32 operand = 0;
+    if (GetBit(instr_, 25)) {
+      MSRImmInstr instr(instr_);
+      operand = RotateRight(instr.fields.imm, instr.fields.rotate_imm * 2);
+    } else {
+      MSRRegInstr instr(instr_);
+      operand = instr.fields.rm;
     }
-    *rs = rm;
+    if (instr.fields.r == 0) {
+      CPSR_Register cpsr(registers.CPSR);
+      if (cpsr.bits.M != 0b10000) {
+        if (GetBit(instr.fields.field_mask, 0)) {
+          registers.CPSR =
+              (registers.CPSR & 0xFFFFFF00) | (operand & 0x000000FF);
+        }
+        if (GetBit(instr.fields.field_mask, 1)) {
+          registers.CPSR =
+              (registers.CPSR & 0xFFFF00FF) | (operand & 0x0000FF00);
+        }
+        if (GetBit(instr.fields.field_mask, 2)) {
+          registers.CPSR =
+              (registers.CPSR & 0xFF00FFFF) | (operand & 0x00FF0000);
+        }
+      }
+      if (GetBit(instr.fields.field_mask, 3)) {
+        registers.CPSR = (registers.CPSR & 0x00FFFFFF) | (operand & 0xFF000000);
+      }
+    } else {
+      if (U32 *spsr_ptr = GetSPRS()) {
+        U32 &spsr = *spsr_ptr;
+        if (GetBit(instr.fields.field_mask, 0)) {
+          spsr = (spsr & 0xFFFFFF00) | (operand & 0x000000FF);
+        }
+        if (GetBit(instr.fields.field_mask, 1)) {
+          spsr = (spsr & 0xFFFF00FF) | (operand & 0x0000FF00);
+        }
+        if (GetBit(instr.fields.field_mask, 2)) {
+          spsr = (spsr & 0xFF00FFFF) | (operand & 0x00FF0000);
+        }
+        if (GetBit(instr.fields.field_mask, 3)) {
+          spsr = (spsr & 0x00FFFFFF) | (operand & 0xFF000000);
+        }
+      }
+    }
   }
   registers.r[15] += kInstrSize;
   return true;

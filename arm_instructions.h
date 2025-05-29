@@ -27,20 +27,43 @@ union SingleDataTransferInstr {
   operator U32() const { return value; } // Implicit conversion
 };
 
-struct MSRInstrFields {
-  U32 rm : 4;
-  U32 : 8;
-  U32 : 10;
-  U32 dest_psr : 1;
+struct MSRImmInstrFields {
+  U32 imm : 8;
+  U32 rotate_imm : 4;
+  U32 sbo : 4;
+  U32 field_mask : 4;
+  U32 : 2;
+  U32 r : 1;
   U32 : 5;
   U32 cond : 4;
 };
 
-union MSRInstr {
+union MSRImmInstr {
   U32 value;
-  MSRInstrFields fields;
+  MSRImmInstrFields fields;
 
-  MSRInstr(U32 val = 0) : value(val) {}
+  MSRImmInstr(U32 val = 0) : value(val) {}
+
+  operator U32() const { return value; } // Implicit conversion
+};
+
+struct MSRRegInstrFields {
+  U32 rm : 4;
+  U32 : 4;
+  U32 sbz : 4;
+  U32 sbo : 4;
+  U32 field_mask : 4;
+  U32 : 2;
+  U32 r : 1;
+  U32 : 5;
+  U32 cond : 4;
+};
+
+union MSRRegInstr {
+  U32 value;
+  MSRRegInstrFields fields;
+
+  MSRRegInstr(U32 val = 0) : value(val) {}
 
   operator U32() const { return value; } // Implicit conversion
 };
