@@ -1,3 +1,4 @@
+#include <cassert>
 #include <cstring>
 #include <stdio.h>
 
@@ -648,7 +649,9 @@ bool evaluate_cond(ConditionCode cond, CPSR_Register cpsr) {
     CPSR_Register &cpsr = *reinterpret_cast<CPSR_Register *>(&registers.CPSR);
     registers.r[instr.fields.rd] = shifter.shifter_operand;
     if (instr.fields.s && instr.fields.rd == 15) {
-      cpsr = registers.SPSR_abt;
+      U32 *sprs = GetSPRS();
+      assert(sprs);
+      cpsr = *sprs;
     } else if (instr.fields.s) {
       cpsr.bits.N = GetBit(registers.r[instr.fields.rd], 31);
       cpsr.bits.Z = instr.fields.rd == 0;

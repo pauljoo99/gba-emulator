@@ -10,6 +10,16 @@ namespace Emulator::Arm
 
 {
 
+enum Mode {
+  USER,
+  SYSTEM,
+  SUPERVISOR,
+  ABORT,
+  UNDEFINED,
+  INTERRUPT,
+  FAST_INTERRUPT
+};
+
 struct Registers {
   U32 r[16];
 
@@ -105,7 +115,28 @@ struct CPU {
   Registers registers;
   Pipeline pipeline;
   PipelineThumb pipeline_thumb;
-  bool thumb_instr = 0;
+  bool thumb_instr = false;
+
+  Mode mode;
+
+  inline U32 *GetSPRS() {
+    switch (mode) {
+    case USER:
+      return nullptr;
+    case SYSTEM:
+      return nullptr;
+    case SUPERVISOR:
+      return &registers.SPSR_svc;
+    case ABORT:
+      return &registers.SPSR_abt;
+    case UNDEFINED:
+      return &registers.SPSR_und;
+    case INTERRUPT:
+      return &registers.SPSR_irq;
+    case FAST_INTERRUPT:
+      return &registers.SPSR_fiq;
+    }
+  }
 };
 
 } // namespace Emulator::Arm
