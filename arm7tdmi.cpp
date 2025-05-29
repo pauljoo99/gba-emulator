@@ -37,6 +37,28 @@ union CPSR_Register {
 ShifterOperandResult CPU::ShifterOperand(DataProcessingInstr instr) noexcept {
   if (instr.fields.i) {
     return ShifterOperandImmediate(instr.fields.operand_2);
+  } else {
+    U8 code = (instr.fields.i >> 4) | 0b111;
+    if (code == 0) {
+      return ShifterOperandLogicalShiftLeftByImm(instr.fields.operand_2);
+    } else if (code == 1) {
+      return ShifterOperandLogicalShiftLeftByRegister(instr.fields.operand_2);
+    } else if (code == 2) {
+      return ShifterOperandLogicalShiftRightByImm(instr.fields.operand_2);
+    } else if (code == 3) {
+      return ShifterOperandLogicalShiftRightByRegister(instr.fields.operand_2);
+    } else if (code == 4) {
+      return ShifterOperandArithmeticShiftRightByImm(instr.fields.operand_2);
+    } else if (code == 5) {
+      return ShifterOperandArithmeticShiftRightByRegister(
+          instr.fields.operand_2);
+    } else if (code == 6) {
+      return ShifterOperandRotateRightByImm(instr.fields.operand_2);
+    } else if (code == 7) {
+      return ShifterOperandRotateRightByRegister(instr.fields.operand_2);
+    } else {
+      perror("CouldNotDecodeShiftOperand");
+    }
   }
   return {};
 }
@@ -55,16 +77,8 @@ CPU::ShifterOperandImmediate(DataProcessingInstrImmediate operand_2) noexcept {
   return result;
 }
 
-ShifterOperandResult
-CPU::ShifterOperandRegister(DataProcessingInstrRegister operand_2) noexcept {
-  ShifterOperandResult result{};
-  result.shifter_operand = registers.r[operand_2.fields.rm];
-  result.shifter_carry_out = CPSR_Register(registers.CPSR).bits.C;
-  return result;
-}
-
 ShifterOperandResult CPU::ShifterOperandLogicalShiftLeftByImm(
-    DataProcessingInstrLogicalShiftByImm operand_2) noexcept {
+    DataProcessingInstrShiftByImm operand_2) noexcept {
   ShifterOperandResult result{};
   CPSR_Register cpsr(registers.CPSR);
   if (operand_2.fields.shift_imm == 0) {
@@ -79,7 +93,7 @@ ShifterOperandResult CPU::ShifterOperandLogicalShiftLeftByImm(
 }
 
 ShifterOperandResult CPU::ShifterOperandLogicalShiftLeftByRegister(
-    DataProcessingInstrLogicalShiftByRegister operand_2) noexcept {
+    DataProcessingInstrShiftByRegister operand_2) noexcept {
   ShifterOperandResult result{};
   U8 rs(registers.r[operand_2.fields.rs]);
   U32 rm(registers.r[operand_2.fields.rm]);
@@ -100,7 +114,7 @@ ShifterOperandResult CPU::ShifterOperandLogicalShiftLeftByRegister(
 }
 
 ShifterOperandResult CPU::ShifterOperandLogicalShiftRightByImm(
-    DataProcessingInstrLogicalShiftByImm operand_2) noexcept {
+    DataProcessingInstrShiftByImm operand_2) noexcept {
   ShifterOperandResult result{};
   CPSR_Register cpsr(registers.CPSR);
   if (operand_2.fields.shift_imm == 0) {
@@ -116,7 +130,7 @@ ShifterOperandResult CPU::ShifterOperandLogicalShiftRightByImm(
 }
 
 ShifterOperandResult CPU::ShifterOperandLogicalShiftRightByRegister(
-    DataProcessingInstrLogicalShiftByRegister operand_2) noexcept {
+    DataProcessingInstrShiftByRegister operand_2) noexcept {
   ShifterOperandResult result{};
   U8 rs(registers.r[operand_2.fields.rs]);
   U32 rm(registers.r[operand_2.fields.rm]);
@@ -132,6 +146,84 @@ ShifterOperandResult CPU::ShifterOperandLogicalShiftRightByRegister(
   } else {
     result.shifter_operand = 0;
     result.shifter_carry_out = 0;
+  }
+  return result;
+}
+
+ShifterOperandResult CPU::ShifterOperandArithmeticShiftRightByImm(
+    DataProcessingInstrShiftByImm operand_2) noexcept {
+  ShifterOperandResult result{};
+  CPSR_Register cpsr(registers.CPSR);
+  U32 rm(registers.r[operand_2.fields.rm]);
+  if (operand_2.fields.shift_imm == 0) {
+    if (GetBit(rm, 31) == 0) {
+      result.shifter_operand = 0;
+      result.shifter_carry_out = 0;
+    } else {
+      result.shifter_operand = 0xFFFFFFFF;
+      result.shifter_carry_out = 1;
+    }
+  } else {
+    result.shifter_operand =
+        (U32)ArithmeticShiftRight((I32)rm, operand_2.fields.shift_imm);
+    result.shifter_carry_out = GetBit(rm, operand_2.fields.shift_imm - 1);
+  }
+  return result;
+}
+
+ShifterOperandResult CPU::ShifterOperandArithmeticShiftRightByRegister(
+    DataProcessingInstrShiftByRegister operand_2) noexcept {
+  ShifterOperandResult result{};
+  U8 rs(registers.r[operand_2.fields.rs]);
+  U32 rm(registers.r[operand_2.fields.rm]);
+  if (rs == 0) {
+    result.shifter_operand = rm;
+    result.shifter_carry_out = CPSR_Register(registers.CPSR).bits.C;
+  } else if (rs < 32) {
+    result.shifter_operand = ArithmeticShiftRight((I32)rm, rs);
+    result.shifter_carry_out = GetBit(rm, rs - 1);
+  } else if (rs >= 32) {
+    if (rm == 0) {
+      result.shifter_operand = 0;
+      result.shifter_carry_out = 0;
+    } else {
+      result.shifter_operand = 0xFFFFFFFF;
+      result.shifter_carry_out = 1;
+    }
+  }
+  return result;
+}
+
+ShifterOperandResult CPU::ShifterOperandRotateRightByImm(
+    DataProcessingInstrShiftByImm operand_2) noexcept {
+  ShifterOperandResult result{};
+  CPSR_Register cpsr(registers.CPSR);
+  U32 rm(registers.r[operand_2.fields.rm]);
+  if (operand_2.fields.shift_imm == 0) {
+    result.shifter_operand =
+        LogicalShiftLeft(cpsr.bits.C, 31) | LogicalShiftRight(rm, 1);
+    result.shifter_carry_out = GetBit(rm, 0);
+  } else {
+    result.shifter_operand = RotateRight(rm, operand_2.fields.shift_imm);
+    result.shifter_carry_out = GetBit(rm, operand_2.fields.shift_imm - 1);
+  }
+  return result;
+}
+
+ShifterOperandResult CPU::ShifterOperandRotateRightByRegister(
+    DataProcessingInstrShiftByRegister operand_2) noexcept {
+  ShifterOperandResult result{};
+  U8 rs(registers.r[operand_2.fields.rs]);
+  U32 rm(registers.r[operand_2.fields.rm]);
+  if (rs == 0) {
+    result.shifter_operand = rm;
+    result.shifter_carry_out = CPSR_Register(registers.CPSR).bits.C;
+  } else if (GetBitsInRange(rs, 0, 5) == 0) {
+    result.shifter_operand = rm;
+    result.shifter_carry_out = GetBit(rm, 31);
+  } else {
+    result.shifter_operand = RotateRight(rm, GetBitsInRange(rs, 0, 5));
+    result.shifter_carry_out = GetBit(rm, GetBitsInRange(rs, 0, 5) - 1);
   }
   return result;
 }
@@ -551,12 +643,20 @@ bool evaluate_cond(ConditionCode cond, CPSR_Register cpsr) {
 [[nodiscard]] bool CPU::dispatch_MOV(U32 instr_,
                                      const Memory::Memory &memory) noexcept {
   const DataProcessingInstr instr(instr_);
-
   if (evaluate_cond(ConditionCode(instr.fields.cond), registers.CPSR)) {
-    return false;
+    ShifterOperandResult shifter = ShifterOperand(instr);
+    CPSR_Register &cpsr = *reinterpret_cast<CPSR_Register *>(&registers.CPSR);
+    registers.r[instr.fields.rd] = shifter.shifter_operand;
+    if (instr.fields.s && instr.fields.rd == 15) {
+      cpsr = registers.SPSR_abt;
+    } else if (instr.fields.s) {
+      cpsr.bits.N = GetBit(registers.r[instr.fields.rd], 31);
+      cpsr.bits.Z = instr.fields.rd == 0;
+      cpsr.bits.C = shifter.shifter_carry_out;
+    }
   }
   registers.r[15] += kInstrSize;
-  return false;
+  return true;
 }
 
 [[nodiscard]] bool CPU::dispatch_ADD(U32 instr_) noexcept {

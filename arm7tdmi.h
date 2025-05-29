@@ -80,16 +80,24 @@ struct CPU {
 
   ShifterOperandResult
   ShifterOperandImmediate(DataProcessingInstrImmediate operand_2) noexcept;
-  ShifterOperandResult
-  ShifterOperandRegister(DataProcessingInstrRegister operand_2) noexcept;
   ShifterOperandResult ShifterOperandLogicalShiftLeftByImm(
-      DataProcessingInstrLogicalShiftByImm operand_2) noexcept;
+      DataProcessingInstrShiftByImm operand_2) noexcept;
   ShifterOperandResult ShifterOperandLogicalShiftLeftByRegister(
-      DataProcessingInstrLogicalShiftByRegister operand_2) noexcept;
+      DataProcessingInstrShiftByRegister operand_2) noexcept;
   ShifterOperandResult ShifterOperandLogicalShiftRightByImm(
-      DataProcessingInstrLogicalShiftByImm operand_2) noexcept;
+      DataProcessingInstrShiftByImm operand_2) noexcept;
   ShifterOperandResult ShifterOperandLogicalShiftRightByRegister(
-      DataProcessingInstrLogicalShiftByRegister operand_2) noexcept;
+      DataProcessingInstrShiftByRegister operand_2) noexcept;
+  ShifterOperandResult ShifterOperandArithmeticShiftRightByImm(
+      DataProcessingInstrShiftByImm operand_2) noexcept;
+  ShifterOperandResult ShifterOperandArithmeticShiftRightByRegister(
+      DataProcessingInstrShiftByRegister operand_2) noexcept;
+  ShifterOperandResult ShifterOperandRotateRightByImm(
+      DataProcessingInstrShiftByImm operand_2) noexcept;
+  ShifterOperandResult ShifterOperandRotateRightByRegister(
+      DataProcessingInstrShiftByRegister operand_2) noexcept;
+  ShifterOperandResult ShifterOperandRotateRightByExtend(
+      DataProcessingInstrShiftByRegister operand_2) noexcept;
 
   void clearPipeline() noexcept;
   void clearPipelineThumb() noexcept;
