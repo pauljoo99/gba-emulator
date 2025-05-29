@@ -590,13 +590,13 @@ bool evaluate_cond(ConditionCode cond, CPSR_Register cpsr) {
 
 [[nodiscard]] bool CPU::dispatch_BX(U32 instr_) noexcept {
   const BranchAndExchangeInstr instr(instr_);
-  if (!evaluate_cond(ConditionCode(instr.fields.cond), registers.CPSR)) {
+  if (evaluate_cond(ConditionCode(instr.fields.cond), registers.CPSR)) {
+    CPSR_Register &cpsr = *reinterpret_cast<CPSR_Register *>(&registers.CPSR);
+    cpsr.bits.T = GetBit(instr.fields.rm, 0);
+    registers.r[15] = instr.fields.rm & 0xFFFFFFFE;
+  } else {
     registers.r[15] += kInstrSize;
-    return true;
   }
-  thumb_instr = instr.fields.rn & 1;
-  U32 &rn = registers.r[instr.fields.rn];
-  registers.r[15] = rn & ~1;
   return true;
 }
 

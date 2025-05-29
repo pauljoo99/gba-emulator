@@ -144,7 +144,7 @@ union BranchInstr {
 };
 
 struct BranchAndExchangeInstrFields {
-  U32 rn : 4;
+  U32 rm : 4;
   U32 : 24;
   U32 cond : 4;
 };
