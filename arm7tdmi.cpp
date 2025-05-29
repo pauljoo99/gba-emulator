@@ -454,8 +454,6 @@ inline U32 generateMask(U8 a, U8 b) { return ((1U << (b - a + 1)) - 1) << a; }
     return cpu.dispatch_MSR(instr);
   case Instr::Instr::LDR:
     return cpu.dispatch_LDR(instr, memory);
-  case Instr::Instr::ADD:
-    return cpu.dispatch_ADD(instr);
   case Instr::Instr::STR:
     return cpu.dispatch_STR(instr, memory);
   default:
@@ -600,47 +598,6 @@ bool evaluate_cond(ConditionCode cond, CPSR_Register cpsr) {
   return true;
 }
 
-[[nodiscard]] bool op2_register(U32 op2, Registers &registers, bool &carry_out,
-                                U32 &op2_val) {
-
-  U32 &rm = registers.r[op2 & 0b1111];
-
-  U32 shift_type = (op2 >> 5) & 0b11;
-  U32 shift_amount;
-  if ((op2 >> 4) & 1) {
-    U32 &rs = registers.r[op2 >> 8];
-    shift_amount = rs & 0xFF;
-  } else {
-    shift_amount = op2 >> 7;
-  }
-
-  U32 sign;
-  switch (shift_type) {
-  case 0:
-    carry_out = rm >> (32 - shift_amount) & 1;
-    op2_val = rm << shift_amount;
-    break;
-  case 1:
-    carry_out = rm >> (shift_amount - 1) & 1;
-    op2_val = rm >> shift_amount;
-    break;
-  case 2:
-    carry_out = rm >> (shift_amount - 1) & 1;
-    sign = (rm >> 31) & 1;
-    op2_val = (rm >> shift_amount) |
-              (((sign << shift_amount) - 1) << (32 - shift_amount));
-    break;
-  case 3:
-    LOG("No implemented");
-    return false;
-  default:
-    LOG("Not a recognized shift type");
-    return false;
-  }
-
-  return true;
-}
-
 [[nodiscard]] bool CPU::dispatch_MOV(U32 instr_,
                                      const Memory::Memory &memory) noexcept {
   const DataProcessingInstr instr(instr_);
@@ -658,46 +615,6 @@ bool evaluate_cond(ConditionCode cond, CPSR_Register cpsr) {
       cpsr.bits.C = shifter.shifter_carry_out;
     }
   }
-  registers.r[15] += kInstrSize;
-  return true;
-}
-
-[[nodiscard]] bool CPU::dispatch_ADD(U32 instr_) noexcept {
-  const DataProcessingInstr instr(instr_);
-
-  if (!evaluate_cond(ConditionCode(instr.fields.cond), registers.CPSR)) {
-    registers.r[15] += kInstrSize;
-    return true;
-  }
-
-  U32 op2;
-  bool carry_out = 0;
-  if (!instr.fields.i) {
-    if (!op2_register(instr.fields.operand_2, registers, carry_out, op2)) {
-      return false;
-    }
-  } else {
-    const U32 rotate =
-        ((instr.fields.operand_2 & generateMask(8, 11)) >> 8) * 2;
-    const U8 lmm = instr.fields.operand_2 & generateMask(0, 7);
-    op2 = (lmm >> rotate) | (lmm << (8 - rotate));
-    carry_out = (lmm >> (rotate - 1)) & 1;
-  }
-
-  U32 &rn = registers.r[instr.fields.rn];
-  U32 &rd = registers.r[instr.fields.rd];
-
-  rd = rn + op2;
-
-  if (instr.fields.s) {
-    CPSR_Register tmp_cprs = registers.CPSR;
-    tmp_cprs.bits.V = rd < rn || rd < op2;
-    tmp_cprs.bits.C = carry_out;
-    tmp_cprs.bits.Z = rd == 0;
-    tmp_cprs.bits.N = (rd >> 31) & 1;
-    registers.CPSR = tmp_cprs;
-  }
-
   registers.r[15] += kInstrSize;
   return true;
 }

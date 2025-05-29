@@ -76,7 +76,6 @@ struct CPU {
   [[nodiscard]] bool dispatch_MSR(U32 instr) noexcept;
   [[nodiscard]] bool dispatch_LDR(U32 instr,
                                   const Memory::Memory &memory) noexcept;
-  [[nodiscard]] bool dispatch_ADD(U32 instr) noexcept;
   [[nodiscard]] bool dispatch_STR(U32 instr_,
                                   const Memory::Memory &memory) noexcept;
 
