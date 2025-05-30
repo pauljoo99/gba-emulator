@@ -1,3 +1,4 @@
+#include <iostream>
 #include <memory>
 #include <stdio.h>
 #include <stdlib.h>
@@ -9,9 +10,7 @@
 
 using namespace Emulator;
 
-static char game_file[] = "games/Pokemon - Emerald Version (U).gba";
-
-[[nodiscard]] bool load_file(GameCard::GameCard &game_card) {
+[[nodiscard]] bool load_file(GameCard::GameCard &game_card, char *game_file) {
   FILE *file_pointer;
   long file_size;
 
@@ -46,14 +45,20 @@ static char game_file[] = "games/Pokemon - Emerald Version (U).gba";
   return true;
 }
 
-int main() {
+int main(int argc, char *argv[]) {
+
+  if (argc != 2) {
+    std::cerr << "Usage: " << argv[0] << " <name>" << std::endl;
+    return 1;
+  }
+  char *game_file = argv[1];
 
   std::unique_ptr<GameCard::GameCard> game_card =
       std::make_unique<GameCard::GameCard>();
   std::unique_ptr<Arm::CPU> cpu = std::make_unique<Arm::CPU>();
   std::unique_ptr<Memory::Memory> memory = std::make_unique<Memory::Memory>();
 
-  if (!load_file(*game_card)) {
+  if (!load_file(*game_card, game_file)) {
     LOG("Could not load game!");
     return 1;
   }

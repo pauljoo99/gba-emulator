@@ -5,7 +5,7 @@ Run by
 ```
 mkdir build
 make all
-./build/emulator
+./build/emulator "games/Pokemon - Emerald Version (U).gba"
 ```
 
 Dump binary by
