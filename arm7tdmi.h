@@ -129,6 +129,9 @@ struct CPU {
   ShifterOperandResult ShifterOperandRotateRightByExtend(
       DataProcessingInstrShiftByRegister operand_2) noexcept;
 
+  U32 LoadAndStoreWordOrByteImmAddr(U32 instr_) noexcept;
+  U32 LoadAndStoreWordOrByteRegAddr(U32 instr_) noexcept;
+
   void clearPipeline() noexcept;
   void clearPipelineThumb() noexcept;
 

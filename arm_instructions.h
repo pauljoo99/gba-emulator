@@ -73,6 +73,35 @@ struct ShifterOperandResult {
   U32 shifter_carry_out;
 };
 
+struct LoadAndStoreWordOrByteImmFields {
+  U32 offset : 12;
+};
+
+union LoadAndStoreWordOrByteImm {
+  U32 value;
+  LoadAndStoreWordOrByteImmFields fields;
+
+  LoadAndStoreWordOrByteImm(U32 val = 0) : value(val) {}
+
+  operator U32() const { return value; } // Implicit conversion
+};
+
+struct LoadAndStoreWordOrByteRegFields {
+  U32 rm : 4;
+  U32 : 1;
+  U32 shift : 2;
+  U32 shift_imm : 5;
+};
+
+union LoadAndStoreWordOrByteReg {
+  U32 value;
+  LoadAndStoreWordOrByteRegFields fields;
+
+  LoadAndStoreWordOrByteReg(U32 val = 0) : value(val) {}
+
+  operator U32() const { return value; } // Implicit conversion
+};
+
 struct DataProcessingInstrImmediateFields {
   U32 immed_8 : 8;
   U32 rotate_imm : 4;

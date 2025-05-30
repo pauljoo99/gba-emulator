@@ -515,6 +515,39 @@ inline U32 *GetSPRS(CPSR_Register cpsr, Registers &regs, U32 *&reg) {
   return nullptr;
 }
 
+U32 CPU::LoadAndStoreWordOrByteImmAddr(U32 instr_) noexcept {
+  const SingleDataTransferInstr instr{instr_};
+  const LoadAndStoreWordOrByteImm encoding{instr.fields.offset};
+
+  if (!evaluate_cond(ConditionCode(instr.fields.cond), registers.CPSR)) {
+    // Does not matter. The instruction will be skipped anyways.
+    return 0;
+  }
+  if (instr.fields.p == 1 && instr.fields.w == 1) {
+    if (instr.fields.u == 1) {
+      registers.r[instr.fields.rn] += encoding.fields.offset;
+    } else {
+      registers.r[instr.fields.rn] -= encoding.fields.offset;
+    }
+    // TODO: Add w == 0 case which determines access privilege.
+  }
+  U32 address = registers.r[instr.fields.rn];
+  if (instr.fields.p == 0) {
+    if (instr.fields.u == 1) {
+      registers.r[instr.fields.rn] += encoding.fields.offset;
+    } else {
+      registers.r[instr.fields.rn] -= encoding.fields.offset;
+    }
+  }
+  return address;
+}
+
+U32 CPU::LoadAndStoreWordOrByteRegAddr(U32 instr_) noexcept {
+  const SingleDataTransferInstr instr{instr_};
+  // TODO:
+  return instr_;
+}
+
 [[nodiscard]] bool CPU::dispatch(const GameCard::GameCard &game_card,
                                  const Memory::Memory &memory) noexcept {
 
