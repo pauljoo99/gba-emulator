@@ -544,8 +544,70 @@ U32 CPU::LoadAndStoreWordOrByteImmAddr(U32 instr_) noexcept {
 
 U32 CPU::LoadAndStoreWordOrByteRegAddr(U32 instr_) noexcept {
   const SingleDataTransferInstr instr{instr_};
-  // TODO:
-  return instr_;
+  const LoadAndStoreWordOrByteReg encoding{instr.fields.offset};
+
+  if (!evaluate_cond(ConditionCode(instr.fields.cond), registers.CPSR)) {
+    // Does not matter. The instruction will be skipped anyways.
+    return 0;
+  }
+
+  U32 index;
+  switch (encoding.fields.shift) {
+  case (0b00):
+    index = LogicalShiftLeft(registers.r[encoding.fields.rm],
+                             encoding.fields.shift_imm);
+    break;
+  case (0b01):
+    if (encoding.fields.shift_imm == 0) {
+      index = 0;
+    } else {
+      index = LogicalShiftRight(registers.r[encoding.fields.rm],
+                                encoding.fields.shift_imm);
+    }
+    break;
+  case (0b10):
+    if (encoding.fields.shift_imm == 0) {
+      if (registers.r[encoding.fields.rm] == 1) {
+        index = 0xFFFFFFFF;
+      } else {
+        index = 0;
+      }
+    } else {
+      index = ArithmeticShiftRight(registers.r[encoding.fields.rm],
+                                   encoding.fields.shift_imm);
+    }
+    break;
+  case (0b11):
+    CPSR_Register cpsr(registers.CPSR);
+    if (encoding.fields.shift_imm == 0) {
+      index = LogicalShiftLeft(cpsr.bits.C, 31) |
+              LogicalShiftRight(registers.r[encoding.fields.rm], 1);
+    } else {
+      index = RotateRight(registers.r[encoding.fields.rm],
+                          encoding.fields.shift_imm);
+    }
+    break;
+  }
+
+  if (instr.fields.p == 1 && instr.fields.w == 1) {
+    if (instr.fields.u == 1) {
+      registers.r[instr.fields.rn] += index;
+    } else {
+      registers.r[instr.fields.rn] -= index;
+    }
+    // TODO: Add w == 0 case which determines access privilege.
+  }
+
+  U32 address = registers.r[instr.fields.rn];
+
+  if (instr.fields.p == 0) {
+    if (instr.fields.u == 1) {
+      registers.r[instr.fields.rn] += index;
+    } else {
+      registers.r[instr.fields.rn] -= index;
+    }
+  }
+  return address;
 }
 
 [[nodiscard]] bool CPU::dispatch(const GameCard::GameCard &game_card,
@@ -686,33 +748,34 @@ U32 CPU::LoadAndStoreWordOrByteRegAddr(U32 instr_) noexcept {
 [[nodiscard]] bool CPU::dispatch_LDR(U32 instr_,
                                      const Memory::Memory &memory) noexcept {
   const SingleDataTransferInstr instr{instr_};
-  if (!evaluate_cond(ConditionCode(instr.fields.cond), registers.CPSR)) {
-    registers.r[15] += kInstrSize;
-    return true;
-  }
+  if (evaluate_cond(ConditionCode(instr.fields.cond), registers.CPSR)) {
 
-  U32 &rd = registers.r[instr.fields.rd];
-  U32 &rn = registers.r[instr.fields.rn];
+    U32 address;
+    if (instr.fields.i == 0) {
+      address = LoadAndStoreWordOrByteImmAddr(instr_);
+    } else {
+      address = LoadAndStoreWordOrByteRegAddr(instr_);
+    }
 
-  U32 offset;
-  if (instr.fields.i == 0) {
-    offset = instr.fields.offset;
-  } else {
-    LOG("Not implemented");
-    return false;
-  }
+    U32 value;
+    if (GetBitsInRange(address, 0, 2) == 0b00) {
+      memcpy(&value, &memory.mem[address], 4);
+    } else if (GetBitsInRange(address, 0, 2) == 0b01) {
+      memcpy(&value, &memory.mem[address], 4);
+      value = RotateRight(value, 8);
+    } else if (GetBitsInRange(address, 0, 2) == 0b10) {
+      memcpy(&value, &memory.mem[address], 4);
+      value = RotateRight(value, 16);
+    } else if (GetBitsInRange(address, 0, 2) == 0b11) {
+      memcpy(&value, &memory.mem[address], 4);
+      value = RotateRight(value, 24);
+    }
 
-  const U32 old_rn = rn;
-  if (instr.fields.p) {
-    rn += (instr.fields.u ? 1 : -1) * offset;
-    memcpy(&rd, (void *)&memory.mem[rn], (instr.fields.u ? 1 : 4));
-  } else {
-    memcpy(&rd, (void *)&memory.mem[rn], (instr.fields.u ? 1 : 4));
-    rn += (instr.fields.u ? 1 : -1) * offset;
-  }
-
-  if (!instr.fields.w) {
-    rn = old_rn;
+    if (instr.fields.rd == 15) {
+      registers.r[instr.fields.rd] = value & 0xFFFFFFFC;
+    } else {
+      registers.r[instr.fields.rd] = value;
+    }
   }
 
   registers.r[15] += kInstrSize;
