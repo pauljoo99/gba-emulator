@@ -63,6 +63,7 @@ int main(int argc, char *argv[]) {
     return 1;
   }
 
+  cpu->reset();
   while (cpu->dispatch(*game_card, *memory)) {
   }
 

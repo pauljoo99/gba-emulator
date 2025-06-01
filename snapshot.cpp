@@ -8,7 +8,7 @@
 
 namespace Emulator::Arm::Debug {
 
-void write_registers(const Registers &registers, const char *path) {
+void write_registers(const AllRegisters &registers, const char *path) {
   // Open file in binary mode
   char file[MAX_PATH_LENGHT];
   strcpy(file, path);
@@ -59,7 +59,7 @@ void write_program(const Emulator::GameCard::GameCard &card, const char *path) {
   outFile.close();
 }
 
-void debug_snapshot(const Registers &registers,
+void debug_snapshot(const AllRegisters &registers,
                     const Emulator::Memory::Memory &mem,
                     const Emulator::GameCard::GameCard &card,
                     const char *path) {

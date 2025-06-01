@@ -5,6 +5,7 @@
 #include "datatypes.h"
 #include "game_card.h"
 #include "memory.h"
+#include <cstdlib>
 
 namespace Emulator::Arm
 
@@ -41,7 +42,7 @@ enum Mode {
   FAST_INTERRUPT
 };
 
-struct Registers {
+struct AllRegisters {
   U32 r[16];
 
   U32 r8_fiq;
@@ -51,25 +52,31 @@ struct Registers {
   U32 r12_fiq;
   U32 r13_fiq;
   U32 r14_fiq;
-  U32 SPSR_fiq;
+  U32 SPRS_fiq;
 
   U32 r13_svc;
   U32 r14_svc;
-  U32 SPSR_svc;
+  U32 SPRS_svc;
 
   U32 r13_abt;
   U32 r14_abt;
-  U32 SPSR_abt;
+  U32 SPRS_abt;
 
   U32 r13_irq;
   U32 r14_irq;
-  U32 SPSR_irq;
+  U32 SPRS_irq;
 
   U32 r13_und;
   U32 r14_und;
-  U32 SPSR_und;
+  U32 SPRS_und;
 
   U32 CPSR;
+};
+
+struct Registers {
+  U32Ref r[16];
+  U32Ref SPRS;
+  U32Ref CPSR;
 };
 
 struct Pipeline {
@@ -87,11 +94,16 @@ struct PipelineThumb {
 /* Based on ARM DDI 0100E */
 struct CPU {
 
+  void reset() noexcept;
+
   [[nodiscard]] bool dispatch(const GameCard::GameCard &game_card,
                               const Memory::Memory &memory) noexcept;
 
   [[nodiscard]] bool dispatch_B(U32 instr) noexcept;
   [[nodiscard]] bool dispatch_BX(U32 instr) noexcept;
+
+  [[nodiscard]] bool dispatch_CMP(U32 instr) noexcept;
+
   [[nodiscard]] bool dispatch_MOV(U32 instr,
                                   const Memory::Memory &memory) noexcept;
   [[nodiscard]] bool dispatch_MSR(U32 instr) noexcept;
@@ -135,28 +147,117 @@ struct CPU {
   void clearPipeline() noexcept;
   void clearPipelineThumb() noexcept;
 
-  Registers registers;
+  AllRegisters all_registers;
+  Registers user_registers{
+      .r = {&all_registers.r[0], &all_registers.r[1], &all_registers.r[2],
+            &all_registers.r[3], &all_registers.r[4], &all_registers.r[5],
+            &all_registers.r[6], &all_registers.r[7], &all_registers.r[8],
+            &all_registers.r[9], &all_registers.r[10], &all_registers.r[11],
+            &all_registers.r[12], &all_registers.r[13], &all_registers.r[14],
+            &all_registers.r[15]},
+      .CPSR = &all_registers.CPSR,
+      .SPRS = nullptr};
+  Registers system_registers{
+      .r = {&all_registers.r[0], &all_registers.r[1], &all_registers.r[2],
+            &all_registers.r[3], &all_registers.r[4], &all_registers.r[5],
+            &all_registers.r[6], &all_registers.r[7], &all_registers.r[8],
+            &all_registers.r[9], &all_registers.r[10], &all_registers.r[11],
+            &all_registers.r[12], &all_registers.r[13], &all_registers.r[14],
+            &all_registers.r[15]},
+      .CPSR = &all_registers.CPSR,
+      .SPRS = nullptr};
+  Registers supervisor_registers{
+      .r = {&all_registers.r[0], &all_registers.r[1], &all_registers.r[2],
+            &all_registers.r[3], &all_registers.r[4], &all_registers.r[5],
+            &all_registers.r[6], &all_registers.r[7], &all_registers.r[8],
+            &all_registers.r[9], &all_registers.r[10], &all_registers.r[11],
+            &all_registers.r[12], &all_registers.r13_svc,
+            &all_registers.r14_svc, &all_registers.r[15]},
+      .CPSR = &all_registers.CPSR,
+      .SPRS = &all_registers.SPRS_svc};
+  Registers abort_registers{
+      .r = {&all_registers.r[0], &all_registers.r[1], &all_registers.r[2],
+            &all_registers.r[3], &all_registers.r[4], &all_registers.r[5],
+            &all_registers.r[6], &all_registers.r[7], &all_registers.r[8],
+            &all_registers.r[9], &all_registers.r[10], &all_registers.r[11],
+            &all_registers.r[12], &all_registers.r13_abt,
+            &all_registers.r14_abt, &all_registers.r[15]},
+      .CPSR = &all_registers.CPSR,
+      .SPRS = &all_registers.SPRS_abt};
+  Registers undefined_registers{
+      .r = {&all_registers.r[0], &all_registers.r[1], &all_registers.r[2],
+            &all_registers.r[3], &all_registers.r[4], &all_registers.r[5],
+            &all_registers.r[6], &all_registers.r[7], &all_registers.r[8],
+            &all_registers.r[9], &all_registers.r[10], &all_registers.r[11],
+            &all_registers.r[12], &all_registers.r13_und,
+            &all_registers.r14_und, &all_registers.r[15]},
+      .CPSR = &all_registers.CPSR,
+      .SPRS = &all_registers.SPRS_und};
+  Registers interrupt_registers{
+      .r = {&all_registers.r[0], &all_registers.r[1], &all_registers.r[2],
+            &all_registers.r[3], &all_registers.r[4], &all_registers.r[5],
+            &all_registers.r[6], &all_registers.r[7], &all_registers.r[8],
+            &all_registers.r[9], &all_registers.r[10], &all_registers.r[11],
+            &all_registers.r[12], &all_registers.r13_irq,
+            &all_registers.r14_irq, &all_registers.r[15]},
+      .CPSR = &all_registers.CPSR,
+      .SPRS = &all_registers.SPRS_irq};
+  Registers fast_interrupt_registers{
+      .r = {&all_registers.r[0], &all_registers.r[1], &all_registers.r[2],
+            &all_registers.r[3], &all_registers.r[4], &all_registers.r[5],
+            &all_registers.r[6], &all_registers.r[7], &all_registers.r8_fiq,
+            &all_registers.r9_fiq, &all_registers.r10_fiq,
+            &all_registers.r11_fiq, &all_registers.r12_fiq,
+            &all_registers.r13_fiq, &all_registers.r13_fiq,
+            &all_registers.r[15]},
+      .CPSR = &all_registers.CPSR,
+      .SPRS = &all_registers.SPRS_fiq};
+
+  Registers *registers;
+
   Pipeline pipeline;
   PipelineThumb pipeline_thumb;
   bool thumb_instr = false;
 
-  Mode mode;
-
-  inline U32 *GetSPRS() {
-    CPSR_Register cpsr(registers.CPSR);
+  inline Mode GetMode() {
+    CPSR_Register cpsr(registers->CPSR);
     switch (cpsr.bits.M) {
+    case 0b10000:
+      return Mode::USER;
     case 0b10001:
-      return &registers.SPSR_fiq;
+      return Mode::FAST_INTERRUPT;
     case 0b10010:
-      return &registers.SPSR_irq;
+      return Mode::INTERRUPT;
     case 0b10011:
-      return &registers.SPSR_svc;
+      return Mode::SUPERVISOR;
     case 0b10111:
-      return &registers.SPSR_abt;
+      return Mode::ABORT;
     case 0b11011:
-      return &registers.SPSR_und;
+      return Mode::UNDEFINED;
+    case 0b11111:
+      return Mode::SYSTEM;
     default:
-      return nullptr;
+      std::abort();
+      return Mode::USER;
+    }
+  }
+
+  inline void ChangeRegistersOnMode() {
+    switch (GetMode()) {
+    case Mode::USER:
+      registers = &user_registers;
+    case Mode::FAST_INTERRUPT:
+      registers = &fast_interrupt_registers;
+    case Mode::INTERRUPT:
+      registers = &interrupt_registers;
+    case Mode::SUPERVISOR:
+      registers = &supervisor_registers;
+    case Mode::ABORT:
+      registers = &abort_registers;
+    case Mode::UNDEFINED:
+      registers = &undefined_registers;
+    case Mode::SYSTEM:
+      registers = &system_registers;
     }
   }
 };

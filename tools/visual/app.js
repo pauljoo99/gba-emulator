@@ -204,3 +204,12 @@ function GeneratePrevSnapshot() {
 
   snapshotNum.value = prevSnapshotNum;
 }
+
+function GenerateCurrSnapshot() {
+  let snapshotNum = document.getElementById("snapshotNum");
+  SnapshotNum = parseInt(snapshotNum.value);
+
+  Generate(SnapshotNum);
+
+  snapshotNum.value = SnapshotNum;
+}
