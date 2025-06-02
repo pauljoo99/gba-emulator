@@ -3,8 +3,12 @@ function readHex(hex) {
 }
 
 // Helper to convert number to zero-padded 8-digit uppercase hex
-function toHex(value) {
+function toHexPadded(value) {
   return "0x" + value.toString(16).toUpperCase().padStart(8, "0");
+}
+
+function toHex(value) {
+  return "0x" + value.toString(16).toUpperCase();
 }
 
 function parseUint32Array(buffer) {
@@ -100,15 +104,18 @@ function decodeRegisters(buffer) {
 
 function Generate(snapshotNum) {
   let dir = "data/snapshot_" + snapshotNum + "/";
+  console.log("generating" + dir);
 
   fetch(dir + "registers.bin")
     .then((res) => res.arrayBuffer())
     .then((buffer) => {
-      // Registers
-      const registers = decodeRegisters(buffer);
+      console.log("Loading registers: " + dir + "registers.bin");
 
+      // Registers
       const tbodyRegisters = document.querySelector("#registersTable tbody");
       tbodyRegisters.innerHTML = "";
+
+      const registers = decodeRegisters(buffer);
 
       // Add r[0] ... r[15] rows first
       registers.r.forEach((val, i) => {
@@ -131,6 +138,8 @@ function Generate(snapshotNum) {
   fetch(dir + "program.bin")
     .then((res) => res.arrayBuffer())
     .then((buffer) => {
+      console.log("Loading program");
+
       // Program
       const program = parseUint32Array(buffer);
 
@@ -152,7 +161,9 @@ function Generate(snapshotNum) {
 
       table_values.reverse().forEach((val) => {
         const tr = document.createElement("tr");
-        tr.innerHTML = `<td>${toHex(val[0] * 4)}</td><td>${toHex(val[1])}</td>`;
+        tr.innerHTML = `<td>${toHexPadded(val[0] * 4)}</td><td>${toHexPadded(
+          val[1]
+        )}</td>`;
         tbodyProgram.appendChild(tr);
       });
     })
@@ -161,6 +172,8 @@ function Generate(snapshotNum) {
   fetch(dir + "memory.bin")
     .then((res) => res.arrayBuffer())
     .then((buffer) => {
+      console.log("Loading memory");
+
       // Memory
       const memory = parseCharArray(buffer);
 
@@ -192,6 +205,7 @@ function GenerateNextSnapshot() {
   nextSnapshotNum = parseInt(snapshotNum.value) + 1;
 
   Generate(nextSnapshotNum);
+  console.log(nextSnapshotNum);
 
   snapshotNum.value = nextSnapshotNum;
 }
