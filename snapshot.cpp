@@ -38,7 +38,7 @@ void write_memory(const Emulator::Memory::Memory &mem, const char *path) {
   }
 
   // Write bytes to file
-  // outFile.write(reinterpret_cast<const char *>(&mem.mem), sizeof(mem.mem));
+  outFile.write(reinterpret_cast<const char *>(&mem), sizeof(mem));
   outFile.close();
 }
 
