@@ -112,6 +112,7 @@ struct CPU {
                                   const Memory::Memory &memory) noexcept;
   [[nodiscard]] bool dispatch_STR(U32 instr_,
                                   const Memory::Memory &memory) noexcept;
+  [[nodiscard]] bool dispatch_TEQ(U32 instr_) noexcept;
 
   [[nodiscard]] bool dispatch_thumb_LSL(U16 instr) noexcept;
   [[nodiscard]] bool dispatch_thumb_BLX(U16 instr) noexcept;

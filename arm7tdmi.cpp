@@ -437,6 +437,8 @@ inline U32 generateMask(U8 a, U8 b) { return ((1U << (b - a + 1)) - 1) << a; }
     return cpu.dispatch_STR(instr, memory);
   case Instr::Instr::CMP:
     return cpu.dispatch_CMP(instr);
+  case Instr::Instr::TEQ:
+    return cpu.dispatch_TEQ(instr);
   default:
     return false;
   }
@@ -828,6 +830,28 @@ U32 CPU::LoadAndStoreWordOrByteRegAddr(U32 instr_) noexcept {
     mask.bits.Z = 1;
     mask.bits.C = 1;
     mask.bits.V = 1;
+
+    registers->CPSR = SetBitsInMask(registers->CPSR, cpsr, mask);
+  }
+  registers->r[15] += kInstrSize;
+  return true;
+}
+
+bool CPU::dispatch_TEQ(U32 instr_) noexcept {
+  const DataProcessingInstr instr(instr_);
+  if (evaluate_cond(ConditionCode(instr.fields.cond), registers->CPSR)) {
+    ShifterOperandResult shifter = ShifterOperand(instr);
+    U32 alu_out = registers->r[instr.fields.rn] ^ shifter.shifter_operand;
+
+    CPSR_Register cpsr;
+    cpsr.bits.N = GetBit(alu_out, 31);
+    cpsr.bits.Z = alu_out == 1;
+    cpsr.bits.C = shifter.shifter_carry_out;
+
+    CPSR_Register mask;
+    mask.bits.N = 1;
+    mask.bits.Z = 1;
+    mask.bits.C = 1;
 
     registers->CPSR = SetBitsInMask(registers->CPSR, cpsr, mask);
   }
