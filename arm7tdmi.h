@@ -95,6 +95,8 @@ struct PipelineThumb {
 /* Based on ARM DDI 0100E */
 struct CPU {
 
+  inline CPU() { SetupRegisters(); }
+
   void reset() noexcept;
 
   [[nodiscard]] bool dispatch(const GameCard::GameCard &game_card,
@@ -150,70 +152,13 @@ struct CPU {
   void clearPipelineThumb() noexcept;
 
   AllRegisters all_registers;
-  Registers user_registers{
-      .r = {&all_registers.r[0], &all_registers.r[1], &all_registers.r[2],
-            &all_registers.r[3], &all_registers.r[4], &all_registers.r[5],
-            &all_registers.r[6], &all_registers.r[7], &all_registers.r[8],
-            &all_registers.r[9], &all_registers.r[10], &all_registers.r[11],
-            &all_registers.r[12], &all_registers.r[13], &all_registers.r[14],
-            &all_registers.r[15]},
-      .CPSR = &all_registers.CPSR,
-      .SPRS = nullptr};
-  Registers system_registers{
-      .r = {&all_registers.r[0], &all_registers.r[1], &all_registers.r[2],
-            &all_registers.r[3], &all_registers.r[4], &all_registers.r[5],
-            &all_registers.r[6], &all_registers.r[7], &all_registers.r[8],
-            &all_registers.r[9], &all_registers.r[10], &all_registers.r[11],
-            &all_registers.r[12], &all_registers.r[13], &all_registers.r[14],
-            &all_registers.r[15]},
-      .CPSR = &all_registers.CPSR,
-      .SPRS = nullptr};
-  Registers supervisor_registers{
-      .r = {&all_registers.r[0], &all_registers.r[1], &all_registers.r[2],
-            &all_registers.r[3], &all_registers.r[4], &all_registers.r[5],
-            &all_registers.r[6], &all_registers.r[7], &all_registers.r[8],
-            &all_registers.r[9], &all_registers.r[10], &all_registers.r[11],
-            &all_registers.r[12], &all_registers.r13_svc,
-            &all_registers.r14_svc, &all_registers.r[15]},
-      .CPSR = &all_registers.CPSR,
-      .SPRS = &all_registers.SPRS_svc};
-  Registers abort_registers{
-      .r = {&all_registers.r[0], &all_registers.r[1], &all_registers.r[2],
-            &all_registers.r[3], &all_registers.r[4], &all_registers.r[5],
-            &all_registers.r[6], &all_registers.r[7], &all_registers.r[8],
-            &all_registers.r[9], &all_registers.r[10], &all_registers.r[11],
-            &all_registers.r[12], &all_registers.r13_abt,
-            &all_registers.r14_abt, &all_registers.r[15]},
-      .CPSR = &all_registers.CPSR,
-      .SPRS = &all_registers.SPRS_abt};
-  Registers undefined_registers{
-      .r = {&all_registers.r[0], &all_registers.r[1], &all_registers.r[2],
-            &all_registers.r[3], &all_registers.r[4], &all_registers.r[5],
-            &all_registers.r[6], &all_registers.r[7], &all_registers.r[8],
-            &all_registers.r[9], &all_registers.r[10], &all_registers.r[11],
-            &all_registers.r[12], &all_registers.r13_und,
-            &all_registers.r14_und, &all_registers.r[15]},
-      .CPSR = &all_registers.CPSR,
-      .SPRS = &all_registers.SPRS_und};
-  Registers interrupt_registers{
-      .r = {&all_registers.r[0], &all_registers.r[1], &all_registers.r[2],
-            &all_registers.r[3], &all_registers.r[4], &all_registers.r[5],
-            &all_registers.r[6], &all_registers.r[7], &all_registers.r[8],
-            &all_registers.r[9], &all_registers.r[10], &all_registers.r[11],
-            &all_registers.r[12], &all_registers.r13_irq,
-            &all_registers.r14_irq, &all_registers.r[15]},
-      .CPSR = &all_registers.CPSR,
-      .SPRS = &all_registers.SPRS_irq};
-  Registers fast_interrupt_registers{
-      .r = {&all_registers.r[0], &all_registers.r[1], &all_registers.r[2],
-            &all_registers.r[3], &all_registers.r[4], &all_registers.r[5],
-            &all_registers.r[6], &all_registers.r[7], &all_registers.r8_fiq,
-            &all_registers.r9_fiq, &all_registers.r10_fiq,
-            &all_registers.r11_fiq, &all_registers.r12_fiq,
-            &all_registers.r13_fiq, &all_registers.r13_fiq,
-            &all_registers.r[15]},
-      .CPSR = &all_registers.CPSR,
-      .SPRS = &all_registers.SPRS_fiq};
+  Registers user_registers;
+  Registers system_registers;
+  Registers supervisor_registers;
+  Registers abort_registers;
+  Registers undefined_registers;
+  Registers interrupt_registers;
+  Registers fast_interrupt_registers;
 
   Registers *registers;
 
@@ -242,6 +187,77 @@ struct CPU {
       std::abort();
       return Mode::USER;
     }
+  }
+
+  inline void SetupRegisters() {
+    // User registers
+    for (int i = 0; i < 16; ++i) {
+      user_registers.r[i] = &all_registers.r[i];
+    }
+    user_registers.CPSR = &all_registers.CPSR;
+    user_registers.SPRS = nullptr;
+
+    // System registers
+    for (int i = 0; i < 16; ++i) {
+      system_registers.r[i] = &all_registers.r[i];
+    }
+    system_registers.CPSR = &all_registers.CPSR;
+    system_registers.SPRS = nullptr;
+
+    // Supervisor registers
+    for (int i = 0; i < 13; ++i) {
+      supervisor_registers.r[i] = &all_registers.r[i];
+    }
+    supervisor_registers.r[13] = &all_registers.r13_svc;
+    supervisor_registers.r[14] = &all_registers.r14_svc;
+    supervisor_registers.r[15] = &all_registers.r[15];
+    supervisor_registers.CPSR = &all_registers.CPSR;
+    supervisor_registers.SPRS = &all_registers.SPRS_svc;
+
+    // Abort registers
+    for (int i = 0; i < 13; ++i) {
+      abort_registers.r[i] = &all_registers.r[i];
+    }
+    abort_registers.r[13] = &all_registers.r13_abt;
+    abort_registers.r[14] = &all_registers.r14_abt;
+    abort_registers.r[15] = &all_registers.r[15];
+    abort_registers.CPSR = &all_registers.CPSR;
+    abort_registers.SPRS = &all_registers.SPRS_abt;
+
+    // Undefined registers
+    for (int i = 0; i < 13; ++i) {
+      undefined_registers.r[i] = &all_registers.r[i];
+    }
+    undefined_registers.r[13] = &all_registers.r13_und;
+    undefined_registers.r[14] = &all_registers.r14_und;
+    undefined_registers.r[15] = &all_registers.r[15];
+    undefined_registers.CPSR = &all_registers.CPSR;
+    undefined_registers.SPRS = &all_registers.SPRS_und;
+
+    // Interrupt registers
+    for (int i = 0; i < 13; ++i) {
+      interrupt_registers.r[i] = &all_registers.r[i];
+    }
+    interrupt_registers.r[13] = &all_registers.r13_irq;
+    interrupt_registers.r[14] = &all_registers.r14_irq;
+    interrupt_registers.r[15] = &all_registers.r[15];
+    interrupt_registers.CPSR = &all_registers.CPSR;
+    interrupt_registers.SPRS = &all_registers.SPRS_irq;
+
+    // Fast interrupt registers
+    for (int i = 0; i < 8; ++i) {
+      fast_interrupt_registers.r[i] = &all_registers.r[i];
+    }
+    fast_interrupt_registers.r[8] = &all_registers.r8_fiq;
+    fast_interrupt_registers.r[9] = &all_registers.r9_fiq;
+    fast_interrupt_registers.r[10] = &all_registers.r10_fiq;
+    fast_interrupt_registers.r[11] = &all_registers.r11_fiq;
+    fast_interrupt_registers.r[12] = &all_registers.r12_fiq;
+    fast_interrupt_registers.r[13] = &all_registers.r13_fiq;
+    fast_interrupt_registers.r[14] = &all_registers.r14_fiq;
+    fast_interrupt_registers.r[15] = &all_registers.r[15];
+    fast_interrupt_registers.CPSR = &all_registers.CPSR;
+    fast_interrupt_registers.SPRS = &all_registers.SPRS_fiq;
   }
 
   inline void ChangeRegistersOnMode() {
