@@ -4,6 +4,7 @@
 #include "arm_instructions.h"
 #include "datatypes.h"
 #include "game_card.h"
+#include "logging.h"
 #include "memory.h"
 #include <cstdlib>
 
@@ -246,18 +247,25 @@ struct CPU {
     switch (GetMode()) {
     case Mode::USER:
       registers = &user_registers;
+      break;
     case Mode::FAST_INTERRUPT:
       registers = &fast_interrupt_registers;
+      break;
     case Mode::INTERRUPT:
       registers = &interrupt_registers;
+      break;
     case Mode::SUPERVISOR:
       registers = &supervisor_registers;
+      break;
     case Mode::ABORT:
       registers = &abort_registers;
+      break;
     case Mode::UNDEFINED:
       registers = &undefined_registers;
+      break;
     case Mode::SYSTEM:
       registers = &system_registers;
+      break;
     }
   }
 };

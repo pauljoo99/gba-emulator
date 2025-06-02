@@ -503,16 +503,25 @@ U32 CPU::LoadAndStoreWordOrByteImmAddr(U32 instr_) noexcept {
     // Does not matter. The instruction will be skipped anyways.
     return 0;
   }
-  if (instr.fields.p == 1 && instr.fields.w == 1) {
-    if (instr.fields.u == 1) {
-      registers->r[instr.fields.rn] += encoding.fields.offset;
+  U32 address;
+  if (instr.fields.p == 1) {
+    if (instr.fields.w == 1) {
+      if (instr.fields.u == 1) {
+        registers->r[instr.fields.rn] += encoding.fields.offset;
+      } else {
+        registers->r[instr.fields.rn] -= encoding.fields.offset;
+      }
+      address = registers->r[instr.fields.rn];
     } else {
-      registers->r[instr.fields.rn] -= encoding.fields.offset;
+      if (instr.fields.u == 1) {
+        address = registers->r[instr.fields.rn] + encoding.fields.offset;
+      } else {
+        address = registers->r[instr.fields.rn] - encoding.fields.offset;
+      }
     }
-    // TODO: Add w == 0 case which determines access privilege.
   }
-  U32 address = registers->r[instr.fields.rn];
   if (instr.fields.p == 0) {
+    address = registers->r[instr.fields.rn];
     if (instr.fields.u == 1) {
       registers->r[instr.fields.rn] += encoding.fields.offset;
     } else {
@@ -659,14 +668,21 @@ U32 CPU::LoadAndStoreWordOrByteRegAddr(U32 instr_) noexcept {
   const DataProcessingInstr instr(instr_);
   if (evaluate_cond(ConditionCode(instr.fields.cond), registers->CPSR)) {
     ShifterOperandResult shifter = ShifterOperand(instr);
-    CPSR_Register &cpsr = *reinterpret_cast<CPSR_Register *>(&registers->CPSR);
     registers->r[instr.fields.rd] = shifter.shifter_operand;
     if (instr.fields.s && instr.fields.rd == 15) {
-      cpsr = U32(registers->SPRS);
+      registers->CPSR = U32(registers->SPRS);
     } else if (instr.fields.s) {
+      CPSR_Register cpsr{};
       cpsr.bits.N = GetBit(registers->r[instr.fields.rd], 31);
       cpsr.bits.Z = instr.fields.rd == 0;
       cpsr.bits.C = shifter.shifter_carry_out;
+
+      CPSR_Register mask{};
+      mask.bits.N = 1;
+      mask.bits.Z = 1;
+      mask.bits.C = 1;
+
+      registers->CPSR = SetBitsInMask(registers->CPSR, cpsr, mask);
     }
   }
   registers->r[15] += kInstrSize;
@@ -746,15 +762,15 @@ U32 CPU::LoadAndStoreWordOrByteRegAddr(U32 instr_) noexcept {
 
     U32 value;
     if (GetBitsInRange(address, 0, 2) == 0b00) {
-      memcpy(&value, &memory.mem[address], 4);
+      value = ReadByteFromGBAMemory(memory, address);
     } else if (GetBitsInRange(address, 0, 2) == 0b01) {
-      memcpy(&value, &memory.mem[address], 4);
+      value = ReadByteFromGBAMemory(memory, address);
       value = RotateRight(value, 8);
     } else if (GetBitsInRange(address, 0, 2) == 0b10) {
-      memcpy(&value, &memory.mem[address], 4);
+      value = ReadByteFromGBAMemory(memory, address);
       value = RotateRight(value, 16);
     } else if (GetBitsInRange(address, 0, 2) == 0b11) {
-      memcpy(&value, &memory.mem[address], 4);
+      value = ReadByteFromGBAMemory(memory, address);
       value = RotateRight(value, 24);
     }
 
@@ -771,38 +787,7 @@ U32 CPU::LoadAndStoreWordOrByteRegAddr(U32 instr_) noexcept {
 
 [[nodiscard]] bool CPU::dispatch_STR(U32 instr_,
                                      const Memory::Memory &memory) noexcept {
-  const SingleDataTransferInstr instr{instr_};
-  if (!evaluate_cond(ConditionCode(instr.fields.cond), registers->CPSR)) {
-    registers->r[15] += kInstrSize;
-    return true;
-  }
-
-  U32 &rd = registers->r[instr.fields.rd];
-  U32 &rn = registers->r[instr.fields.rn];
-
-  U32 offset;
-  if (instr.fields.i == 0) {
-    offset = instr.fields.offset;
-  } else {
-    LOG("Not implemented");
-    return false;
-  }
-
-  const U32 old_rn = rn;
-  if (instr.fields.p) {
-    rn += (instr.fields.u ? 1 : -1) * offset;
-    memcpy((void *)&memory.mem[rd], &rn, (instr.fields.u ? 1 : 4));
-  } else {
-    memcpy((void *)&memory.mem[rd], &rn, (instr.fields.u ? 1 : 4));
-    rn += (instr.fields.u ? 1 : -1) * offset;
-  }
-
-  if (!instr.fields.w) {
-    rn = old_rn;
-  }
-
-  registers->r[15] += kInstrSize;
-  return true;
+  return false;
 }
 
 [[nodiscard]] bool CPU::dispatch_thumb_LSL(U16 instr_) noexcept {
@@ -839,10 +824,10 @@ U32 CPU::LoadAndStoreWordOrByteRegAddr(U32 instr_) noexcept {
                                (I32)shifter.shifter_operand, alu_out);
 
     CPSR_Register mask;
-    cpsr.bits.N = 1;
-    cpsr.bits.Z = 1;
-    cpsr.bits.C = 1;
-    cpsr.bits.V = 1;
+    mask.bits.N = 1;
+    mask.bits.Z = 1;
+    mask.bits.C = 1;
+    mask.bits.V = 1;
 
     registers->CPSR = SetBitsInMask(registers->CPSR, cpsr, mask);
   }
