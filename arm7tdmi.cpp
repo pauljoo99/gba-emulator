@@ -447,6 +447,8 @@ inline U32 generateMask(U8 a, U8 b) { return ((1U << (b - a + 1)) - 1) << a; }
     return cpu.dispatch_STM(instr, memory);
   case Instr::Instr::LDM:
     return cpu.dispatch_LDM(instr, memory);
+  case Instr::Instr::CMN:
+    return cpu.dispatch_CMN(instr);
   default:
     return false;
   }
@@ -982,6 +984,33 @@ bool CPU::dispatch_LDM(U32 instr_, const Memory::Memory &memory) noexcept {
     // Not yet implemented.
     return false;
   }
+  return true;
+}
+
+bool CPU::dispatch_CMN(U32 instr_) noexcept {
+  DataProcessingInstr instr(instr_);
+  if (evaluate_cond(ConditionCode(instr.fields.cond), registers->CPSR)) {
+    ShifterOperandResult shifter = ShifterOperand(instr);
+    U32 alu_out = registers->r[instr.fields.rn] + shifter.shifter_operand;
+
+    CPSR_Register cpsr{};
+    cpsr.bits.N = GetBit(alu_out, 31);
+    cpsr.bits.Z = alu_out == 0;
+    U32 carry_from_args[] = {registers->r[instr.fields.rn],
+                             shifter.shifter_operand};
+    cpsr.bits.C = CarryFrom(2, carry_from_args);
+    cpsr.bits.V = OverflowFrom(registers->r[instr.fields.rn],
+                               shifter.shifter_operand, (I32)alu_out);
+
+    CPSR_Register mask{};
+    mask.bits.N = 1;
+    mask.bits.Z = 1;
+    mask.bits.C = 1;
+    mask.bits.V = 1;
+
+    registers->CPSR = SetBitsInMask(registers->CPSR, cpsr, mask);
+  }
+  registers->r[15] += kInstrSize;
   return true;
 }
 
