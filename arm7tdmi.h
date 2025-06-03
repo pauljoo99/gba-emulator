@@ -148,6 +148,8 @@ struct CPU {
   U32 LoadAndStoreWordOrByteImmAddr(U32 instr_) noexcept;
   U32 LoadAndStoreWordOrByteRegAddr(U32 instr_) noexcept;
 
+  LoadAndStoreMultipleAddrResult LoadAndStoreMultipleAddr(U32 instr_) noexcept;
+
   void clearPipeline() noexcept;
   void clearPipelineThumb() noexcept;
 

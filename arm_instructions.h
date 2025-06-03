@@ -121,6 +121,32 @@ union LoadAndStoreWordOrByteReg {
   operator U32() const { return value; } // Implicit conversion
 };
 
+struct LoadAndStoreMultipleFields {
+  U32 register_list : 16;
+  U32 rn : 4;
+  U32 l : 1;
+  U32 w : 1;
+  U32 s : 1;
+  U32 u : 1;
+  U32 p : 1;
+  U32 : 3;
+  U32 cond : 4;
+};
+
+union LoadAndStoreMultiple {
+  U32 value;
+  LoadAndStoreMultipleFields fields;
+
+  LoadAndStoreMultiple(U32 val = 0) : value(val) {}
+
+  operator U32() const { return value; } // Implicit conversion
+};
+
+struct LoadAndStoreMultipleAddrResult {
+  U32 start_addr;
+  U32 end_addr;
+};
+
 struct DataProcessingInstrImmediateFields {
   U32 immed_8 : 8;
   U32 rotate_imm : 4;

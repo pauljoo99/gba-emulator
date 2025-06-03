@@ -61,4 +61,13 @@ bool OverflowFrom(I32 a, I32 b, I32 result) {
   return ((a > 0 && b > 0 && result < 0) || (a < 0 && b < 0 && result > 0));
 }
 
+inline U32 CountSetBits(U32 n) {
+  U32 count = 0;
+  while (n) {
+    n &= (n - 1);
+    count++;
+  }
+  return count;
+}
+
 } // namespace Emulator::BitUtils

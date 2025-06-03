@@ -607,6 +607,47 @@ U32 CPU::LoadAndStoreWordOrByteRegAddr(U32 instr_) noexcept {
   return address;
 }
 
+LoadAndStoreMultipleAddrResult
+CPU::LoadAndStoreMultipleAddr(U32 instr_) noexcept {
+  LoadAndStoreMultiple instr(instr_);
+
+  if (!evaluate_cond(ConditionCode(instr.fields.cond), registers->CPSR)) {
+    return {};
+  }
+
+  LoadAndStoreMultipleAddrResult result;
+  if (instr.fields.p == 0 && instr.fields.u == 1) {
+    result.start_addr = registers->r[instr.fields.rn];
+    result.end_addr = registers->r[instr.fields.rn] +
+                      CountSetBits(instr.fields.register_list) * 4 - 4;
+    if (instr.fields.w == 1) {
+      registers->r[instr.fields.rn] = result.end_addr + 4;
+    }
+  } else if (instr.fields.p == 1 && instr.fields.u == 1) {
+    result.start_addr = registers->r[instr.fields.rn] + 4;
+    result.end_addr = registers->r[instr.fields.rn] +
+                      CountSetBits(instr.fields.register_list) * 4;
+    if (instr.fields.w == 1) {
+      registers->r[instr.fields.rn] = result.end_addr;
+    }
+  } else if (instr.fields.p == 0 && instr.fields.u == 0) {
+    result.start_addr = registers->r[instr.fields.rn] -
+                        CountSetBits(instr.fields.register_list) * 4 + 4;
+    result.end_addr = registers->r[instr.fields.rn];
+    if (instr.fields.w == 1) {
+      registers->r[instr.fields.rn] = result.start_addr - 4;
+    }
+  } else {
+    result.start_addr = registers->r[instr.fields.rn] -
+                        CountSetBits(instr.fields.register_list) * 4;
+    result.end_addr = registers->r[instr.fields.rn] - 4;
+    if (instr.fields.w == 1) {
+      registers->r[instr.fields.rn] = result.start_addr;
+    }
+  }
+  return result;
+}
+
 [[nodiscard]] bool CPU::dispatch(Memory::Memory &memory) noexcept {
 
   Debug::debug_snapshot(all_registers, memory, "tools/visual/data/");
@@ -902,7 +943,17 @@ bool CPU::dispatch_TEQ(U32 instr_) noexcept {
 }
 
 bool CPU::dispatch_STM(U32 instr_, Memory::Memory &memory) noexcept {
-  return false;
+  LoadAndStoreMultipleAddrResult addr = LoadAndStoreMultipleAddr(instr_);
+  LoadAndStoreMultiple instr(instr_);
+  U32 address = addr.start_addr;
+  for (U32 i = 0; i < 15; ++i) {
+    if (GetBit(instr.fields.register_list, i) == 1) {
+      WriteWordFromGBAMemory(memory, address, registers->r[i]);
+      address += 4;
+    }
+  }
+  assert(addr.end_addr == address - 4);
+  return true;
 }
 
 void CPU::reset() noexcept {
