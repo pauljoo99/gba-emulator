@@ -28,10 +28,12 @@
 
 <body>
 
-    <h1>GBA Emulator</h1>
+    <h1>
+        GBA Emulator 
+        <input type="text" placeholder="Snapshot" id="snapshotNum"/>
+    </h1>
 
     <h2>BitUtils</h2>
-
     <div>
         <input type="text" placeholder="Hex" id="hexInput" />
         <div>
@@ -39,7 +41,111 @@
             </table>
         </div>
     </div>
+
+    <h2>Registers</h2>
+    <table id="registersTable"></table>
+
+    <h2>Memory</h2>
+    <h3>
+        BIOS 
+        <input type="text" placeholder="Start address" id="biosStartAddrInput" />
+        <input type="text" placeholder="End address" id="biosEndAddrInput" />
+    </h3>
+    <div class="scroll-box">
+        <table id="memoryTable">
+        </table>
+    </div>
+
     <script>
+
+        // Initialization
+        let memory;
+        let registers;
+        load_registers(0);
+        load_memory(0);
+
+        function load_registers(snapshotNum_)
+        {
+            ReadRegisterData(snapshotNum_).then((registers_data) => {
+                console.log("Read registers");
+                registers = registers_data;
+
+                update_registers();
+            });
+        }
+
+        function load_memory(snapshotNum_)
+        {
+            ReadMemoryData(snapshotNum_).then((memory_data) => {
+                console.log("Read memory");
+                memory = memory_data;
+            });
+        }
+
+        function update_registers() {
+            console.log("Decoded registers:", registers);
+
+            const flat_registers = Object.entries(registers).map(
+                ([key, value]) => `${key}: ${toHex(value)}`
+            );
+
+            const num_cols = 4;
+            let table = [];
+            for (let i = 0; i < flat_registers.length; i += num_cols) {
+                table.push(flat_registers.slice(i, i + num_cols));
+            }
+            console.log("table", table);
+
+            const table_element = document.getElementById("registersTable");
+            table_element.innerHTML = "";
+            for (let i = 0; i < table.length; ++i)
+            {
+                let tr = document.createElement("tr");
+                for (let j = 0; j < table[i].length; j++) {
+                    const td = document.createElement("td");
+                    td.textContent = table[i][j];
+                    tr.appendChild(td);
+                }
+                table_element.appendChild(tr);
+            }
+        }
+
+        function update_memory(){
+            const flat_memory = memory.BIOS;
+            const table_element = document.getElementById("memoryTable");
+            table_element.innerHTML = "";
+
+            const biosStartAddrInput = Math.max(parseInt(document.getElementById("biosStartAddrInput").value), 0);
+            const biosEndAddrInput = Math.min(parseInt(document.getElementById("biosEndAddrInput").value), flat_memory.length - 1);
+            for (let i = biosEndAddrInput; i >= biosStartAddrInput; --i)
+            {
+                let tr = document.createElement("tr");
+
+                const td1 = document.createElement("td");
+                td1.textContent = toHex(i);
+                const td2 = document.createElement("td");
+                td2.textContent = toHex(flat_memory[i]);
+                tr.appendChild(td1);
+                tr.appendChild(td2);
+
+                table_element.appendChild(tr);
+            }
+        }
+
+        document.getElementById("biosStartAddrInput").addEventListener("input", function (event) {
+            update_memory();
+        });
+
+        document.getElementById("biosEndAddrInput").addEventListener("input", function (event) {
+            update_memory();
+        });
+
+        document.getElementById("snapshotNum").addEventListener("input", function (event) {
+            const snapshotNum = parseInt(event.target.value) || 0;
+            load_registers(snapshotNum);
+            load_memory(snapshotNum);
+        });
+
         document.getElementById("hexInput").addEventListener("input", function (event) {
             let bin_output_table = document.getElementById("binOutputTable");
             bin_output_table.innerHTML = "";
@@ -79,87 +185,9 @@
             bin_output_table.appendChild(trh);
             bin_output_table.appendChild(tr);
         });
+
     </script>
 
-    <h2>Registers</h2>
-    <table id="registersTable"></table>
-    <script>
-    ReadRegisterData(3).then((registers) => {
-        console.log("Decoded registers:", registers);
-
-        const flat_registers = Object.entries(registers).map(
-            ([key, value]) => `${key}: ${toHex(value)}`
-        );
-
-        const num_cols = 4;
-        let table = [];
-        for (let i = 0; i < flat_registers.length; i += num_cols) {
-            table.push(flat_registers.slice(i, i + num_cols));
-        }
-        console.log("table", table);
-
-        const table_element = document.getElementById("registersTable");
-        for (let i = 0; i < table.length; ++i)
-        {
-            let tr = document.createElement("tr");
-            for (let j = 0; j < table[i].length; j++) {
-                const td = document.createElement("td");
-                td.textContent = table[i][j];
-                tr.appendChild(td);
-            }
-            table_element.appendChild(tr);
-        }
-    });
-    </script>
-
-    <h2>Memory</h2>
-
-    <h3>
-        BIOS 
-        <input type="text" placeholder="Start address" id="biosStartAddrInput" />
-        <input type="text" placeholder="End address" id="biosEndAddrInput" />
-    </h3>
-    <div class="scroll-box">
-        <table id="memoryTable">
-        </table>
-    </div>
-    <script>
-        let memory;
-        ReadMemoryData(3).then((memory_data) => {
-            console.log("Read memory");
-            memory = memory_data;
-        });
-
-        function update(){
-            const flat_memory = memory.BIOS;
-            const table_element = document.getElementById("memoryTable");
-            table_element.innerHTML = "";
-
-            const biosStartAddrInput = Math.max(parseInt(document.getElementById("biosStartAddrInput").value), 0);
-            const biosEndAddrInput = Math.min(parseInt(document.getElementById("biosEndAddrInput").value), flat_memory.length - 1);
-            for (let i = biosEndAddrInput; i >= biosStartAddrInput; --i)
-            {
-                let tr = document.createElement("tr");
-
-                const td1 = document.createElement("td");
-                td1.textContent = toHex(i);
-                const td2 = document.createElement("td");
-                td2.textContent = toHex(flat_memory[i]);
-                tr.appendChild(td1);
-                tr.appendChild(td2);
-
-                table_element.appendChild(tr);
-            }
-        }
-        document.getElementById("biosStartAddrInput").addEventListener("input", function (event) {
-            update();
-        });
-        document.getElementById("biosEndAddrInput").addEventListener("input", function (event) {
-            update();
-        });
-    </script>
-
-    
 </body>
 
 </html>
