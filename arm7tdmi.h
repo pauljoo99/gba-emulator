@@ -3,7 +3,6 @@
 #include "arm7tdmi_constants.h"
 #include "arm_instructions.h"
 #include "datatypes.h"
-#include "game_card.h"
 #include "logging.h"
 #include "memory.h"
 #include <cstdlib>
