@@ -47,6 +47,25 @@ union MSRImmInstr {
   operator U32() const { return value; } // Implicit conversion
 };
 
+struct MRSRegInstrFields {
+  U32 sbz : 12;
+  U32 rd : 4;
+  U32 sbo : 4;
+  U32 : 2;
+  U32 r : 1;
+  U32 : 5;
+  U32 cond : 4;
+};
+
+union MRSRegInstr {
+  U32 value;
+  MRSRegInstrFields fields;
+
+  MRSRegInstr(U32 val = 0) : value(val) {}
+
+  operator U32() const { return value; } // Implicit conversion
+};
+
 struct MSRRegInstrFields {
   U32 rm : 4;
   U32 : 4;

@@ -439,6 +439,8 @@ inline U32 generateMask(U8 a, U8 b) { return ((1U << (b - a + 1)) - 1) << a; }
     return cpu.dispatch_CMP(instr);
   case Instr::Instr::TEQ:
     return cpu.dispatch_TEQ(instr);
+  case Instr::Instr::MRS:
+    return cpu.dispatch_MRS(instr);
   default:
     return false;
   }
@@ -744,6 +746,19 @@ U32 CPU::LoadAndStoreWordOrByteRegAddr(U32 instr_) noexcept {
               (registers->SPRS & 0x00FFFFFF) | (operand & 0xFF000000);
         }
       }
+    }
+  }
+  registers->r[15] += kInstrSize;
+  return true;
+}
+
+[[nodiscard]] bool CPU::dispatch_MRS(U32 instr_) noexcept {
+  MRSRegInstr instr(instr_);
+  if (evaluate_cond(ConditionCode(instr.fields.cond), registers->CPSR)) {
+    if (instr.fields.r == 1) {
+      registers->r[instr.fields.rd] = U32(registers->SPRS);
+    } else {
+      registers->r[instr.fields.rd] = U32(registers->CPSR);
     }
   }
   registers->r[15] += kInstrSize;

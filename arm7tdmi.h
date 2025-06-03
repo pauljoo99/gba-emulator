@@ -115,6 +115,7 @@ struct CPU {
   [[nodiscard]] bool dispatch_STR(U32 instr_,
                                   const Memory::Memory &memory) noexcept;
   [[nodiscard]] bool dispatch_TEQ(U32 instr_) noexcept;
+  [[nodiscard]] bool dispatch_MRS(U32 instr) noexcept;
 
   [[nodiscard]] bool dispatch_thumb_LSL(U16 instr) noexcept;
   [[nodiscard]] bool dispatch_thumb_BLX(U16 instr) noexcept;
@@ -192,9 +193,9 @@ struct CPU {
   inline void SetupRegisters() {
     // User registers
     for (int i = 0; i < 16; ++i) {
-      user_registers.r[i] = &all_registers.r[i];
+      user_registers.r[i] = U32Ref(&all_registers.r[i]);
     }
-    user_registers.CPSR = &all_registers.CPSR;
+    user_registers.CPSR = U32Ref(&all_registers.CPSR);
     user_registers.SPRS = nullptr;
 
     // System registers
