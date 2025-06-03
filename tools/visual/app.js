@@ -1,123 +1,153 @@
 function toHex(value) {
-  return "0x" + value.toString(16).toUpperCase();
+    return "0x" + value.toString(16).toUpperCase();
 }
 
 function toBinary(value) {
-  return "0b" + value.toString(2).padStart(32, "0");
+    return "0b" + value.toString(2).padStart(32, "0");
 }
 
 function decodeMemory(buffer) {
-  const view = new DataView(buffer);
-  let offset = 0;
-  const result = {};
+    const view = new DataView(buffer);
+    let offset = 0;
+    const result = {};
 
-  let bios = [];
-  for (let i = 0; i < 0x4000; i++) {
-    bios.push(view.getUint8(offset, true));
-    offset += 1;
-  }
-  result["BIOS"] = bios;
-  result["BIOS_index"] = 0x00;
+    let bios = [];
+    for (let i = 0; i < 0x4000; i++) {
+        bios.push(view.getUint8(offset, true));
+        offset += 1;
+    }
+    result["BIOS"] = bios;
+    result["BIOS_index"] = 0x00;
 
-  let wram_on_board = [];
-  for (let i = 0; i < 0x40000; i++) {
-    wram_on_board.push(view.getUint8(offset, true));
-    offset += 1;
-  }
-  result["wram_on_board"] = wram_on_board;
-  result["wram_on_board_index"] = 0x02000000;
+    let wram_on_board = [];
+    for (let i = 0; i < 0x40000; i++) {
+        wram_on_board.push(view.getUint8(offset, true));
+        offset += 1;
+    }
+    result["wram_on_board"] = wram_on_board;
+    result["wram_on_board_index"] = 0x02000000;
 
-  return result;
+    return result;
+}
+
+function decodePipeline(buffer) {
+    const view = new DataView(buffer);
+    let offset = 0;
+    const result = {};
+
+    result["fetch"] = view.getUint32(offset, true);
+    offset += 4;
+
+    result["decode"] = view.getUint32(offset, true);
+    offset += 4;
+
+    result["execute"] = view.getUint32(offset, true);
+    offset += 4;
+
+    return result;
 }
 
 function decodeRegisters(buffer) {
-  if (buffer.byteLength < 148) {
-    throw new Error("Buffer too small to contain Registers struct");
-  }
+    if (buffer.byteLength < 148) {
+        throw new Error("Buffer too small to contain Registers struct");
+    }
 
-  const view = new DataView(buffer);
-  let offset = 0;
-  const result = {};
+    const view = new DataView(buffer);
+    let offset = 0;
+    const result = {};
 
-  // Read r[16]
-  for (let i = 0; i < 16; i++) {
-    result["r" + i] = view.getUint32(offset, true);
+    // Read r[16]
+    for (let i = 0; i < 16; i++) {
+        result["r" + i] = view.getUint32(offset, true);
+        offset += 4;
+    }
+
+    // Read r8_fiq to SPSR_fiq (8 uint32_t)
+    const fiqFields = [
+        "r8_fiq",
+        "r9_fiq",
+        "r10_fiq",
+        "r11_fiq",
+        "r12_fiq",
+        "r13_fiq",
+        "r14_fiq",
+        "SPSR_fiq",
+    ];
+    fiqFields.forEach((name) => {
+        result[name] = view.getUint32(offset, true);
+        offset += 4;
+    });
+
+    // Read r13_svc, r14_svc, SPSR_svc (3)
+    const svcFields = ["r13_svc", "r14_svc", "SPSR_svc"];
+    svcFields.forEach((name) => {
+        result[name] = view.getUint32(offset, true);
+        offset += 4;
+    });
+
+    // Read r13_abt, r14_abt, SPSR_abt (3)
+    const abtFields = ["r13_abt", "r14_abt", "SPSR_abt"];
+    abtFields.forEach((name) => {
+        result[name] = view.getUint32(offset, true);
+        offset += 4;
+    });
+
+    // Read r13_irq, r14_irq, SPSR_irq (3)
+    const irqFields = ["r13_irq", "r14_irq", "SPSR_irq"];
+    irqFields.forEach((name) => {
+        result[name] = view.getUint32(offset, true);
+        offset += 4;
+    });
+
+    // Read r13_und, r14_und, SPSR_und (3)
+    const undFields = ["r13_und", "r14_und", "SPSR_und"];
+    undFields.forEach((name) => {
+        result[name] = view.getUint32(offset, true);
+        offset += 4;
+    });
+
+    // Read CPSR (1 uint32_t)
+    result.CPSR = view.getUint32(offset, true);
     offset += 4;
-  }
 
-  // Read r8_fiq to SPSR_fiq (8 uint32_t)
-  const fiqFields = [
-    "r8_fiq",
-    "r9_fiq",
-    "r10_fiq",
-    "r11_fiq",
-    "r12_fiq",
-    "r13_fiq",
-    "r14_fiq",
-    "SPSR_fiq",
-  ];
-  fiqFields.forEach((name) => {
-    result[name] = view.getUint32(offset, true);
-    offset += 4;
-  });
+    return result;
+}
 
-  // Read r13_svc, r14_svc, SPSR_svc (3)
-  const svcFields = ["r13_svc", "r14_svc", "SPSR_svc"];
-  svcFields.forEach((name) => {
-    result[name] = view.getUint32(offset, true);
-    offset += 4;
-  });
+function ReadPipelineData(snapshotNum) {
+    let dir = "data/snapshot_" + snapshotNum + "/";
+    console.log("generating" + dir);
 
-  // Read r13_abt, r14_abt, SPSR_abt (3)
-  const abtFields = ["r13_abt", "r14_abt", "SPSR_abt"];
-  abtFields.forEach((name) => {
-    result[name] = view.getUint32(offset, true);
-    offset += 4;
-  });
-
-  // Read r13_irq, r14_irq, SPSR_irq (3)
-  const irqFields = ["r13_irq", "r14_irq", "SPSR_irq"];
-  irqFields.forEach((name) => {
-    result[name] = view.getUint32(offset, true);
-    offset += 4;
-  });
-
-  // Read r13_und, r14_und, SPSR_und (3)
-  const undFields = ["r13_und", "r14_und", "SPSR_und"];
-  undFields.forEach((name) => {
-    result[name] = view.getUint32(offset, true);
-    offset += 4;
-  });
-
-  // Read CPSR (1 uint32_t)
-  result.CPSR = view.getUint32(offset, true);
-  offset += 4;
-
-  return result;
+    return fetch(dir + "pipeline.bin")
+        .then((res) => res.arrayBuffer())
+        .then((buffer) => {
+            console.log("Loading pipeline: " + dir + "pipeline.bin");
+            return decodePipeline(buffer);
+        })
+        .catch(console.error);
 }
 
 function ReadRegisterData(snapshotNum) {
-  let dir = "data/snapshot_" + snapshotNum + "/";
-  console.log("generating" + dir);
+    let dir = "data/snapshot_" + snapshotNum + "/";
+    console.log("generating" + dir);
 
-  return fetch(dir + "registers.bin")
-    .then((res) => res.arrayBuffer())
-    .then((buffer) => {
-      console.log("Loading registers: " + dir + "registers.bin");
-      return decodeRegisters(buffer);
-    })
-    .catch(console.error);
+    return fetch(dir + "registers.bin")
+        .then((res) => res.arrayBuffer())
+        .then((buffer) => {
+            console.log("Loading registers: " + dir + "registers.bin");
+            return decodeRegisters(buffer);
+        })
+        .catch(console.error);
 }
 
 function ReadMemoryData(snapshotNum) {
-  let dir = "data/snapshot_" + snapshotNum + "/";
-  console.log("generating" + dir);
+    let dir = "data/snapshot_" + snapshotNum + "/";
+    console.log("generating" + dir);
 
-  return fetch(dir + "memory.bin")
-    .then((res) => res.arrayBuffer())
-    .then((buffer) => {
-      console.log("Loading memory: " + dir + "memory.bin");
-      return decodeMemory(buffer);
-    })
-    .catch(console.error);
+    return fetch(dir + "memory.bin")
+        .then((res) => res.arrayBuffer())
+        .then((buffer) => {
+            console.log("Loading memory: " + dir + "memory.bin");
+            return decodeMemory(buffer);
+        })
+        .catch(console.error);
 }

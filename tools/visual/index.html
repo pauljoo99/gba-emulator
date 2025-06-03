@@ -47,6 +47,9 @@
         </div>
     </div>
 
+    <h2>Pipeline</h2>
+    <table id="pipelineTable"></table>
+
     <h2>Registers</h2>
     <table id="registersTable"></table>
 
@@ -74,8 +77,19 @@
         // Initialization
         let memory;
         let registers;
+        let pipeline;
         load_registers(0);
         load_memory(0);
+        load_pipeline(0);
+
+        function load_pipeline(snapshotNum_) {
+            ReadPipelineData(snapshotNum_).then((pipeline_data) => {
+                console.log("Read pipeline");
+                pipeline = pipeline_data;
+
+                update_pipeline();
+            });
+        }
 
         function load_registers(snapshotNum_) {
             ReadRegisterData(snapshotNum_).then((registers_data) => {
@@ -91,6 +105,23 @@
                 console.log("Read memory");
                 memory = memory_data;
             });
+        }
+
+        function update_pipeline() {
+            const table_element = document.getElementById("pipelineTable");
+            table_element.innerHTML = "";
+            let tr = document.createElement("tr");
+            let trh = document.createElement("tr");
+            for (const key in pipeline) {
+                const td = document.createElement("td");
+                const tdh = document.createElement("td");
+                tdh.textContent = key;
+                td.textContent = toHex(pipeline[key]);
+                tr.appendChild(td);
+                trh.appendChild(tdh);
+            }
+            table_element.appendChild(trh);
+            table_element.appendChild(tr);
         }
 
         function update_registers() {
@@ -177,6 +208,7 @@
             const snapshotNum = parseInt(event.target.value) || 0;
             load_registers(snapshotNum);
             load_memory(snapshotNum);
+            load_pipeline(snapshotNum);
         });
 
         document.getElementById("hexInput").addEventListener("input", function(event) {

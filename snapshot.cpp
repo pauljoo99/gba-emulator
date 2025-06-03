@@ -42,8 +42,26 @@ void write_memory(const Emulator::Memory::Memory &mem, const char *path) {
   outFile.close();
 }
 
+void write_pipeline(const Pipeline &pipeline, const char *path) {
+  // Open file in binary mode
+  char file[MAX_PATH_LENGHT];
+  strcpy(file, path);
+  strcat(file, pipeline_bin);
+  std::ofstream outFile(file, std::ios::binary);
+
+  if (!outFile) {
+    // Handle error
+    return;
+  }
+
+  // Write bytes to file
+  outFile.write(reinterpret_cast<const char *>(&pipeline), sizeof(pipeline));
+  outFile.close();
+}
+
 void debug_snapshot(const AllRegisters &registers,
-                    const Emulator::Memory::Memory &mem, const char *path) {
+                    const Emulator::Memory::Memory &mem,
+                    const Pipeline &pipeline, const char *path) {
   static U32 snapshot_num = 0;
 
   LOG("Writing Snapshot: %u", snapshot_num);
@@ -58,6 +76,7 @@ void debug_snapshot(const AllRegisters &registers,
 
   write_registers(registers, snapshot_path);
   write_memory(mem, snapshot_path);
+  write_pipeline(pipeline, snapshot_path);
 }
 
 } // namespace Emulator::Arm::Debug

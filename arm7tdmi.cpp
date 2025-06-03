@@ -650,7 +650,7 @@ CPU::LoadAndStoreMultipleAddr(U32 instr_) noexcept {
 
 [[nodiscard]] bool CPU::dispatch(Memory::Memory &memory) noexcept {
 
-  Debug::debug_snapshot(all_registers, memory, "tools/visual/data/");
+  Debug::debug_snapshot(all_registers, memory, pipeline, "tools/visual/data/");
 
   ChangeRegistersOnMode();
 
