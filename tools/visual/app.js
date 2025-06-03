@@ -17,6 +17,15 @@ function decodeMemory(buffer) {
     offset += 1;
   }
   result["BIOS"] = bios;
+  result["BIOS_index"] = 0x00;
+
+  let wram_on_board = [];
+  for (let i = 0; i < 0x40000; i++) {
+    wram_on_board.push(view.getUint8(offset, true));
+    offset += 1;
+  }
+  result["wram_on_board"] = wram_on_board;
+  result["wram_on_board_index"] = 0x02000000;
 
   return result;
 }

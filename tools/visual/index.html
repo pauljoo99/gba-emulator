@@ -11,26 +11,31 @@
             border-collapse: collapse;
             width: 100%;
         }
-        th, td {
+        
+        th,
+        td {
             border: 1px solid black;
             padding: 4px;
         }
-
+        
         .scroll-box {
-            height: 200px; /* Set the height of the scrollable area */
-            width: 300px; /* Set the width */
-            overflow-y: scroll; /* Enable vertical scrolling */
-            border: 1px solid #ccc; /* Optional: Add a border */
+            height: 200px;
+            /* Set the height of the scrollable area */
+            width: 300px;
+            /* Set the width */
+            overflow-y: scroll;
+            /* Enable vertical scrolling */
+            border: 1px solid #ccc;
+            /* Optional: Add a border */
         }
-
     </style>
 </head>
 
 <body>
 
     <h1>
-        GBA Emulator 
-        <input type="text" placeholder="Snapshot" id="snapshotNum"/>
+        GBA Emulator
+        <input type="text" placeholder="Snapshot" id="snapshotNum" />
     </h1>
 
     <h2>BitUtils</h2>
@@ -47,25 +52,32 @@
 
     <h2>Memory</h2>
     <h3>
-        BIOS 
+        BIOS
         <input type="text" placeholder="Start address" id="biosStartAddrInput" />
         <input type="text" placeholder="End address" id="biosEndAddrInput" />
     </h3>
     <div class="scroll-box">
-        <table id="memoryTable">
+        <table id="memoryBIOSTable">
+        </table>
+    </div>
+    <h3>
+        WRAM On Board
+        <input type="text" placeholder="Start address" id="WRAMOnBoardStartAddrInput" />
+        <input type="text" placeholder="End address" id="WRAMOnBoardEndAddrInput" />
+    </h3>
+    <div class="scroll-box">
+        <table id="memoryWRAMOnBoardTable">
         </table>
     </div>
 
     <script>
-
         // Initialization
         let memory;
         let registers;
         load_registers(0);
         load_memory(0);
 
-        function load_registers(snapshotNum_)
-        {
+        function load_registers(snapshotNum_) {
             ReadRegisterData(snapshotNum_).then((registers_data) => {
                 console.log("Read registers");
                 registers = registers_data;
@@ -74,8 +86,7 @@
             });
         }
 
-        function load_memory(snapshotNum_)
-        {
+        function load_memory(snapshotNum_) {
             ReadMemoryData(snapshotNum_).then((memory_data) => {
                 console.log("Read memory");
                 memory = memory_data;
@@ -98,8 +109,7 @@
 
             const table_element = document.getElementById("registersTable");
             table_element.innerHTML = "";
-            for (let i = 0; i < table.length; ++i)
-            {
+            for (let i = 0; i < table.length; ++i) {
                 let tr = document.createElement("tr");
                 for (let j = 0; j < table[i].length; j++) {
                     const td = document.createElement("td");
@@ -110,19 +120,19 @@
             }
         }
 
-        function update_memory(){
-            const flat_memory = memory.BIOS;
-            const table_element = document.getElementById("memoryTable");
+        function update_memory_segment(memory_segment, start_addr, start_input, end_input, table) {
+            const flat_memory = memory_segment;
+            const table_element = document.getElementById(table);
             table_element.innerHTML = "";
 
-            const biosStartAddrInput = Math.max(parseInt(document.getElementById("biosStartAddrInput").value), 0);
-            const biosEndAddrInput = Math.min(parseInt(document.getElementById("biosEndAddrInput").value), flat_memory.length - 1);
-            for (let i = biosEndAddrInput; i >= biosStartAddrInput; --i)
-            {
+            let StartAddrInput = Math.max(parseInt(document.getElementById(start_input).value) - start_addr, 0);
+            let EndAddrInput = Math.max(StartAddrInput, Math.min(parseInt(document.getElementById(end_input).value) - start_addr, flat_memory.length - 1));
+
+            for (let i = EndAddrInput; i >= StartAddrInput; --i) {
                 let tr = document.createElement("tr");
 
                 const td1 = document.createElement("td");
-                td1.textContent = toHex(i);
+                td1.textContent = toHex(i + start_addr);
                 const td2 = document.createElement("td");
                 td2.textContent = toHex(flat_memory[i]);
                 tr.appendChild(td1);
@@ -132,28 +142,50 @@
             }
         }
 
-        document.getElementById("biosStartAddrInput").addEventListener("input", function (event) {
+        function update_memory() {
+            update_memory_segment(
+                memory.BIOS,
+                memory.BIOS_index,
+                "biosStartAddrInput",
+                "biosEndAddrInput",
+                "memoryBIOSTable");
+            update_memory_segment(
+                memory.wram_on_board,
+                memory.wram_on_board_index,
+                "WRAMOnBoardStartAddrInput",
+                "WRAMOnBoardEndAddrInput",
+                "memoryWRAMOnBoardTable");
+        }
+
+        document.getElementById("biosStartAddrInput").addEventListener("input", function(event) {
             update_memory();
         });
 
-        document.getElementById("biosEndAddrInput").addEventListener("input", function (event) {
+        document.getElementById("biosEndAddrInput").addEventListener("input", function(event) {
             update_memory();
         });
 
-        document.getElementById("snapshotNum").addEventListener("input", function (event) {
+        document.getElementById("WRAMOnBoardStartAddrInput").addEventListener("input", function(event) {
+            update_memory();
+        });
+
+        document.getElementById("WRAMOnBoardEndAddrInput").addEventListener("input", function(event) {
+            update_memory();
+        });
+
+        document.getElementById("snapshotNum").addEventListener("input", function(event) {
             const snapshotNum = parseInt(event.target.value) || 0;
             load_registers(snapshotNum);
             load_memory(snapshotNum);
         });
 
-        document.getElementById("hexInput").addEventListener("input", function (event) {
+        document.getElementById("hexInput").addEventListener("input", function(event) {
             let bin_output_table = document.getElementById("binOutputTable");
             bin_output_table.innerHTML = "";
             bin_string = toBinary(parseInt(event.target.value)).slice(2);
             let tr = document.createElement("tr");
             let trh = document.createElement("tr");
-            for (let i = 0; i < bin_string.length; ++i)
-            {
+            for (let i = 0; i < bin_string.length; ++i) {
                 const td = document.createElement("td");
                 const tdh = document.createElement("td");
                 td.textContent = bin_string[i];
@@ -166,18 +198,18 @@
                 tdh.style.textAlign = "center";
 
                 const lightColors = [
-                "#FFB3BA", // Light Red/Pink
-                "#FFDFBA", // Light Orange
-                "#FFFFBA", // Light Yellow
-                "#BAFFC9", // Light Green
-                "#BAE1FF", // Light Blue
-                "#D6BAFF", // Light Purple
-                "#FFE1BA", // Light Peach
-                "#BAFFF9"  // Light Cyan
+                    "#FFB3BA", // Light Red/Pink
+                    "#FFDFBA", // Light Orange
+                    "#FFFFBA", // Light Yellow
+                    "#BAFFC9", // Light Green
+                    "#BAE1FF", // Light Blue
+                    "#D6BAFF", // Light Purple
+                    "#FFE1BA", // Light Peach
+                    "#BAFFF9" // Light Cyan
                 ];
 
-                td.style.backgroundColor = lightColors[Math.floor(i/4)];
-                tdh.style.backgroundColor = lightColors[Math.floor(i/4)];
+                td.style.backgroundColor = lightColors[Math.floor(i / 4)];
+                tdh.style.backgroundColor = lightColors[Math.floor(i / 4)];
 
                 tr.appendChild(td);
                 trh.appendChild(tdh)
@@ -185,7 +217,6 @@
             bin_output_table.appendChild(trh);
             bin_output_table.appendChild(tr);
         });
-
     </script>
 
 </body>
