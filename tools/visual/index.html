@@ -159,10 +159,6 @@
             let StartAddrInput = Math.max(parseInt(document.getElementById(start_input).value) - start_addr, 0);
             let EndAddrInput = Math.max(StartAddrInput, Math.min(parseInt(document.getElementById(end_input).value) - start_addr, flat_memory.length - 1));
 
-            console.log(StartAddrInput);
-            console.log(EndAddrInput);
-            console.log(flat_memory.length);
-
             for (let i = EndAddrInput; i >= StartAddrInput; --i) {
                 let tr = document.createElement("tr");
 
