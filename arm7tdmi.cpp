@@ -418,7 +418,7 @@ Thumb::ThumbOpcode get_thumb_instruction(U16 instr) {
 inline U32 generateMask(U8 a, U8 b) { return ((1U << (b - a + 1)) - 1) << a; }
 
 [[nodiscard]] bool process_instr(U32 instr, Instr::Instr instr_type,
-                                 const Memory::Memory &memory, CPU &cpu) {
+                                 Memory::Memory &memory, CPU &cpu) {
 
   LOG("Instr: %s, Raw Instr: 0x%08X", toString(instr_type), instr);
 
@@ -443,6 +443,8 @@ inline U32 generateMask(U8 a, U8 b) { return ((1U << (b - a + 1)) - 1) << a; }
     return cpu.dispatch_MRS(instr);
   case Instr::Instr::ORR:
     return cpu.dispatch_ORR(instr);
+  case Instr::Instr::STM:
+    return cpu.dispatch_STM(instr, memory);
   default:
     return false;
   }
@@ -605,7 +607,7 @@ U32 CPU::LoadAndStoreWordOrByteRegAddr(U32 instr_) noexcept {
   return address;
 }
 
-[[nodiscard]] bool CPU::dispatch(const Memory::Memory &memory) noexcept {
+[[nodiscard]] bool CPU::dispatch(Memory::Memory &memory) noexcept {
 
   Debug::debug_snapshot(all_registers, memory, "tools/visual/data/");
 
@@ -897,6 +899,10 @@ bool CPU::dispatch_TEQ(U32 instr_) noexcept {
   }
   registers->r[15] += kInstrSize;
   return true;
+}
+
+bool CPU::dispatch_STM(U32 instr_, Memory::Memory &memory) noexcept {
+  return false;
 }
 
 void CPU::reset() noexcept {

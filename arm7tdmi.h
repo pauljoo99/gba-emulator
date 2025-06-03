@@ -96,7 +96,7 @@ struct CPU {
 
   void reset() noexcept;
 
-  [[nodiscard]] bool dispatch(const Memory::Memory &memory) noexcept;
+  [[nodiscard]] bool dispatch(Memory::Memory &memory) noexcept;
 
   [[nodiscard]] bool dispatch_B(U32 instr) noexcept;
   [[nodiscard]] bool dispatch_BX(U32 instr) noexcept;
@@ -119,6 +119,8 @@ struct CPU {
 
   [[nodiscard]] bool advance_pipeline(U32 instr) noexcept;
   [[nodiscard]] bool advance_pipeline(U16 instr) noexcept;
+
+  [[nodiscard]] bool dispatch_STM(U32 instr, Memory::Memory &memory) noexcept;
 
   ShifterOperandResult ShifterOperand(DataProcessingInstr instr) noexcept;
 
