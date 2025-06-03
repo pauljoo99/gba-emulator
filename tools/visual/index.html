@@ -72,6 +72,15 @@
         <table id="memoryWRAMOnBoardTable">
         </table>
     </div>
+    <h3>
+        WRAM On Chip
+        <input type="text" placeholder="Start address" id="WRAMOnChipStartAddrInput" />
+        <input type="text" placeholder="End address" id="WRAMOnChipEndAddrInput" />
+    </h3>
+    <div class="scroll-box">
+        <table id="memoryWRAMOnChipTable">
+        </table>
+    </div>
 
     <script>
         // Initialization
@@ -186,6 +195,12 @@
                 "WRAMOnBoardStartAddrInput",
                 "WRAMOnBoardEndAddrInput",
                 "memoryWRAMOnBoardTable");
+            update_memory_segment(
+                memory.wram_on_chip,
+                memory.wram_on_chip_index,
+                "WRAMOnChipStartAddrInput",
+                "WRAMOnChipEndAddrInput",
+                "memoryWRAMOnChipTable");
         }
 
         document.getElementById("biosStartAddrInput").addEventListener("input", function(event) {
@@ -201,6 +216,14 @@
         });
 
         document.getElementById("WRAMOnBoardEndAddrInput").addEventListener("input", function(event) {
+            update_memory();
+        });
+
+        document.getElementById("WRAMOnChipStartAddrInput").addEventListener("input", function(event) {
+            update_memory();
+        });
+
+        document.getElementById("WRAMOnChipEndAddrInput").addEventListener("input", function(event) {
             update_memory();
         });
 

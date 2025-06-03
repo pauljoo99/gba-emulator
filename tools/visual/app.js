@@ -27,6 +27,14 @@ function decodeMemory(buffer) {
     result["wram_on_board"] = wram_on_board;
     result["wram_on_board_index"] = 0x02000000;
 
+    let wram_on_chip = [];
+    for (let i = 0; i < 0x8000; i++) {
+        wram_on_chip.push(view.getUint8(offset, true));
+        offset += 1;
+    }
+    result["wram_on_chip"] = wram_on_chip;
+    result["wram_on_chip_index"] = 0x03000000;
+
     return result;
 }
 
