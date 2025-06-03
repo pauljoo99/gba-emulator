@@ -30,6 +30,57 @@
 
     <h1>GBA Emulator</h1>
 
+    <h2>BitUtils</h2>
+
+    <div>
+        <input type="text" placeholder="Hex" id="hexInput" />
+        <div>
+            <table id="binOutputTable">
+            </table>
+        </div>
+    </div>
+    <script>
+        document.getElementById("hexInput").addEventListener("input", function (event) {
+            let bin_output_table = document.getElementById("binOutputTable");
+            bin_output_table.innerHTML = "";
+            bin_string = toBinary(parseInt(event.target.value)).slice(2);
+            let tr = document.createElement("tr");
+            let trh = document.createElement("tr");
+            for (let i = 0; i < bin_string.length; ++i)
+            {
+                const td = document.createElement("td");
+                const tdh = document.createElement("td");
+                td.textContent = bin_string[i];
+                tdh.textContent = bin_string.length - i - 1;
+
+                td.style.width = "20px";
+                td.style.textAlign = "center";
+
+                tdh.style.width = "20px";
+                tdh.style.textAlign = "center";
+
+                const lightColors = [
+                "#FFB3BA", // Light Red/Pink
+                "#FFDFBA", // Light Orange
+                "#FFFFBA", // Light Yellow
+                "#BAFFC9", // Light Green
+                "#BAE1FF", // Light Blue
+                "#D6BAFF", // Light Purple
+                "#FFE1BA", // Light Peach
+                "#BAFFF9"  // Light Cyan
+                ];
+
+                td.style.backgroundColor = lightColors[Math.floor(i/4)];
+                tdh.style.backgroundColor = lightColors[Math.floor(i/4)];
+
+                tr.appendChild(td);
+                trh.appendChild(tdh)
+            }
+            bin_output_table.appendChild(trh);
+            bin_output_table.appendChild(tr);
+        });
+    </script>
+
     <h2>Registers</h2>
     <table id="registersTable"></table>
     <script>
@@ -108,57 +159,6 @@
         });
     </script>
 
-
-    <h2>BitUtils</h2>
-
-    <div>
-        <input type="text" placeholder="Hex" id="hexInput" />
-        <div>
-            <table id="binOutputTable">
-            </table>
-        </div>
-    </div>
-    <script>
-        document.getElementById("hexInput").addEventListener("input", function (event) {
-            let bin_output_table = document.getElementById("binOutputTable");
-            bin_output_table.innerHTML = "";
-            bin_string = toBinary(parseInt(event.target.value)).slice(2);
-            let tr = document.createElement("tr");
-            let trh = document.createElement("tr");
-            for (let i = 0; i < bin_string.length; ++i)
-            {
-                const td = document.createElement("td");
-                const tdh = document.createElement("td");
-                td.textContent = bin_string[i];
-                tdh.textContent = bin_string.length - i - 1;
-
-                td.style.width = "20px";
-                td.style.textAlign = "center";
-
-                tdh.style.width = "20px";
-                tdh.style.textAlign = "center";
-
-                const lightColors = [
-                "#FFB3BA", // Light Red/Pink
-                "#FFDFBA", // Light Orange
-                "#FFFFBA", // Light Yellow
-                "#BAFFC9", // Light Green
-                "#BAE1FF", // Light Blue
-                "#D6BAFF", // Light Purple
-                "#FFE1BA", // Light Peach
-                "#BAFFF9"  // Light Cyan
-                ];
-
-                td.style.backgroundColor = lightColors[Math.floor(i/4)];
-                tdh.style.backgroundColor = lightColors[Math.floor(i/4)];
-
-                tr.appendChild(td);
-                trh.appendChild(tdh)
-            }
-            bin_output_table.appendChild(trh);
-            bin_output_table.appendChild(tr);
-        });
-    </script>
     
 </body>
 
