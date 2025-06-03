@@ -445,6 +445,8 @@ inline U32 generateMask(U8 a, U8 b) { return ((1U << (b - a + 1)) - 1) << a; }
     return cpu.dispatch_ORR(instr);
   case Instr::Instr::STM:
     return cpu.dispatch_STM(instr, memory);
+  case Instr::Instr::LDM:
+    return cpu.dispatch_LDM(instr, memory);
   default:
     return false;
   }
@@ -649,9 +651,7 @@ CPU::LoadAndStoreMultipleAddr(U32 instr_) noexcept {
 }
 
 [[nodiscard]] bool CPU::dispatch(Memory::Memory &memory) noexcept {
-
   Debug::debug_snapshot(all_registers, memory, pipeline, "tools/visual/data/");
-
   ChangeRegistersOnMode();
 
   CPSR_Register cpsr(registers->CPSR);
@@ -953,6 +953,35 @@ bool CPU::dispatch_STM(U32 instr_, Memory::Memory &memory) noexcept {
     }
   }
   assert(addr.end_addr == address - 4);
+  registers->r[15] += kInstrSize;
+  return true;
+}
+
+bool CPU::dispatch_LDM(U32 instr_, const Memory::Memory &memory) noexcept {
+  LoadAndStoreMultiple instr(instr_);
+  if (instr.fields.s == 0) {
+    if (evaluate_cond(ConditionCode(instr.fields.cond), registers->CPSR)) {
+      LoadAndStoreMultipleAddrResult addr = LoadAndStoreMultipleAddr(instr_);
+      U32 address = addr.start_addr;
+      for (U32 i = 0; i < 15; ++i) {
+        if (GetBit(instr.fields.register_list, i) == 1) {
+          registers->r[i] = ReadWordFromGBAMemory(memory, address);
+          address += 4;
+        }
+      }
+      if (GetBit(instr.fields.register_list, 15) == 1) {
+        U32 value = ReadWordFromGBAMemory(memory, address);
+        registers->r[15] = value & 0xFFFFFFFC;
+        clearPipeline();
+      } else {
+        registers->r[15] += kInstrSize;
+      }
+      assert(addr.end_addr == address - 4);
+    }
+  } else {
+    // Not yet implemented.
+    return false;
+  }
   return true;
 }
 
