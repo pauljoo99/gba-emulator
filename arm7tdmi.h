@@ -95,12 +95,9 @@ struct PipelineThumb {
 /* Based on ARM DDI 0100E */
 struct CPU {
 
-  inline CPU() {}
-
   void reset() noexcept;
 
-  [[nodiscard]] bool dispatch(const GameCard::GameCard &game_card,
-                              const Memory::Memory &memory) noexcept;
+  [[nodiscard]] bool dispatch(const Memory::Memory &memory) noexcept;
 
   [[nodiscard]] bool dispatch_B(U32 instr) noexcept;
   [[nodiscard]] bool dispatch_BX(U32 instr) noexcept;

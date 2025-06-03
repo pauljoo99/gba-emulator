@@ -18,10 +18,7 @@ void write_registers(const AllRegisters &registers, const char *path);
 
 void write_memory(const Emulator::Memory::Memory &mem, const char *path);
 
-void write_program(const Emulator::GameCard::GameCard &card, const char *path);
-
 void debug_snapshot(const AllRegisters &registers,
-                    const Emulator::Memory::Memory &mem,
-                    const Emulator::GameCard::GameCard &card, const char *path);
+                    const Emulator::Memory::Memory &mem, const char *path);
 
 } // namespace Emulator::Arm::Debug

@@ -42,27 +42,8 @@ void write_memory(const Emulator::Memory::Memory &mem, const char *path) {
   outFile.close();
 }
 
-void write_program(const Emulator::GameCard::GameCard &card, const char *path) {
-  // Open file in binary mode
-  char file[MAX_PATH_LENGHT];
-  strcpy(file, path);
-  strcat(file, program_bin);
-  std::ofstream outFile(file, std::ios::binary);
-
-  if (!outFile) {
-    // Handle error
-    return;
-  }
-
-  // Write bytes to file
-  outFile.write(reinterpret_cast<const char *>(&card.mem), sizeof(card.mem));
-  outFile.close();
-}
-
 void debug_snapshot(const AllRegisters &registers,
-                    const Emulator::Memory::Memory &mem,
-                    const Emulator::GameCard::GameCard &card,
-                    const char *path) {
+                    const Emulator::Memory::Memory &mem, const char *path) {
   static U32 snapshot_num = 0;
 
   LOG("Writing Snapshot: %u", snapshot_num);
@@ -77,7 +58,6 @@ void debug_snapshot(const AllRegisters &registers,
 
   write_registers(registers, snapshot_path);
   write_memory(mem, snapshot_path);
-  write_program(card, snapshot_path);
 }
 
 } // namespace Emulator::Arm::Debug

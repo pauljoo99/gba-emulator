@@ -605,21 +605,16 @@ U32 CPU::LoadAndStoreWordOrByteRegAddr(U32 instr_) noexcept {
   return address;
 }
 
-[[nodiscard]] bool CPU::dispatch(const GameCard::GameCard &game_card,
-                                 const Memory::Memory &memory) noexcept {
+[[nodiscard]] bool CPU::dispatch(const Memory::Memory &memory) noexcept {
 
-  Debug::debug_snapshot(all_registers, memory, game_card, "tools/visual/data/");
+  Debug::debug_snapshot(all_registers, memory, "tools/visual/data/");
 
   ChangeRegistersOnMode();
-
-  if (registers->r[15] > sizeof(game_card.mem) / sizeof(game_card.mem[0])) {
-    return false;
-  }
 
   CPSR_Register cpsr(registers->CPSR);
   if (cpsr.bits.T) {
     U16 instr;
-    memcpy(&instr, (void *)&game_card.mem[registers->r[15]], kThumbInstrSize);
+    memcpy(&instr, (void *)&memory.BIOS[registers->r[15]], kThumbInstrSize);
     if (advance_pipeline(instr)) {
       if (!process_thumb(pipeline_thumb.execute, memory, *this)) {
         return false;
@@ -629,7 +624,7 @@ U32 CPU::LoadAndStoreWordOrByteRegAddr(U32 instr_) noexcept {
     }
   } else {
     U32 instr;
-    memcpy(&instr, (void *)&game_card.mem[registers->r[15]], kInstrSize);
+    memcpy(&instr, (void *)&memory.BIOS[registers->r[15]], kInstrSize);
     if (advance_pipeline(instr)) {
       Instr::Instr instr_type;
       if (!get_instr_type(pipeline.execute, instr_type)) {
@@ -697,14 +692,14 @@ U32 CPU::LoadAndStoreWordOrByteRegAddr(U32 instr_) noexcept {
 
 [[nodiscard]] bool CPU::dispatch_MSR(U32 instr_) noexcept {
   MSRImmInstr instr(instr_);
-  if (evaluate_cond(ConditionCode(instr_ >> 28), registers->CPSR)) {
+  if (evaluate_cond(ConditionCode(instr.fields.cond), registers->CPSR)) {
     U32 operand = 0;
     if (GetBit(instr_, 25)) {
       MSRImmInstr instr(instr_);
       operand = RotateRight(instr.fields.imm, instr.fields.rotate_imm * 2);
     } else {
       MSRRegInstr instr(instr_);
-      operand = instr.fields.rm;
+      operand = registers->r[instr.fields.rm];
     }
     if (instr.fields.r == 0) {
       CPSR_Register cpsr(registers->CPSR);
@@ -807,16 +802,18 @@ U32 CPU::LoadAndStoreWordOrByteRegAddr(U32 instr_) noexcept {
 
     U32 value;
     if (GetBitsInRange(address, 0, 2) == 0b00) {
-      value = ReadByteFromGBAMemory(memory, address);
+      value = ReadWordFromGBAMemory(memory, address);
     } else if (GetBitsInRange(address, 0, 2) == 0b01) {
-      value = ReadByteFromGBAMemory(memory, address);
+      value = ReadWordFromGBAMemory(memory, address);
       value = RotateRight(value, 8);
     } else if (GetBitsInRange(address, 0, 2) == 0b10) {
-      value = ReadByteFromGBAMemory(memory, address);
+      value = ReadWordFromGBAMemory(memory, address);
       value = RotateRight(value, 16);
     } else if (GetBitsInRange(address, 0, 2) == 0b11) {
-      value = ReadByteFromGBAMemory(memory, address);
+      value = ReadWordFromGBAMemory(memory, address);
       value = RotateRight(value, 24);
+    } else {
+      value = 0;
     }
 
     if (instr.fields.rd == 15) {
