@@ -85,12 +85,6 @@ struct Pipeline {
   U32 execute = U32(-1);
 };
 
-struct PipelineThumb {
-  U16 fetch = U16(-1);
-  U16 decode = U16(-1);
-  U16 execute = U16(-1);
-};
-
 /* Based on ARM DDI 0100E */
 struct CPU {
 
@@ -115,11 +109,8 @@ struct CPU {
   [[nodiscard]] bool dispatch_SUB(U32 instr) noexcept;
   [[nodiscard]] bool dispatch_ADD(U32 instr) noexcept;
 
-  [[nodiscard]] bool dispatch_thumb_LSL(U16 instr) noexcept;
-  [[nodiscard]] bool dispatch_thumb_BLX(U16 instr) noexcept;
-
-  [[nodiscard]] bool advance_pipeline(U32 instr) noexcept;
-  [[nodiscard]] bool advance_pipeline(U16 instr) noexcept;
+  [[nodiscard]] bool AdvancePipeline(U32 instr) noexcept;
+  [[nodiscard]] bool AdvancePipeline(U16 instr) noexcept;
 
   [[nodiscard]] bool dispatch_STM(U32 instr, Memory::Memory &memory) noexcept;
   [[nodiscard]] bool dispatch_STR(U32 instr, Memory::Memory &memory) noexcept;
@@ -154,8 +145,7 @@ struct CPU {
 
   LoadAndStoreMultipleAddrResult LoadAndStoreMultipleAddr(U32 instr_) noexcept;
 
-  void clearPipeline() noexcept;
-  void clearPipelineThumb() noexcept;
+  void ClearPipeline() noexcept;
 
   AllRegisters all_registers;
   Registers user_registers{
@@ -224,10 +214,7 @@ struct CPU {
       .SPRS = &all_registers.SPRS_fiq};
 
   Registers *registers;
-
   Pipeline pipeline;
-  PipelineThumb pipeline_thumb;
-  bool thumb_instr = false;
 
   inline Mode GetMode() {
     CPSR_Register cpsr(registers->CPSR);

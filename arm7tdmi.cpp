@@ -207,33 +207,20 @@ ShifterOperandResult CPU::ShifterOperandRotateRightByRegister(
   return result;
 }
 
-bool CPU::advance_pipeline(U32 instr) noexcept {
+bool CPU::AdvancePipeline(U32 instr) noexcept {
   pipeline.execute = pipeline.decode;
   pipeline.decode = pipeline.fetch;
   pipeline.fetch = instr;
   return pipeline.execute != U32(-1);
 }
 
-bool CPU::advance_pipeline(U16 instr) noexcept {
-  pipeline.execute = pipeline.decode;
-  pipeline.decode = pipeline.fetch;
-  pipeline.fetch = instr;
-  return pipeline_thumb.execute != U16(-1);
-}
-
-void CPU::clearPipeline() noexcept {
+void CPU::ClearPipeline() noexcept {
   pipeline.fetch = U32(-1);
   pipeline.decode = U32(-1);
   pipeline.execute = U32(-1);
 }
 
-void CPU::clearPipelineThumb() noexcept {
-  pipeline.fetch = U16(-1);
-  pipeline.decode = U16(-1);
-  pipeline.execute = U16(-1);
-}
-
-Thumb::ThumbOpcode get_thumb_instruction(U16 instr) {
+Thumb::ThumbOpcode GetThumbOpcode(U16 instr) {
   switch (instr >> 13) {
   case (0):
     switch ((instr >> 11) & 0b11) {
@@ -460,15 +447,11 @@ inline U32 generateMask(U8 a, U8 b) { return ((1U << (b - a + 1)) - 1) << a; }
 [[nodiscard]] bool process_thumb(U16 instr, const Memory::Memory &memory,
                                  CPU &cpu) {
 
-  Thumb::ThumbOpcode opcode = get_thumb_instruction(instr);
+  Thumb::ThumbOpcode opcode = GetThumbOpcode(instr);
 
   LOG("Raw Instr: 0x%04X, Instr: %s", instr, toString(opcode));
 
   switch (opcode) {
-  case (Thumb::ThumbOpcode::LSL):
-    return cpu.dispatch_thumb_LSL(instr);
-  case (Thumb::ThumbOpcode::BLX):
-    return cpu.dispatch_thumb_BLX(instr);
   default:
     return false;
   }
@@ -661,19 +644,17 @@ CPU::LoadAndStoreMultipleAddr(U32 instr_) noexcept {
 
   CPSR_Register cpsr(registers->CPSR);
   if (cpsr.bits.T) {
-    U16 instr;
-    memcpy(&instr, (void *)&memory.BIOS[registers->r[15]], kThumbInstrSize);
-    if (advance_pipeline(instr)) {
-      if (!process_thumb(pipeline_thumb.execute, memory, *this)) {
+    U16 instr = ReadHalfWordFromGBAMemory(memory, registers->r[15]);
+    if (AdvancePipeline((U32)instr)) {
+      if (!process_thumb((U16)pipeline.execute, memory, *this)) {
         return false;
       }
     } else {
       registers->r[15] += 2;
     }
   } else {
-    U32 instr;
-    memcpy(&instr, (void *)&memory.BIOS[registers->r[15]], kInstrSize);
-    if (advance_pipeline(instr)) {
+    U32 instr = ReadWordFromGBAMemory(memory, registers->r[15]);
+    if (AdvancePipeline(instr)) {
       Instr::Instr instr_type;
       if (!get_instr_type(pipeline.execute, instr_type)) {
         return false;
@@ -696,7 +677,7 @@ CPU::LoadAndStoreMultipleAddr(U32 instr_) noexcept {
   }
   registers->r[15] = static_cast<I32>(registers->r[15]) +
                      SignExtend(ConcatBits(instr.fields.offset, 0, 2), 26);
-  clearPipeline();
+  ClearPipeline();
   return true;
 }
 
@@ -709,6 +690,7 @@ CPU::LoadAndStoreMultipleAddr(U32 instr_) noexcept {
     mask.bits.T = 1;
     registers->CPSR = SetBitsInMask(registers->CPSR, cpsr, mask);
     registers->r[15] = registers->r[instr.fields.rm] & 0xFFFFFFFE;
+    ClearPipeline();
   } else {
     registers->r[15] += kInstrSize;
   }
@@ -894,24 +876,6 @@ CPU::LoadAndStoreMultipleAddr(U32 instr_) noexcept {
   return true;
 }
 
-[[nodiscard]] bool CPU::dispatch_thumb_LSL(U16 instr_) noexcept {
-  if (((instr_ >> 13) & 0b111) == 0b000) {
-    const Thumb::MoveShiftedRegister instr{instr_};
-    registers->r[instr.fields.rd] = instr.fields.rs << instr.fields.offset5;
-    registers->r[15] += kThumbInstrSize;
-    return true;
-  }
-  return false;
-}
-
-[[nodiscard]] bool CPU::dispatch_thumb_BLX(U16 instr_) noexcept {
-  const Thumb::UnconditionalBranch instr(instr_);
-  int32_t offset = static_cast<int32_t>(U32(instr.fields.offset11)
-                                        << 12); // TODO: Sign Extend
-
-  return false;
-}
-
 [[nodiscard]] bool CPU::dispatch_CMP(U32 instr_) noexcept {
   const DataProcessingInstr instr(instr_);
   if (evaluate_cond(ConditionCode(instr.fields.cond), registers->CPSR)) {
@@ -991,7 +955,7 @@ bool CPU::dispatch_LDM(U32 instr_, const Memory::Memory &memory) noexcept {
       if (GetBit(instr.fields.register_list, 15) == 1) {
         U32 value = ReadWordFromGBAMemory(memory, address);
         registers->r[15] = value & 0xFFFFFFFC;
-        clearPipeline();
+        ClearPipeline();
       } else {
         registers->r[15] += kInstrSize;
       }
@@ -1041,7 +1005,7 @@ bool CPU::dispatch_SUB(U32 instr_) noexcept {
     if (instr.fields.s == 1 && instr.fields.rd == 15) {
       registers->CPSR = U32(registers->SPRS);
       // Return early since pc is being updated.
-      clearPipeline();
+      ClearPipeline();
       return true;
     } else if (instr.fields.s == 1) {
       CPSR_Register cpsr{};
@@ -1076,7 +1040,7 @@ bool CPU::dispatch_ADD(U32 instr_) noexcept {
     if (instr.fields.s == 1 && instr.fields.rd == 15) {
       registers->CPSR = U32(registers->SPRS);
       // Return early since pc is being updated.
-      clearPipeline();
+      ClearPipeline();
       return true;
     } else if (instr.fields.s == 1) {
       CPSR_Register cpsr{};

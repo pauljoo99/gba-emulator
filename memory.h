@@ -102,6 +102,12 @@ inline U32 ReadWordFromGBAMemory(const Memory &mem, U32 address) noexcept {
   return value;
 }
 
+inline U16 ReadHalfWordFromGBAMemory(const Memory &mem, U32 address) noexcept {
+  U16 value;
+  memcpy(&value, GetPhysicalMemoryReadOnly(mem, address), sizeof(value));
+  return value;
+}
+
 inline void WriteByteFromGBAMemory(Memory &mem, U32 address,
                                    U8 value) noexcept {
   memcpy(GetPhysicalMemoryReadWrite(mem, address), &value, sizeof(value));
@@ -109,6 +115,11 @@ inline void WriteByteFromGBAMemory(Memory &mem, U32 address,
 
 inline void WriteWordFromGBAMemory(Memory &mem, U32 address,
                                    U32 value) noexcept {
+  memcpy(GetPhysicalMemoryReadWrite(mem, address), &value, sizeof(value));
+}
+
+inline void WriteHalfWordFromGBAMemory(Memory &mem, U32 address,
+                                       U16 value) noexcept {
   memcpy(GetPhysicalMemoryReadWrite(mem, address), &value, sizeof(value));
 }
 
