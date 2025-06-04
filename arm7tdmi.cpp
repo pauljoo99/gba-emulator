@@ -264,10 +264,17 @@ inline U32 generateMask(U8 a, U8 b) { return ((1U << (b - a + 1)) - 1) << a; }
 }
 
 [[nodiscard]] bool process_thumb(U16 instr, const Memory::Memory &memory,
-                                 CPU &cpu) {
+                                 CPU &cpu) noexcept {
 
   const Thumb::ThumbOpcode opcode = Thumb::GetThumbOpcode(instr);
   LOG("Raw Thumb Instr: 0x%04X, Opcode: %s", instr, Thumb::ToString(opcode));
+
+  switch (opcode) {
+  case (Thumb::ThumbOpcode::MOV1):
+    return cpu.dispatch_thumb_MOV1(instr);
+  default:
+    break;
+  }
 
   return false;
 }
@@ -880,7 +887,25 @@ bool CPU::dispatch_ADD(U32 instr_) noexcept {
   return true;
 }
 
-bool CPU::dispatch_thumb_MOV(U16 instr) noexcept { return false; }
+bool CPU::dispatch_thumb_MOV1(U16 instr) noexcept {
+  U32 immed_8 = GetBitsInRange(instr, 0, 8);
+  U32 rd = GetBitsInRange(instr, 8, 11);
+
+  registers->r[rd] = immed_8;
+
+  CPSR_Register cpsr{};
+  cpsr.bits.N = GetBit(registers->r[rd], 31);
+  cpsr.bits.Z = registers->r[rd] == 0;
+
+  CPSR_Register mask{};
+  mask.bits.N = 1;
+  mask.bits.Z = 1;
+
+  registers->CPSR = SetBitsInMask(registers->CPSR, cpsr, mask);
+
+  registers->r[15] += 2;
+  return true;
+}
 
 void CPU::reset() noexcept {
   // On reset, start at SVC mode

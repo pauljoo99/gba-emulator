@@ -7,6 +7,7 @@ namespace Emulator::BitUtils {
 
 inline U8 GetBit(U32 imm, U8 bit) { return (imm >> bit) & 0b1; }
 
+// Get bits from [start, end)
 inline U32 GetBitsInRange(U32 imm, U8 start, U8 end) {
   if (end == 32) {
     return imm >> start;

@@ -116,7 +116,7 @@ struct CPU {
   [[nodiscard]] bool dispatch_LDM(U32 instr,
                                   const Memory::Memory &memory) noexcept;
 
-  [[nodiscard]] bool dispatch_thumb_MOV(U16 instr) noexcept;
+  [[nodiscard]] bool dispatch_thumb_MOV1(U16 instr) noexcept;
 
   ShifterOperandResult ShifterOperand(DataProcessingInstr instr) noexcept;
 
