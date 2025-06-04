@@ -108,8 +108,6 @@ struct CPU {
   [[nodiscard]] bool dispatch_MSR(U32 instr) noexcept;
   [[nodiscard]] bool dispatch_LDR(U32 instr,
                                   const Memory::Memory &memory) noexcept;
-  [[nodiscard]] bool dispatch_STR(U32 instr_,
-                                  const Memory::Memory &memory) noexcept;
   [[nodiscard]] bool dispatch_TEQ(U32 instr_) noexcept;
   [[nodiscard]] bool dispatch_MRS(U32 instr) noexcept;
   [[nodiscard]] bool dispatch_ORR(U32 instr) noexcept;
@@ -123,6 +121,7 @@ struct CPU {
   [[nodiscard]] bool advance_pipeline(U16 instr) noexcept;
 
   [[nodiscard]] bool dispatch_STM(U32 instr, Memory::Memory &memory) noexcept;
+  [[nodiscard]] bool dispatch_STR(U32 instr, Memory::Memory &memory) noexcept;
   [[nodiscard]] bool dispatch_LDM(U32 instr,
                                   const Memory::Memory &memory) noexcept;
 

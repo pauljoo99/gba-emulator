@@ -433,8 +433,6 @@ inline U32 generateMask(U8 a, U8 b) { return ((1U << (b - a + 1)) - 1) << a; }
     return cpu.dispatch_MSR(instr);
   case Instr::Instr::LDR:
     return cpu.dispatch_LDR(instr, memory);
-  case Instr::Instr::STR:
-    return cpu.dispatch_STR(instr, memory);
   case Instr::Instr::CMP:
     return cpu.dispatch_CMP(instr);
   case Instr::Instr::TEQ:
@@ -451,6 +449,8 @@ inline U32 generateMask(U8 a, U8 b) { return ((1U << (b - a + 1)) - 1) << a; }
     return cpu.dispatch_CMN(instr);
   case Instr::Instr::SUB:
     return cpu.dispatch_SUB(instr);
+  case Instr::Instr::STR:
+    return cpu.dispatch_STR(instr, memory);
   default:
     return false;
   }
@@ -875,8 +875,19 @@ CPU::LoadAndStoreMultipleAddr(U32 instr_) noexcept {
 }
 
 [[nodiscard]] bool CPU::dispatch_STR(U32 instr_,
-                                     const Memory::Memory &memory) noexcept {
-  return false;
+                                     Memory::Memory &memory) noexcept {
+  const SingleDataTransferInstr instr{instr_};
+  if (evaluate_cond(ConditionCode(instr.fields.cond), registers->CPSR)) {
+    U32 address;
+    if (instr.fields.i == 0) {
+      address = LoadAndStoreWordOrByteImmAddr(instr_);
+    } else {
+      address = LoadAndStoreWordOrByteRegAddr(instr_);
+    }
+    WriteWordFromGBAMemory(memory, address, registers->r[instr.fields.rd]);
+  }
+  registers->r[15] += 4;
+  return true;
 }
 
 [[nodiscard]] bool CPU::dispatch_thumb_LSL(U16 instr_) noexcept {
