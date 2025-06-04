@@ -7,7 +7,6 @@
 #include "bitutils.h"
 #include "logging.h"
 #include "snapshot.h"
-#include "thumb2_instructions.h"
 #include "thumb_instructions.h"
 
 namespace Emulator::Arm {
