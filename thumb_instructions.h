@@ -243,17 +243,150 @@ enum ThumbOpcode {
   NUM_OPCODES, // Must be last enum
 };
 
+const char *ToString(const ThumbOpcode opcode) {
+  switch (opcode) {
+  case ADC:
+    return "ADC";
+  case ADD1:
+    return "ADD1";
+  case ADD2:
+    return "ADD2";
+  case ADD3:
+    return "ADD3";
+  case ADD4:
+    return "ADD4";
+  case ADD5:
+    return "ADD5";
+  case ADD6:
+    return "ADD6";
+  case ADD7:
+    return "ADD7";
+  case AND:
+    return "AND";
+  case ASR1:
+    return "ASR1";
+  case ASR2:
+    return "ASR2";
+  case B1:
+    return "B1";
+  case B2:
+    return "B2";
+  case BIC:
+    return "BIC";
+  case BKPT:
+    return "BKPT";
+  case BL:
+    return "BL";
+  case BX:
+    return "BX";
+  case CMN:
+    return "CMN";
+  case CMP1:
+    return "CMP1";
+  case CMP2:
+    return "CMP2";
+  case CMP3:
+    return "CMP3";
+  case EOR:
+    return "EOR";
+  case LDMIA:
+    return "LDMIA";
+  case LDR1:
+    return "LDR1";
+  case LDR2:
+    return "LDR2";
+  case LDR3:
+    return "LDR3";
+  case LDR4:
+    return "LDR4";
+  case LDRB1:
+    return "LDRB1";
+  case LDRB2:
+    return "LDRB2";
+  case LDRH1:
+    return "LDRH1";
+  case LDRH2:
+    return "LDRH2";
+  case LDRSB:
+    return "LDRSB";
+  case LDRSH:
+    return "LDRSH";
+  case LSL1:
+    return "LSL1";
+  case LSL2:
+    return "LSL2";
+  case LSR1:
+    return "LSR1";
+  case LSR2:
+    return "LSR2";
+  case MOV1:
+    return "MOV1";
+  case MOV2:
+    return "MOV2";
+  case MOV3:
+    return "MOV3";
+  case MUL:
+    return "MUL";
+  case MVN:
+    return "MVN";
+  case NEG:
+    return "NEG";
+  case ORR:
+    return "ORR";
+  case POP:
+    return "POP";
+  case PUSH:
+    return "PUSH";
+  case ROR:
+    return "ROR";
+  case SBC:
+    return "SBC";
+  case STMIA:
+    return "STMIA";
+  case STR1:
+    return "STR1";
+  case STR2:
+    return "STR2";
+  case STR3:
+    return "STR3";
+  case STRB1:
+    return "STRB1";
+  case STRB2:
+    return "STRB2";
+  case STRH1:
+    return "STRH1";
+  case STRH2:
+    return "STRH2";
+  case SUB1:
+    return "SUB1";
+  case SUB2:
+    return "SUB2";
+  case SUB3:
+    return "SUB3";
+  case SUB4:
+    return "SUB4";
+  case SWI:
+    return "SWI";
+  case TST:
+    return "TST";
+  case NUM_OPCODES:
+    return "NUM_OPCODES";
+  default:
+    return "UNKNOWN";
+  }
+}
+
 static_assert(sizeof(ThumbEncodingList) / sizeof(ThumbEncodingList[0]) ==
               NUM_OPCODES);
 static_assert(sizeof(ThumbMaskList) / sizeof(ThumbMaskList[0]) == NUM_OPCODES);
 
 inline ThumbOpcode GetThumbOpcode(U16 instr) {
   for (U32 i = 0; i < U32(NUM_OPCODES); ++i) {
-    if ((instr & ThumbEncodingList[i]) == ThumbMaskList[i]) {
+    if ((instr & ThumbMaskList[i]) == ThumbEncodingList[i]) {
       return ThumbOpcode(i);
     }
   }
-  std::abort();
+  LOG_ABORT("Could not find thumbcode for 0x%04X", instr);
 }
 
 } // namespace Emulator::Thumb

@@ -235,8 +235,7 @@ struct CPU {
     case 0b11111:
       return Mode::SYSTEM;
     default:
-      std::abort();
-      return Mode::USER;
+      LOG_ABORT("Undefined Mode %u", cpsr.bits.M);
     }
   }
 

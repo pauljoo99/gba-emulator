@@ -266,7 +266,9 @@ inline U32 generateMask(U8 a, U8 b) { return ((1U << (b - a + 1)) - 1) << a; }
 [[nodiscard]] bool process_thumb(U16 instr, const Memory::Memory &memory,
                                  CPU &cpu) {
 
-  LOG("Raw Thumb Instr: 0x%04X", instr);
+  const Thumb::ThumbOpcode opcode = Thumb::GetThumbOpcode(instr);
+  LOG("Raw Thumb Instr: 0x%04X, Opcode: %s", instr, Thumb::ToString(opcode));
+
   return false;
 }
 
