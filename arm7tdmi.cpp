@@ -932,7 +932,7 @@ bool CPU::dispatch_TEQ(U32 instr_) noexcept {
 
     CPSR_Register cpsr;
     cpsr.bits.N = GetBit(alu_out, 31);
-    cpsr.bits.Z = alu_out == 1;
+    cpsr.bits.Z = alu_out == 0;
     cpsr.bits.C = shifter.shifter_carry_out;
 
     CPSR_Register mask;
