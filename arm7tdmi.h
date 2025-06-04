@@ -113,6 +113,7 @@ struct CPU {
   [[nodiscard]] bool dispatch_ORR(U32 instr) noexcept;
   [[nodiscard]] bool dispatch_CMN(U32 instr) noexcept;
   [[nodiscard]] bool dispatch_SUB(U32 instr) noexcept;
+  [[nodiscard]] bool dispatch_ADD(U32 instr) noexcept;
 
   [[nodiscard]] bool dispatch_thumb_LSL(U16 instr) noexcept;
   [[nodiscard]] bool dispatch_thumb_BLX(U16 instr) noexcept;

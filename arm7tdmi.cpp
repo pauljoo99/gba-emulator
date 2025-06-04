@@ -451,6 +451,8 @@ inline U32 generateMask(U8 a, U8 b) { return ((1U << (b - a + 1)) - 1) << a; }
     return cpu.dispatch_SUB(instr);
   case Instr::Instr::STR:
     return cpu.dispatch_STR(instr, memory);
+  case Instr::Instr::ADD:
+    return cpu.dispatch_ADD(instr);
   default:
     return false;
   }
@@ -702,9 +704,12 @@ CPU::LoadAndStoreMultipleAddr(U32 instr_) noexcept {
 [[nodiscard]] bool CPU::dispatch_BX(U32 instr_) noexcept {
   const BranchAndExchangeInstr instr(instr_);
   if (evaluate_cond(ConditionCode(instr.fields.cond), registers->CPSR)) {
-    CPSR_Register &cpsr = *reinterpret_cast<CPSR_Register *>(&registers->CPSR);
-    cpsr.bits.T = GetBit(instr.fields.rm, 0);
-    registers->r[15] = instr.fields.rm & 0xFFFFFFFE;
+    CPSR_Register cpsr{};
+    cpsr.bits.T = GetBit(registers->r[instr.fields.rm], 0);
+    CPSR_Register mask{};
+    mask.bits.T = 1;
+    registers->CPSR = SetBitsInMask(registers->CPSR, cpsr, mask);
+    registers->r[15] = registers->r[instr.fields.rm] & 0xFFFFFFFE;
   } else {
     registers->r[15] += kInstrSize;
   }
@@ -1045,6 +1050,42 @@ bool CPU::dispatch_SUB(U32 instr_) noexcept {
       cpsr.bits.Z = registers->r[instr.fields.rd] == 0;
       cpsr.bits.C =
           !BorrowFrom(registers->r[instr.fields.rn], shifter.shifter_operand);
+      cpsr.bits.V =
+          OverflowFrom(registers->r[instr.fields.rn], shifter.shifter_operand,
+                       registers->r[instr.fields.rd]);
+
+      CPSR_Register mask{};
+      mask.bits.N = 1;
+      mask.bits.Z = 1;
+      mask.bits.C = 1;
+      mask.bits.V = 1;
+
+      registers->CPSR = SetBitsInMask(registers->CPSR, cpsr, mask);
+    }
+  }
+  registers->r[15] += kInstrSize;
+  return true;
+}
+
+bool CPU::dispatch_ADD(U32 instr_) noexcept {
+  DataProcessingInstr instr(instr_);
+  if (evaluate_cond(ConditionCode(instr.fields.cond), registers->CPSR)) {
+    ShifterOperandResult shifter = ShifterOperand(instr);
+    registers->r[instr.fields.rd] =
+        U32((I32)registers->r[instr.fields.rn] + (I32)shifter.shifter_operand);
+
+    if (instr.fields.s == 1 && instr.fields.rd == 15) {
+      registers->CPSR = U32(registers->SPRS);
+      // Return early since pc is being updated.
+      clearPipeline();
+      return true;
+    } else if (instr.fields.s == 1) {
+      CPSR_Register cpsr{};
+      cpsr.bits.N = GetBit(registers->r[instr.fields.rd], 31);
+      cpsr.bits.Z = registers->r[instr.fields.rd] == 0;
+      U32 carry_from_args[] = {registers->r[instr.fields.rn],
+                               shifter.shifter_operand};
+      cpsr.bits.C = CarryFrom(2, carry_from_args);
       cpsr.bits.V =
           OverflowFrom(registers->r[instr.fields.rn], shifter.shifter_operand,
                        registers->r[instr.fields.rd]);
