@@ -4,291 +4,134 @@
 
 namespace Emulator::Thumb {
 
-// Move Shifted Register (LSL, LSR, ASR)
-struct MoveShiftedRegisterFields {
-  U16 rd : 3;
-  U16 rs : 3;
-  U16 offset5 : 5;
-  U16 op2 : 2;
-  U16 : 3;
+enum class ThumbMasks : U16 {
+  ADC = 0xFFC0,
+  ADD1 = 0xFE00,
+  ADD2 = 0xF800,
+  ADD3 = 0xFE00,
+  ADD4 = 0xFF00,
+  ADD5 = 0xF800,
+  ADD6 = 0xF800,
+  ADD7 = 0xFF80,
+  AND = 0xFFC0,
+  ASR1 = 0xF800,
+  ASR2 = 0xFFC0,
+  B1 = 0xF000,
+  B2 = 0xF800,
+  BIC = 0xFFC0,
+  BKPT = 0xFF00,
+  BL = 0xF800,
+  BX = 0xFF80,
+  CMN = 0xFFC0,
+  CMP1 = 0xF800,
+  CMP2 = 0xFFC0,
+  CMP3 = 0xFF00,
+  EOR = 0xFFC0,
+  LDMIA = 0xF800,
+  LDR1 = 0xF800,
+  LDR2 = 0xFE00,
+  LDR3 = 0xF800,
+  LDR4 = 0xF800,
+  LDRB1 = 0xF800,
+  LDRB2 = 0xFE00,
+  LDRH1 = 0xF800,
+  LDRH2 = 0xFE00,
+  LDRSB = 0xFE00,
+  LDRSH = 0xFE00,
+  LSL1 = 0xF800,
+  LSL2 = 0xFFC0,
+  LSR1 = 0xF800,
+  LSR2 = 0xFFC0,
+  MOV1 = 0xF800,
+  MOV2 = 0xFFC0,
+  MOV3 = 0xFF00,
+  MUL = 0xFFC0,
+  MVN = 0xFFC0,
+  NEG = 0xFFC0,
+  ORR = 0xFFC0,
+  POP = 0xFF00,
+  PUSH = 0xFE00,
+  ROR = 0xFFC0,
+  SBC = 0xFFC0,
+  STMIA = 0xF800,
+  STR1 = 0xF800,
+  STR2 = 0xFE00,
+  STR3 = 0xF800,
+  STRB1 = 0xF800,
+  STRB2 = 0xFE00,
+  STRH1 = 0xF800,
+  STRH2 = 0xFE00,
+  SUB1 = 0xFE00,
+  SUB2 = 0xF800,
+  SUB3 = 0xFE00,
+  SUB4 = 0xFF80,
+  SWI = 0xFF00,
+  TST = 0xFFC0,
 };
 
-union MoveShiftedRegister {
-  U16 value;
-  MoveShiftedRegisterFields fields;
-
-  MoveShiftedRegister(U16 val = 0) : value(val) {}
-  operator U16() const { return value; }
-};
-
-// Add/Subtract Register
-struct AddSubtractRegisterFields {
-  U16 rd : 3;
-  U16 rs : 3;
-  U16 rn_or_imm : 3;
-  U16 op : 1;
-  U16 : 6;
-};
-
-union AddSubtractRegister {
-  U16 value;
-  AddSubtractRegisterFields fields;
-
-  AddSubtractRegister(U16 val = 0) : value(val) {}
-  operator U16() const { return value; }
-};
-
-// Immediate Operations (MOV, CMP, ADD, SUB)
-struct ImmediateOperationFields {
-  U16 rd : 3;
-  U16 imm8 : 8;
-  U16 op : 2;
-  U16 : 3;
-};
-
-union ImmediateOperation {
-  U16 value;
-  ImmediateOperationFields fields;
-
-  ImmediateOperation(U16 val = 0) : value(val) {}
-  operator U16() const { return value; }
-};
-
-// ALU Operations (AND, EOR, LSL, LSR, ASR, ADC, SBC, ROR, TST, NEG, CMP, CMN,
-// ORR, MUL, BIC, MVN)
-struct ALUOperationFields {
-  U16 rd : 3;
-  U16 rs : 3;
-  U16 op : 4;
-  U16 : 6;
-};
-
-union ALUOperation {
-  U16 value;
-  ALUOperationFields fields;
-
-  ALUOperation(U16 val = 0) : value(val) {}
-  operator U16() const { return value; }
-};
-
-// High Register Operations (MOV, ADD, CMP, BX)
-struct HighRegisterOperationFields {
-  U16 rd : 3;
-  U16 rs : 3;
-  U16 op : 2;
-  U16 h1 : 1;
-  U16 h2 : 1;
-  U16 : 6;
-};
-
-union HighRegisterOperation {
-  U16 value;
-  HighRegisterOperationFields fields;
-
-  HighRegisterOperation(U16 val = 0) : value(val) {}
-  operator U16() const { return value; }
-};
-
-// Load/Store Word (LDR, STR)
-struct LoadStoreWordFields {
-  U16 rd : 3;
-  U16 rb : 3;
-  U16 offset5 : 5;
-  U16 l : 1; // 1 = Load, 0 = Store
-  U16 : 4;
-};
-
-union LoadStoreWord {
-  U16 value;
-  LoadStoreWordFields fields;
-
-  LoadStoreWord(U16 val = 0) : value(val) {}
-  operator U16() const { return value; }
-};
-
-// Load/Store Byte (LDRB, STRB)
-struct LoadStoreByteFields {
-  U16 rd : 3;
-  U16 rb : 3;
-  U16 offset5 : 5;
-  U16 b : 1;
-  U16 l : 1;
-  U16 : 3;
-};
-
-union LoadStoreByte {
-  U16 value;
-  LoadStoreByteFields fields;
-
-  LoadStoreByte(U16 val = 0) : value(val) {}
-  operator U16() const { return value; }
-};
-
-// Load/Store with SP-relative Addressing
-struct LoadStoreSPRelativeFields {
-  U16 rd : 3;
-  U16 imm8 : 8;
-  U16 l : 1;
-  U16 : 4;
-};
-
-union LoadStoreSPRelative {
-  U16 value;
-  LoadStoreSPRelativeFields fields;
-
-  LoadStoreSPRelative(U16 val = 0) : value(val) {}
-  operator U16() const { return value; }
-};
-
-// Conditional Branch (BNE, BEQ, BGE, etc.)
-struct ConditionalBranchFields {
-  U16 offset8 : 8;
-  U16 cond : 4;
-  U16 : 4;
-};
-
-union ConditionalBranch {
-  U16 value;
-  ConditionalBranchFields fields;
-
-  ConditionalBranch(U16 val = 0) : value(val) {}
-  operator U16() const { return value; }
-};
-
-// Unconditional Branch (B)
-struct UnconditionalBranchFields {
-  U16 offset11 : 11;
-  U16 : 5;
-};
-
-union UnconditionalBranch {
-  U16 value;
-  UnconditionalBranchFields fields;
-
-  UnconditionalBranch(U16 val = 0) : value(val) {}
-  operator U16() const { return value; }
-};
-
-enum class ThumbOpcode {
-  ADC,      // Add with Carry
-  ADD,      // Add
-  AND,      // AND
-  ASR,      // Arithmetic Shift Right
-  B,        // Unconditional Branch
-  BXX,      // Conditional Branch
-  BIC,      // Bit Clear
-  BL,       // Branch and Link
-  BLX,      // Branch with Link and Exchange
-  BX,       // Branch and Exchange
-  CMN,      // Compare Negative
-  CMP,      // Compare
-  EOR,      // EOR
-  LDMIA,    // Load Multiple
-  LDR,      // Load Word
-  LDRB,     // Load Byte
-  LDRH,     // Load Halfword
-  LSL,      // Logical Shift Left
-  LDSB,     // Load Sign-Extended Byte
-  LDSH,     // Load Sign-Extended Halfword
-  LSR,      // Logical Shift Right
-  MOV,      // Move Register
-  MUL,      // Multiply
-  MVN,      // Move Negative Register
-  NEG,      // Negate
-  ORR,      // OR
-  POP,      // Pop Registers
-  PUSH,     // Push Registers
-  ROR,      // Rotate Right
-  SBC,      // Subtract with Carry
-  STMIA,    // Store Multiple
-  STR,      // Store Word
-  STRB,     // Store Byte
-  STRH,     // Store Halfword
-  SWI,      // Software Interrupt
-  SUB,      // Subtract
-  TST,      // Test Bits
-  UNDEFINED // Placeholder for unknown instructions
-};
-
-const char *toString(ThumbOpcode cc) {
-  switch (cc) {
-  case ThumbOpcode::ADC:
-    return "Add with Carry";
-  case ThumbOpcode::ADD:
-    return "Add";
-  case ThumbOpcode::AND:
-    return "AND";
-  case ThumbOpcode::ASR:
-    return "Arithmetic Shift Right";
-  case ThumbOpcode::B:
-    return "Unconditional Branch";
-  case ThumbOpcode::BXX:
-    return "Conditional Branch";
-  case ThumbOpcode::BIC:
-    return "Bit Clear";
-  case ThumbOpcode::BL:
-    return "Branch and Link";
-  case ThumbOpcode::BLX:
-    return "Branch with Link and Exchange";
-  case ThumbOpcode::BX:
-    return "Branch and Exchange";
-  case ThumbOpcode::CMN:
-    return "Compare Negative";
-  case ThumbOpcode::CMP:
-    return "Compare";
-  case ThumbOpcode::EOR:
-    return "EOR";
-  case ThumbOpcode::LDMIA:
-    return "Load Multiple";
-  case ThumbOpcode::LDR:
-    return "Load Word";
-  case ThumbOpcode::LDRB:
-    return "Load Byte";
-  case ThumbOpcode::LDRH:
-    return "Load Halfword";
-  case ThumbOpcode::LSL:
-    return "Logical Shift Left";
-  case ThumbOpcode::LDSB:
-    return "Load Sign-Extended Byte";
-  case ThumbOpcode::LDSH:
-    return "Load Sign-Extended Halfword";
-  case ThumbOpcode::LSR:
-    return "Logical Shift Right";
-  case ThumbOpcode::MOV:
-    return "Move Register";
-  case ThumbOpcode::MUL:
-    return "Multiply";
-  case ThumbOpcode::MVN:
-    return "Move Negative Register";
-  case ThumbOpcode::NEG:
-    return "Negate";
-  case ThumbOpcode::ORR:
-    return "OR";
-  case ThumbOpcode::POP:
-    return "Pop Registers";
-  case ThumbOpcode::PUSH:
-    return "Push Registers";
-  case ThumbOpcode::ROR:
-    return "Rotate Right";
-  case ThumbOpcode::SBC:
-    return "Subtract with Carry";
-  case ThumbOpcode::STMIA:
-    return "Store Multiple";
-  case ThumbOpcode::STR:
-    return "Store Word";
-  case ThumbOpcode::STRB:
-    return "Store Byte";
-  case ThumbOpcode::STRH:
-    return "Store Halfword";
-  case ThumbOpcode::SWI:
-    return "Software Interrupt";
-  case ThumbOpcode::SUB:
-    return "Subtract";
-  case ThumbOpcode::TST:
-    return "Test Bits";
-  case ThumbOpcode::UNDEFINED:
-    return "Placeholder for unknown instructions";
-  }
+enum class ThumbOpcode : U16 {
+  ADC = 0x4180,
+  ADD1 = 0x1C00,
+  ADD2 = 0x3000,
+  ADD3 = 0x1800,
+  ADD4 = 0x4400,
+  ADD5 = 0xA000,
+  ADD6 = 0xA800,
+  ADD7 = 0xB000,
+  AND = 0x4000,
+  ASR1 = 0x1000,
+  ASR2 = 0x4100,
+  B1 = 0xD000,
+  B2 = 0xE000,
+  BIC = 0x4380,
+  BKPT = 0xBE00,
+  BL = 0xF800,
+  BX = 0x4700,
+  CMN = 0x42C0,
+  CMP1 = 0x2800,
+  CMP2 = 0x4280,
+  CMP3 = 0x4500,
+  EOR = 0x4040,
+  LDMIA = 0xC800,
+  LDR1 = 0x6800,
+  LDR2 = 0x5800,
+  LDR3 = 0x4800,
+  LDR4 = 0x9800,
+  LDRB1 = 0x7800,
+  LDRB2 = 0x5C00,
+  LDRH1 = 0x8800,
+  LDRH2 = 0x5A00,
+  LDRSB = 0x5600,
+  LDRSH = 0x5D00,
+  LSL1 = 0x0000,
+  LSL2 = 0x4080,
+  LSR1 = 0x0800,
+  LSR2 = 0x40C0,
+  MOV1 = 0x2000,
+  MOV2 = 0x1C00,
+  MOV3 = 0x4600,
+  MUL = 0x4340,
+  MVN = 0x43C0,
+  NEG = 0x4240,
+  ORR = 0x4300,
+  POP = 0xBC00,
+  PUSH = 0xB400,
+  ROR = 0x41C0,
+  SBC = 0x4180,
+  STMIA = 0xC000,
+  STR1 = 0x6000,
+  STR2 = 0x5000,
+  STR3 = 0x9000,
+  STRB1 = 0x7000,
+  STRB2 = 0x5400,
+  STRH1 = 0x8000,
+  STRH2 = 0x5200,
+  SUB1 = 0x1E00,
+  SUB2 = 0x3800,
+  SUB3 = 0x1A00,
+  SUB4 = 0xB100,
+  SWI = 0xDF00,
+  TST = 0x4200,
 };
 
 } // namespace Emulator::Thumb

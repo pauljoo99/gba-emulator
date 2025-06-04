@@ -220,187 +220,6 @@ void CPU::ClearPipeline() noexcept {
   pipeline.execute = U32(-1);
 }
 
-Thumb::ThumbOpcode GetThumbOpcode(U16 instr) {
-  switch (instr >> 13) {
-  case (0):
-    switch ((instr >> 11) & 0b11) {
-    case (0b00):
-      return Thumb::ThumbOpcode::LSL;
-    case (0b01):
-      return Thumb::ThumbOpcode::LSR;
-    case (0b10):
-      return Thumb::ThumbOpcode::ASR;
-    case (0b11):
-      if (instr >> 10 == 0) {
-        return Thumb::ThumbOpcode::ADD;
-      } else {
-        return Thumb::ThumbOpcode::SUB;
-      }
-    }
-
-  case (1):
-    switch ((instr >> 11) & 0b11) {
-    case (0b00):
-      return Thumb::ThumbOpcode::MOV;
-    case (0b01):
-      return Thumb::ThumbOpcode::CMP;
-    case (0b10):
-      return Thumb::ThumbOpcode::ADD;
-    case (0b11):
-      return Thumb::ThumbOpcode::SUB;
-    }
-
-  case (2):
-    switch ((instr >> 10) & 0b111) {
-    case (0b000):
-      switch ((instr >> 6) & 0b1111) {
-      case (0b0000):
-        return Thumb::ThumbOpcode::AND;
-      case (0b0001):
-        return Thumb::ThumbOpcode::EOR;
-      case (0b0010):
-        return Thumb::ThumbOpcode::LSL;
-      case (0b0011):
-        return Thumb::ThumbOpcode::LSR;
-      case (0b0100):
-        return Thumb::ThumbOpcode::ASR;
-      case (0b0101):
-        return Thumb::ThumbOpcode::ADC;
-      case (0b0110):
-        return Thumb::ThumbOpcode::SBC;
-      case (0b0111):
-        return Thumb::ThumbOpcode::ROR;
-      case (0b1000):
-        return Thumb::ThumbOpcode::TST;
-      case (0b1001):
-        return Thumb::ThumbOpcode::NEG;
-      case (0b1010):
-        return Thumb::ThumbOpcode::CMP;
-      case (0b1011):
-        return Thumb::ThumbOpcode::CMN;
-      case (0b1100):
-        return Thumb::ThumbOpcode::ORR;
-      case (0b1101):
-        return Thumb::ThumbOpcode::MUL;
-      case (0b1110):
-        return Thumb::ThumbOpcode::BIC;
-      case (0b1111):
-        return Thumb::ThumbOpcode::MVN;
-      }
-    case (0b001):
-      switch ((instr >> 8) & 0b11) {
-      case (0b00):
-        return Thumb::ThumbOpcode::ADD;
-      case (0b01):
-        return Thumb::ThumbOpcode::CMP;
-      case (0b10):
-        return Thumb::ThumbOpcode::MOV;
-      case (0b11):
-        return Thumb::ThumbOpcode::BX;
-      }
-    case (0b010):
-    case (0b011):
-      return Thumb::ThumbOpcode::LDR;
-    case (0b100):
-    case (0b101):
-    case (0b110):
-    case (0b111):
-      switch ((instr >> 9) & 0b111) {
-      case (0b000):
-        return Thumb::ThumbOpcode::STR;
-      case (0b010):
-        return Thumb::ThumbOpcode::STRB;
-      case (0b100):
-        return Thumb::ThumbOpcode::LDR;
-      case (0b110):
-        return Thumb::ThumbOpcode::LDRB;
-      case (0b001):
-        return Thumb::ThumbOpcode::STRH;
-      case (0b011):
-        return Thumb::ThumbOpcode::LDRH;
-      case (0b101):
-        return Thumb::ThumbOpcode::LDSB;
-      case (0b111):
-        return Thumb::ThumbOpcode::LDSH;
-      }
-    }
-
-  case (3):
-    switch ((instr >> 11) & 0b11) {
-    case (0b00):
-      return Thumb::ThumbOpcode::STR;
-    case (0b10):
-      return Thumb::ThumbOpcode::LDR;
-    case (0b01):
-      return Thumb::ThumbOpcode::STRB;
-    case (0b11):
-      return Thumb::ThumbOpcode::LDRB;
-    }
-
-  case (4):
-    switch ((instr >> 11) & 0b11) {
-    case (0b00):
-      return Thumb::ThumbOpcode::STRH;
-    case (0b01):
-      return Thumb::ThumbOpcode::LDRH;
-    case (0b10):
-      return Thumb::ThumbOpcode::STR;
-    case (0b11):
-      return Thumb::ThumbOpcode::LDR;
-    }
-
-  case (5):
-    switch ((instr >> 11) & 0b11) {
-    case (0b00):
-      return Thumb::ThumbOpcode::ADD;
-    case (0b01):
-      return Thumb::ThumbOpcode::ADD;
-    case (0b10):
-      if (((instr >> 8) & 0b1111) == 0) {
-        return Thumb::ThumbOpcode::ADD;
-      } else if (((instr >> 8) & 0b1111) == 0b1010) {
-        return Thumb::ThumbOpcode::PUSH;
-      } else if (((instr >> 8) & 0b1111) == 0b1110) {
-        return Thumb::ThumbOpcode::POP;
-      }
-    default:
-      break;
-    }
-
-  case (6):
-    switch ((instr >> 11) & 0b11) {
-    case (0b00):
-      return Thumb::ThumbOpcode::STMIA;
-    case (0b01):
-      return Thumb::ThumbOpcode::LDMIA;
-    case (0b10):
-    case (0b11):
-      if (((instr >> 8) & 0b11111) == 0b11111) {
-        return Thumb::ThumbOpcode::SWI;
-      }
-      return Thumb::ThumbOpcode::BXX;
-    default:
-      break;
-    }
-
-  case (7):
-    switch ((instr >> 11) & 0b11) {
-    case (0b00):
-      return Thumb::ThumbOpcode::B;
-    case (0b01):
-      return Thumb::ThumbOpcode::BLX;
-    case (0b10):
-    case (0b11):
-      return Thumb::ThumbOpcode::BL;
-    default:
-      break;
-    }
-  default:
-    break;
-  }
-  return Thumb::ThumbOpcode::UNDEFINED;
-}
-
 inline U32 generateMask(U8 a, U8 b) { return ((1U << (b - a + 1)) - 1) << a; }
 
 [[nodiscard]] bool process_instr(U32 instr, Instr::Instr instr_type,
@@ -414,7 +233,7 @@ inline U32 generateMask(U8 a, U8 b) { return ((1U << (b - a + 1)) - 1) << a; }
   case Instr::Instr::BX:
     return cpu.dispatch_BX(instr);
   case Instr::Instr::MOV:
-    return cpu.dispatch_MOV(instr, memory);
+    return cpu.dispatch_MOV(instr);
   case Instr::Instr::MSR:
     return cpu.dispatch_MSR(instr);
   case Instr::Instr::LDR:
@@ -447,14 +266,8 @@ inline U32 generateMask(U8 a, U8 b) { return ((1U << (b - a + 1)) - 1) << a; }
 [[nodiscard]] bool process_thumb(U16 instr, const Memory::Memory &memory,
                                  CPU &cpu) {
 
-  Thumb::ThumbOpcode opcode = GetThumbOpcode(instr);
-
-  LOG("Raw Instr: 0x%04X, Instr: %s", instr, toString(opcode));
-
-  switch (opcode) {
-  default:
-    return false;
-  }
+  LOG("Raw Thumb Instr: 0x%04X", instr);
+  return false;
 }
 
 bool evaluate_cond(ConditionCode cond, U32 cpsr_) {
@@ -697,8 +510,7 @@ CPU::LoadAndStoreMultipleAddr(U32 instr_) noexcept {
   return true;
 }
 
-[[nodiscard]] bool CPU::dispatch_MOV(U32 instr_,
-                                     const Memory::Memory &memory) noexcept {
+[[nodiscard]] bool CPU::dispatch_MOV(U32 instr_) noexcept {
   const DataProcessingInstr instr(instr_);
   if (evaluate_cond(ConditionCode(instr.fields.cond), registers->CPSR)) {
     ShifterOperandResult shifter = ShifterOperand(instr);
@@ -1065,6 +877,8 @@ bool CPU::dispatch_ADD(U32 instr_) noexcept {
   registers->r[15] += kInstrSize;
   return true;
 }
+
+bool CPU::dispatch_thumb_MOV(U16 instr) noexcept { return false; }
 
 void CPU::reset() noexcept {
   // On reset, start at SVC mode
