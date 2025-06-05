@@ -284,8 +284,12 @@ inline U32 generateMask(U8 a, U8 b) { return ((1U << (b - a + 1)) - 1) << a; }
       Thumb::ToString(opcode), cpu.pipeline.execute_addr);
 
   switch (opcode) {
+  case (Thumb::ThumbOpcode::CMP1):
+    return cpu.dispatch_thumb_CMP1(instr);
   case (Thumb::ThumbOpcode::MOV1):
     return cpu.dispatch_thumb_MOV1(instr);
+  case (Thumb::ThumbOpcode::MOV3):
+    return cpu.dispatch_thumb_MOV3(instr);
   case (Thumb::ThumbOpcode::MVN):
     return cpu.dispatch_thumb_MVN(instr);
   case (Thumb::ThumbOpcode::LDR3):
@@ -296,20 +300,36 @@ inline U32 generateMask(U8 a, U8 b) { return ((1U << (b - a + 1)) - 1) << a; }
     return cpu.dispatch_thumb_STR3(instr, memory);
   case (Thumb::ThumbOpcode::STRH1):
     return cpu.dispatch_thumb_STRH1(instr, memory);
+  case (Thumb::ThumbOpcode::ORR):
+    return cpu.dispatch_thumb_ORR(instr);
   case (Thumb::ThumbOpcode::ADD1):
     return cpu.dispatch_thumb_ADD1(instr);
+  case (Thumb::ThumbOpcode::ADD3):
+    return cpu.dispatch_thumb_ADD3(instr);
   case (Thumb::ThumbOpcode::LSL1):
     return cpu.dispatch_thumb_LSL1(instr);
+  case (Thumb::ThumbOpcode::LSR1):
+    return cpu.dispatch_thumb_LSR1(instr);
+  case (Thumb::ThumbOpcode::ASR1):
+    return cpu.dispatch_thumb_ASR1(instr);
   case (Thumb::ThumbOpcode::B1):
     return cpu.dispatch_thumb_B1(instr);
+  case (Thumb::ThumbOpcode::B2):
+    return cpu.dispatch_thumb_B2(instr);
   case (Thumb::ThumbOpcode::BL):
     return cpu.dispatch_thumb_BL(instr);
   case (Thumb::ThumbOpcode::BX):
     return cpu.dispatch_thumb_BX(instr);
   case (Thumb::ThumbOpcode::PUSH):
     return cpu.dispatch_thumb_PUSH(instr, memory);
+  case (Thumb::ThumbOpcode::SUB1):
+    return cpu.dispatch_thumb_SUB1(instr);
+  case (Thumb::ThumbOpcode::SUB3):
+    return cpu.dispatch_thumb_SUB3(instr);
   case (Thumb::ThumbOpcode::SUB4):
     return cpu.dispatch_thumb_SUB4(instr);
+  case (Thumb::ThumbOpcode::TST):
+    return cpu.dispatch_thumb_TST(instr);
   default:
     break;
   }
@@ -987,11 +1007,61 @@ bool CPU::dispatch_thumb_MOV1(U16 instr) noexcept {
   return true;
 }
 
+bool CPU::dispatch_thumb_MOV3(U16 instr) noexcept {
+  U32 rd = GetBitsInRange(instr, 0, 3);
+  U32 rm = GetBitsInRange(instr, 3, 6);
+  registers->r[rd] = U32(registers->r[rm]);
+  return true;
+}
+
+bool CPU::dispatch_thumb_CMP1(U16 instr) noexcept {
+  U32 immed_8 = GetBitsInRange(instr, 0, 8);
+  U32 rn = GetBitsInRange(instr, 8, 11);
+  U32 alu_out = registers->r[rn] - immed_8;
+
+  CPSR_Register cpsr{};
+  cpsr.bits.N = GetBit(alu_out, 31);
+  cpsr.bits.Z = alu_out == 0;
+  cpsr.bits.C = !BorrowFrom(registers->r[rn], immed_8);
+  cpsr.bits.V = OverflowFrom(registers->r[rn], immed_8, alu_out);
+
+  CPSR_Register mask{};
+  mask.bits.N = 1;
+  mask.bits.Z = 1;
+  mask.bits.C = 1;
+  mask.bits.V = 1;
+
+  registers->CPSR = SetBitsInMask(registers->CPSR, cpsr, mask);
+
+  registers->r[PC] += 2;
+  return true;
+}
+
 bool CPU::dispatch_thumb_MVN(U16 instr) noexcept {
   U32 rd = GetBitsInRange(instr, 0, 3);
   U32 rm = GetBitsInRange(instr, 3, 6);
 
   registers->r[rd] = ~(registers->r[rm]);
+
+  CPSR_Register cpsr{};
+  cpsr.bits.N = GetBit(registers->r[rd], 31);
+  cpsr.bits.Z = registers->r[rd] == 0;
+
+  CPSR_Register mask{};
+  mask.bits.N = 1;
+  mask.bits.Z = 1;
+
+  registers->CPSR = SetBitsInMask(registers->CPSR, cpsr, mask);
+
+  registers->r[PC] += 2;
+  return true;
+}
+
+bool CPU::dispatch_thumb_ORR(U16 instr) noexcept {
+  U32 rd = GetBitsInRange(instr, 3, 0);
+  U32 rm = GetBitsInRange(instr, 3, 5);
+
+  registers->r[rd] = registers->r[rd] | registers->r[rm];
 
   CPSR_Register cpsr{};
   cpsr.bits.N = GetBit(registers->r[rd], 31);
@@ -1034,6 +1104,33 @@ bool CPU::dispatch_thumb_ADD1(U16 instr) noexcept {
   return true;
 }
 
+bool CPU::dispatch_thumb_ADD3(U16 instr) noexcept {
+  U32 rd = GetBitsInRange(instr, 0, 3);
+  U32 rn = GetBitsInRange(instr, 3, 6);
+  U32 rm = GetBitsInRange(instr, 6, 9);
+
+  registers->r[rd] = registers->r[rn] + registers->r[rm];
+
+  CPSR_Register cpsr{};
+  cpsr.bits.N = GetBit(registers->r[rd], 31);
+  cpsr.bits.Z = registers->r[rd] == 0;
+  U32 carry_from_args[] = {registers->r[rn], registers->r[rm]};
+  cpsr.bits.C = CarryFrom(2, carry_from_args);
+  cpsr.bits.V =
+      OverflowFrom(registers->r[rn], registers->r[rm], registers->r[rd]);
+
+  CPSR_Register mask{};
+  mask.bits.N = 1;
+  mask.bits.Z = 1;
+  mask.bits.C = 1;
+  mask.bits.V = 1;
+
+  registers->CPSR = SetBitsInMask(registers->CPSR, cpsr, mask);
+
+  registers->r[PC] += 2;
+  return true;
+}
+
 bool CPU::dispatch_thumb_LSL1(U16 instr) noexcept {
   U32 immed_5 = GetBitsInRange(instr, 6, 11);
   U32 rm = GetBitsInRange(instr, 3, 6);
@@ -1062,9 +1159,141 @@ bool CPU::dispatch_thumb_LSL1(U16 instr) noexcept {
   return true;
 }
 
+bool CPU::dispatch_thumb_LSR1(U16 instr) noexcept {
+  U32 rd = GetBitsInRange(instr, 0, 3);
+  U32 rm = GetBitsInRange(instr, 3, 6);
+  U32 immed_5 = GetBitsInRange(instr, 6, 11);
+
+  if (immed_5 == 0) {
+    CPSR_Register cpsr{};
+    cpsr.bits.C = GetBit(registers->r[rd], 31);
+    CPSR_Register mask{};
+    mask.bits.C = 1;
+    registers->CPSR = SetBitsInMask(registers->CPSR, cpsr, mask);
+    registers->r[rd] = 0;
+  } else {
+    CPSR_Register cpsr{};
+    cpsr.bits.C = GetBit(registers->r[rd], immed_5 - 1);
+    CPSR_Register mask{};
+    mask.bits.C = 1;
+    registers->CPSR = SetBitsInMask(registers->CPSR, cpsr, mask);
+    registers->r[rd] = LogicalShiftRight(registers->r[rm], immed_5);
+  }
+
+  CPSR_Register cpsr{};
+  cpsr.bits.N = GetBit(registers->r[rd], 31);
+  cpsr.bits.Z = registers->r[rd] == 0;
+  CPSR_Register mask{};
+  mask.bits.N = 1;
+  mask.bits.Z = 1;
+  registers->CPSR = SetBitsInMask(registers->CPSR, cpsr, mask);
+
+  registers->r[PC] += 2;
+  return true;
+}
+
+bool CPU::dispatch_thumb_ASR1(U16 instr) noexcept {
+  U32 rd = GetBitsInRange(instr, 0, 3);
+  U32 rm = GetBitsInRange(instr, 3, 6);
+  U32 immed_5 = GetBitsInRange(instr, 6, 11);
+
+  if (immed_5 == 0) {
+    CPSR_Register cpsr{};
+    cpsr.bits.C = GetBit(registers->r[rm], 31);
+    CPSR_Register mask{};
+    mask.bits.C = 1;
+    registers->CPSR = SetBitsInMask(registers->CPSR, cpsr, mask);
+    if (GetBit(registers->r[rm], 31) == 0) {
+      registers->r[rd] = 0;
+    } else {
+      registers->r[rd] = 0xFFFFFFFF;
+    }
+  } else {
+    CPSR_Register cpsr{};
+    cpsr.bits.C = GetBit(registers->r[rd], immed_5 - 1);
+    CPSR_Register mask{};
+    mask.bits.C = 1;
+    registers->CPSR = SetBitsInMask(registers->CPSR, cpsr, mask);
+    registers->r[rd] = ArithmeticShiftRight(registers->r[rm], immed_5);
+  }
+
+  CPSR_Register cpsr{};
+  cpsr.bits.N = GetBit(registers->r[rd], 31);
+  cpsr.bits.Z = registers->r[rd] == 0;
+  CPSR_Register mask{};
+  mask.bits.N = 1;
+  mask.bits.Z = 1;
+  registers->CPSR = SetBitsInMask(registers->CPSR, cpsr, mask);
+
+  registers->r[PC] += 2;
+  return true;
+}
+
+bool CPU::dispatch_thumb_SUB1(U16 instr) noexcept {
+  U32 rd = GetBitsInRange(instr, 0, 3);
+  U32 rn = GetBitsInRange(instr, 3, 6);
+  U32 immed_3 = GetBitsInRange(instr, 6, 9);
+
+  registers->r[rd] = registers->r[rn] - immed_3;
+
+  CPSR_Register cpsr{};
+  cpsr.bits.N = GetBit(registers->r[rd], 31);
+  cpsr.bits.Z = registers->r[rd] == 0;
+  cpsr.bits.C = !BorrowFrom(registers->r[rn], immed_3);
+  cpsr.bits.V = OverflowFrom(registers->r[rn], immed_3, registers->r[rd]);
+
+  CPSR_Register mask{};
+  mask.bits.N = 1;
+  mask.bits.Z = 1;
+  mask.bits.C = 1;
+  mask.bits.V = 1;
+  registers->CPSR = SetBitsInMask(registers->CPSR, cpsr, mask);
+
+  return true;
+}
+
+bool CPU::dispatch_thumb_SUB3(U16 instr) noexcept {
+  U32 rd = GetBitsInRange(instr, 0, 3);
+  U32 rn = GetBitsInRange(instr, 3, 6);
+  U32 rm = GetBitsInRange(instr, 6, 9);
+
+  registers->r[rd] = U32(registers->r[rn]) - U32(registers->r[rm]);
+
+  CPSR_Register cpsr{};
+  cpsr.bits.N = GetBit(registers->r[rd], 31);
+  cpsr.bits.Z = registers->r[rd] == 0;
+  cpsr.bits.C = !BorrowFrom(registers->r[rn], registers->r[rm]);
+  cpsr.bits.V =
+      OverflowFrom(registers->r[rn], registers->r[rm], registers->r[rd]);
+
+  CPSR_Register mask{};
+  mask.bits.N = 1;
+  mask.bits.Z = 1;
+  mask.bits.C = 1;
+  mask.bits.V = 1;
+  registers->CPSR = SetBitsInMask(registers->CPSR, cpsr, mask);
+
+  return true;
+}
+
 bool CPU::dispatch_thumb_SUB4(U16 instr) noexcept {
   U32 immed_7 = GetBitsInRange(instr, 0, 7);
   registers->r[SP] -= (immed_7 << 2);
+  registers->r[PC] += 2;
+  return true;
+}
+
+bool CPU::dispatch_thumb_TST(U16 instr) noexcept {
+  U32 rn = GetBitsInRange(instr, 0, 3);
+  U32 rm = GetBitsInRange(instr, 3, 6);
+  U32 alu_out = registers->r[rn] & registers->r[rm];
+  CPSR_Register cpsr{};
+  cpsr.bits.N = GetBit(alu_out, 31);
+  cpsr.bits.Z = alu_out == 0;
+  CPSR_Register mask{};
+  mask.bits.N = 1;
+  mask.bits.Z = 1;
+  registers->CPSR = SetBitsInMask(registers->CPSR, cpsr, mask);
   registers->r[PC] += 2;
   return true;
 }
@@ -1079,6 +1308,13 @@ bool CPU::dispatch_thumb_B1(U16 instr) noexcept {
   } else {
     registers->r[PC] += 2;
   }
+  return true;
+}
+
+bool CPU::dispatch_thumb_B2(U16 instr) noexcept {
+  I32 immed_11 = GetBitsInRange(instr, 0, 11);
+  registers->r[PC] += (SignExtend(immed_11, 10) << 1);
+  ClearPipeline();
   return true;
 }
 
