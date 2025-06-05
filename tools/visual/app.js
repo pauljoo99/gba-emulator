@@ -159,3 +159,26 @@ function ReadMemoryData(snapshotNum) {
         })
         .catch(console.error);
 }
+
+function GetMode(cpsrValue) {
+    const mode = cpsrValue & 0b11111; // Extract lowest 5 bits (M field)
+
+    switch (mode) {
+        case 0b10000:
+            return "USER";
+        case 0b10001:
+            return "FAST_INTERRUPT";
+        case 0b10010:
+            return "INTERRUPT";
+        case 0b10011:
+            return "SUPERVISOR";
+        case 0b10111:
+            return "ABORT";
+        case 0b11011:
+            return "UNDEFINED";
+        case 0b11111:
+            return "SYSTEM";
+        default:
+            return "";
+    }
+}

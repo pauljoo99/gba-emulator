@@ -52,6 +52,9 @@
 
     <h2>Registers</h2>
     <table id="registersTable"></table>
+    <h3>CPSR</h3>
+    <div>Mode: <span id="displayMode"></span></div>
+    <table id="cpsrTable"></table>
 
     <h2>Memory</h2>
     <h3>
@@ -158,6 +161,44 @@
                 }
                 table_element.appendChild(tr);
             }
+
+            const header = ['N', 'Z', 'C', 'V', 27, 26, 25, 24, 23, 22, 21, 20, 19, 18, 17, 16,
+                15, 14, 13, 12, 11, 10, 9, 8, 'I', 'F', 'T', 'M', 'M', 'M', 'M', 'M'
+            ];
+            let color = 0;
+            const lightColors = [
+                "#FFB3BA", // Light Red/Pink
+                "#FFDFBA", // Light Orange
+                "#FFFFBA", // Light Yellow
+                "#BAFFC9", // Light Green
+                "#BAE1FF", // Light Blue
+                "#D6BAFF", // Light Purple
+                "#FFE1BA", // Light Peach
+                "#BAFFF9" // Light Cyan
+            ];
+            const colors = [];
+            for (let i = 0; i < 4; ++i) {
+                colors.push(lightColors[color]);
+            }
+            color++;
+            for (let i = 0; i < 20; ++i) {
+                colors.push(lightColors[color]);
+            }
+            color++;
+            colors.push(lightColors[color]);
+            color++;
+            colors.push(lightColors[color]);
+            color++;
+            colors.push(lightColors[color]);
+            color++;
+            for (let i = 0; i < 5; ++i) {
+                colors.push(lightColors[color]);
+            }
+            color++;
+            displayBinaryTable("cpsrTable", registers.CPSR, header, colors);
+
+            let mode = document.getElementById("displayMode");
+            mode.textContent = GetMode(registers.CPSR);
         }
 
         function update_memory_segment(memory_segment, start_addr, start_input, end_input, table) {
@@ -235,16 +276,38 @@
         });
 
         document.getElementById("hexInput").addEventListener("input", function(event) {
-            let bin_output_table = document.getElementById("binOutputTable");
+            const header = [31, 30, 29, 28, 27, 26, 25, 24, 23, 22, 21, 20, 19, 18, 17, 16,
+                15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0
+            ];
+
+            const lightColors = [
+                "#FFB3BA", // Light Red/Pink
+                "#FFDFBA", // Light Orange
+                "#FFFFBA", // Light Yellow
+                "#BAFFC9", // Light Green
+                "#BAE1FF", // Light Blue
+                "#D6BAFF", // Light Purple
+                "#FFE1BA", // Light Peach
+                "#BAFFF9" // Light Cyan
+            ];
+            const colors = [];
+            for (let i = 0; i < header.length; ++i) {
+                colors.push(lightColors[Math.floor(i / 4)]);
+            }
+            displayBinaryTable("binOutputTable", event.target.value, header, colors);
+        });
+
+        function displayBinaryTable(table, value, header, colors) {
+            let bin_output_table = document.getElementById(table);
             bin_output_table.innerHTML = "";
-            bin_string = toBinary(parseInt(event.target.value)).slice(2);
+            bin_string = toBinary(parseInt(value)).slice(2);
             let tr = document.createElement("tr");
             let trh = document.createElement("tr");
             for (let i = 0; i < bin_string.length; ++i) {
                 const td = document.createElement("td");
                 const tdh = document.createElement("td");
                 td.textContent = bin_string[i];
-                tdh.textContent = bin_string.length - i - 1;
+                tdh.textContent = header[i];
 
                 td.style.width = "20px";
                 td.style.textAlign = "center";
@@ -263,15 +326,16 @@
                     "#BAFFF9" // Light Cyan
                 ];
 
-                td.style.backgroundColor = lightColors[Math.floor(i / 4)];
-                tdh.style.backgroundColor = lightColors[Math.floor(i / 4)];
+                td.style.backgroundColor = colors[i];
+                tdh.style.backgroundColor = colors[i];
 
                 tr.appendChild(td);
                 trh.appendChild(tdh)
             }
             bin_output_table.appendChild(trh);
             bin_output_table.appendChild(tr);
-        });
+
+        }
     </script>
 
 </body>
