@@ -308,6 +308,8 @@ inline U32 generateMask(U8 a, U8 b) { return ((1U << (b - a + 1)) - 1) << a; }
     return cpu.dispatch_thumb_ADD3(instr);
   case (Thumb::ThumbOpcode::LSL1):
     return cpu.dispatch_thumb_LSL1(instr);
+  case (Thumb::ThumbOpcode::LSL2):
+    return cpu.dispatch_thumb_LSL2(instr);
   case (Thumb::ThumbOpcode::LSR1):
     return cpu.dispatch_thumb_LSR1(instr);
   case (Thumb::ThumbOpcode::ASR1):
@@ -1145,6 +1147,45 @@ bool CPU::dispatch_thumb_LSL1(U16 instr) noexcept {
     mask.bits.C = 1;
     registers->r[rd] = LogicalShiftLeft(registers->r[rm], immed_5);
     registers->CPSR = SetBitsInMask(registers->CPSR, cpsr, mask);
+  }
+
+  CPSR_Register cpsr{};
+  cpsr.bits.N = GetBit(registers->r[rd], 31);
+  cpsr.bits.Z = registers->r[rd] == 0;
+  CPSR_Register mask{};
+  mask.bits.N = 1;
+  mask.bits.Z = 1;
+  registers->CPSR = SetBitsInMask(registers->CPSR, cpsr, mask);
+
+  registers->r[PC] += 2;
+  return true;
+}
+
+bool CPU::dispatch_thumb_LSL2(U16 instr) noexcept {
+  U32 rs = GetBitsInRange(instr, 3, 6);
+  U32 rd = GetBitsInRange(instr, 0, 3);
+
+  U32 rs_byte = GetBitsInRange(registers->r[rs], 0, 8);
+  if (rs_byte == 0) {
+  } else if (rs_byte < 32) {
+    CPSR_Register cpsr{};
+    cpsr.bits.C = GetBit(registers->r[rd], rs_byte - 1);
+    CPSR_Register mask{};
+    mask.bits.C = 1;
+    registers->CPSR = SetBitsInMask(registers->CPSR, cpsr, mask);
+    registers->r[rd] = LogicalShiftRight(registers->r[rd], rs_byte);
+  } else if (rs_byte == 32) {
+    CPSR_Register cpsr{};
+    cpsr.bits.C = GetBit(registers->r[rd], 31);
+    CPSR_Register mask{};
+    mask.bits.C = 1;
+    registers->r[rd] = 0;
+  } else {
+    CPSR_Register cpsr{};
+    cpsr.bits.C = 0;
+    CPSR_Register mask{};
+    mask.bits.C = 1;
+    registers->r[rd] = 0;
   }
 
   CPSR_Register cpsr{};
