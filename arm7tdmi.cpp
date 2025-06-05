@@ -233,7 +233,8 @@ inline U32 generateMask(U8 a, U8 b) { return ((1U << (b - a + 1)) - 1) << a; }
 [[nodiscard]] bool process_instr(U32 instr, Instr::Instr instr_type,
                                  Memory::Memory &memory, CPU &cpu) {
 
-  LOG("Instr: %s, Raw Instr: 0x%08X", toString(instr_type), instr);
+  LOG("Instr: %s, Raw Instr: 0x%08X, PC: 0x%04X", toString(instr_type), instr,
+      cpu.pipeline.execute_addr);
 
   switch (instr_type) {
   case Instr::Instr::B:
@@ -277,7 +278,8 @@ inline U32 generateMask(U8 a, U8 b) { return ((1U << (b - a + 1)) - 1) << a; }
                                  CPU &cpu) noexcept {
 
   const Thumb::ThumbOpcode opcode = Thumb::GetThumbOpcode(instr);
-  LOG("Raw Thumb Instr: 0x%04X, Opcode: %s", instr, Thumb::ToString(opcode));
+  LOG("Raw Thumb Instr: 0x%04X, Opcode: %s, PC: 0x%04X", instr,
+      Thumb::ToString(opcode), cpu.pipeline.execute_addr);
 
   switch (opcode) {
   case (Thumb::ThumbOpcode::MOV1):
