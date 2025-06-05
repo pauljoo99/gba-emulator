@@ -129,7 +129,7 @@ constexpr U16 STRH2 = 0x5200;
 constexpr U16 SUB1 = 0x1E00;
 constexpr U16 SUB2 = 0x3800;
 constexpr U16 SUB3 = 0x1A00;
-constexpr U16 SUB4 = 0xB100;
+constexpr U16 SUB4 = 0xB080;
 constexpr U16 SWI = 0xDF00;
 constexpr U16 TST = 0x4200;
 } // namespace ThumbEncoding

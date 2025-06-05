@@ -11,6 +11,10 @@ namespace Emulator::Arm
 
 {
 
+constexpr U32 LR = 14;
+constexpr U32 SP = 13;
+constexpr U32 PC = 15;
+
 struct CPSR_Flags {
   U32 M : 5;
   U32 T : 1;
@@ -123,11 +127,16 @@ struct CPU {
 
   [[nodiscard]] bool dispatch_thumb_MOV1(U16 instr) noexcept;
   [[nodiscard]] bool dispatch_thumb_ADD1(U16 instr) noexcept;
+  [[nodiscard]] bool dispatch_thumb_SUB4(U16 instr) noexcept;
   [[nodiscard]] bool dispatch_thumb_B1(U16 instr) noexcept;
   [[nodiscard]] bool dispatch_thumb_BX(U16 instr) noexcept;
   [[nodiscard]] bool dispatch_thumb_LDR3(U16 instr,
                                          const Memory::Memory &memory) noexcept;
   [[nodiscard]] bool dispatch_thumb_STR2(U16 instr,
+                                         Memory::Memory &memory) noexcept;
+  [[nodiscard]] bool dispatch_thumb_STR3(U16 instr,
+                                         Memory::Memory &memory) noexcept;
+  [[nodiscard]] bool dispatch_thumb_PUSH(U16 instr,
                                          Memory::Memory &memory) noexcept;
 
   ShifterOperandResult ShifterOperand(DataProcessingInstr instr) noexcept;
