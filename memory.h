@@ -57,7 +57,7 @@ inline const U8 *GetPhysicalMemoryReadOnly(const Memory &mem,
     return &mem.GamePak_SRAM[address - 0x0E000000];
   } else {
     // Out of bounds or unused memory
-    return nullptr;
+    LOG_ABORT("Invalid memory address: %u", address);
   }
 }
 
@@ -86,7 +86,7 @@ inline U8 *GetPhysicalMemoryReadWrite(Memory &mem, U32 address) noexcept {
     return &mem.GamePak_SRAM[address - 0x0E000000];
   } else {
     // Out of bounds or unused memory
-    return nullptr;
+    LOG_ABORT("Invalid memory address: %u", address);
   }
 }
 

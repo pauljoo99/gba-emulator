@@ -263,7 +263,7 @@ inline U32 generateMask(U8 a, U8 b) { return ((1U << (b - a + 1)) - 1) << a; }
   }
 }
 
-[[nodiscard]] bool process_thumb(U16 instr, const Memory::Memory &memory,
+[[nodiscard]] bool process_thumb(U16 instr, Memory::Memory &memory,
                                  CPU &cpu) noexcept {
 
   const Thumb::ThumbOpcode opcode = Thumb::GetThumbOpcode(instr);
@@ -272,6 +272,10 @@ inline U32 generateMask(U8 a, U8 b) { return ((1U << (b - a + 1)) - 1) << a; }
   switch (opcode) {
   case (Thumb::ThumbOpcode::MOV1):
     return cpu.dispatch_thumb_MOV1(instr);
+  case (Thumb::ThumbOpcode::LDR3):
+    return cpu.dispatch_thumb_LDR3(instr, memory);
+  case (Thumb::ThumbOpcode::STR2):
+    return cpu.dispatch_thumb_STR2(instr, memory);
   default:
     break;
   }
@@ -903,6 +907,30 @@ bool CPU::dispatch_thumb_MOV1(U16 instr) noexcept {
 
   registers->CPSR = SetBitsInMask(registers->CPSR, cpsr, mask);
 
+  registers->r[15] += 2;
+  return true;
+}
+
+bool CPU::dispatch_thumb_LDR3(U16 instr,
+                              const Memory::Memory &memory) noexcept {
+  U32 immed_8 = GetBitsInRange(instr, 0, 8);
+  U32 rd = GetBitsInRange(instr, 8, 11);
+  U32 address = (GetBitsInRange(registers->r[15], 2, 32) << 2) + immed_8 * 4;
+  registers->r[rd] = ReadWordFromGBAMemory(memory, address);
+  registers->r[15] += 2;
+  return true;
+}
+
+bool CPU::dispatch_thumb_STR2(U16 instr, Memory::Memory &memory) noexcept {
+  U32 rd = GetBitsInRange(instr, 0, 3);
+  U32 rn = GetBitsInRange(instr, 3, 6);
+  U32 rm = GetBitsInRange(instr, 6, 9);
+  U32 address = registers->r[rn] + registers->r[rm];
+  if (GetBitsInRange(address, 0, 2) == 0b00) {
+    WriteWordFromGBAMemory(memory, address, registers->r[rd]);
+  } else {
+    LOG_ABORT("Unpredictable");
+  }
   registers->r[15] += 2;
   return true;
 }
