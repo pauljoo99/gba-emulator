@@ -301,6 +301,38 @@ struct CPU {
       break;
     }
   }
+
+  inline void CPSR_SetC(bool C) noexcept {
+    CPSR_Register cpsr;
+    cpsr.bits.C = C;
+    CPSR_Register mask;
+    mask.bits.C = 1;
+    registers->CPSR = SetBitsInMask(registers->CPSR, cpsr, mask);
+  }
+
+  inline void CPSR_SetV(bool V) noexcept {
+    CPSR_Register cpsr;
+    cpsr.bits.V = V;
+    CPSR_Register mask;
+    mask.bits.V = 1;
+    registers->CPSR = SetBitsInMask(registers->CPSR, cpsr, mask);
+  }
+
+  inline void CPSR_SetZ(bool Z) noexcept {
+    CPSR_Register cpsr;
+    cpsr.bits.Z = Z;
+    CPSR_Register mask;
+    mask.bits.Z = 1;
+    registers->CPSR = SetBitsInMask(registers->CPSR, cpsr, mask);
+  }
+
+  inline void CPSR_SetN(bool N) noexcept {
+    CPSR_Register cpsr;
+    cpsr.bits.N = N;
+    CPSR_Register mask;
+    mask.bits.N = 1;
+    registers->CPSR = SetBitsInMask(registers->CPSR, cpsr, mask);
+  }
 };
 
 } // namespace Emulator::Arm

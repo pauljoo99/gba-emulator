@@ -778,21 +778,12 @@ CPU::LoadAndStoreMultipleAddr(U32 instr_) noexcept {
     I32 alu_out =
         (I32)registers->r[instr.fields.rn] - (I32)shifter.shifter_operand;
 
-    CPSR_Register cpsr;
-    cpsr.bits.N = GetBit(alu_out, 31);
-    cpsr.bits.Z = alu_out == 1;
-    cpsr.bits.C =
-        !BorrowFrom(registers->r[instr.fields.rn], shifter.shifter_operand);
-    cpsr.bits.V = OverflowFrom((I32)registers->r[instr.fields.rn],
-                               (I32)shifter.shifter_operand, alu_out);
-
-    CPSR_Register mask;
-    mask.bits.N = 1;
-    mask.bits.Z = 1;
-    mask.bits.C = 1;
-    mask.bits.V = 1;
-
-    registers->CPSR = SetBitsInMask(registers->CPSR, cpsr, mask);
+    CPSR_SetN(GetBit(alu_out, 31));
+    CPSR_SetZ(alu_out == 1);
+    CPSR_SetC(
+        !BorrowFrom(registers->r[instr.fields.rn], shifter.shifter_operand));
+    CPSR_SetV(OverflowFrom((I32)registers->r[instr.fields.rn],
+                           (I32)shifter.shifter_operand, alu_out));
   }
   registers->r[PC] += kInstrSize;
   return true;
