@@ -1503,7 +1503,7 @@ bool CPU::dispatch_thumb_STRH1(U16 instr, Memory::Memory &memory) noexcept {
   if (GetBitsInRange(address, 0, 2) == 0) {
     WriteHalfWordFromGBAMemory(memory, address, U16(registers->r[rd]));
   } else {
-    LOG_ABORT("Unpredicatable: Bad address");
+    LOG_ABORT("Unpredicatable: Bad address 0x%04X", address);
   }
   registers->r[PC] += 2;
   return true;
@@ -1518,7 +1518,7 @@ bool CPU::dispatch_thumb_STRH2(U16 instr, Memory::Memory &memory) noexcept {
   if (GetBitsInRange(address, 0, 2) == 0) {
     WriteHalfWordFromGBAMemory(memory, address, U16(registers->r[rd]));
   } else {
-    LOG_ABORT("Unpredicatable: Bad address");
+    LOG_ABORT("Unpredicatable: Bad address 0x%04X", address);
   }
   registers->r[PC] += 2;
   return true;
