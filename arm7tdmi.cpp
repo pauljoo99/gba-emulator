@@ -1048,6 +1048,22 @@ bool CPU::dispatch_thumb_B1(U16 instr) noexcept {
   return true;
 }
 
+bool CPU::dispatch_thumb_BL(U16 instr) noexcept {
+  U32 h = GetBitsInRange(instr, 11, 13);
+  U32 offset_11 = GetBitsInRange(instr, 0, 11);
+
+  if (h == 0b10) {
+    registers->r[LR] = registers->r[PC] + (SignExtend(offset_11, 10) << 12);
+    registers->r[PC] += 2;
+  } else if (h == 0b11) {
+    registers->r[PC] = registers->r[LR] + (offset_11 << 1);
+    registers->r[LR] = (pipeline.execute_addr + 2) | 0b1;
+    ClearPipeline();
+  }
+
+  return true;
+}
+
 bool CPU::dispatch_thumb_BX(U16 instr) noexcept {
   U32 rm = GetBitsInRange(instr, 3, 7);
 
