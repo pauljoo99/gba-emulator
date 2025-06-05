@@ -298,6 +298,8 @@ inline U32 generateMask(U8 a, U8 b) { return ((1U << (b - a + 1)) - 1) << a; }
     return cpu.dispatch_thumb_ADD1(instr);
   case (Thumb::ThumbOpcode::B1):
     return cpu.dispatch_thumb_B1(instr);
+  case (Thumb::ThumbOpcode::BL):
+    return cpu.dispatch_thumb_BL(instr);
   case (Thumb::ThumbOpcode::BX):
     return cpu.dispatch_thumb_BX(instr);
   case (Thumb::ThumbOpcode::PUSH):
