@@ -288,6 +288,10 @@ inline U32 generateMask(U8 a, U8 b) { return ((1U << (b - a + 1)) - 1) << a; }
     return cpu.dispatch_thumb_LDR3(instr, memory);
   case (Thumb::ThumbOpcode::STR2):
     return cpu.dispatch_thumb_STR2(instr, memory);
+  case (Thumb::ThumbOpcode::ADD1):
+    return cpu.dispatch_thumb_ADD1(instr);
+  case (Thumb::ThumbOpcode::B1):
+    return cpu.dispatch_thumb_B1(instr);
   default:
     break;
   }
@@ -477,7 +481,8 @@ CPU::LoadAndStoreMultipleAddr(U32 instr_) noexcept {
 }
 
 [[nodiscard]] bool CPU::dispatch(Memory::Memory &memory) noexcept {
-  Debug::debug_snapshot(all_registers, memory, pipeline, "tools/visual/data/");
+  // Debug::debug_snapshot(all_registers, memory, pipeline,
+  // "tools/visual/data/");
   ChangeRegistersOnMode();
 
   CPSR_Register cpsr(registers->CPSR);
@@ -933,6 +938,46 @@ bool CPU::dispatch_thumb_MOV1(U16 instr) noexcept {
   registers->CPSR = SetBitsInMask(registers->CPSR, cpsr, mask);
 
   registers->r[15] += 2;
+  return true;
+}
+
+bool CPU::dispatch_thumb_ADD1(U16 instr) noexcept {
+  U32 immed_3 = GetBitsInRange(instr, 6, 9);
+  U32 rn = GetBitsInRange(instr, 3, 6);
+  U32 rd = GetBitsInRange(instr, 0, 3);
+
+  registers->r[rd] = registers->r[rn] + immed_3;
+
+  CPSR_Register cpsr{};
+  cpsr.bits.N = GetBit(registers->r[rd], 31);
+  cpsr.bits.Z = registers->r[rd] == 0;
+  U32 carry_from_args[] = {registers->r[rn], immed_3};
+  cpsr.bits.C = CarryFrom(2, carry_from_args);
+
+  cpsr.bits.V = OverflowFrom(registers->r[rn], immed_3, registers->r[rd]);
+
+  CPSR_Register mask{};
+  mask.bits.N = 1;
+  mask.bits.Z = 1;
+  mask.bits.C = 1;
+  mask.bits.V = 1;
+
+  registers->CPSR = SetBitsInMask(registers->CPSR, cpsr, mask);
+
+  registers->r[15] += 2;
+  return true;
+}
+
+bool CPU::dispatch_thumb_B1(U16 instr) noexcept {
+  I32 immed_8 = SignExtend(GetBitsInRange(instr, 0, 8), 7);
+  U32 cond = GetBitsInRange(instr, 8, 11);
+
+  if (evaluate_cond(ConditionCode(cond), registers->CPSR)) {
+    registers->r[15] = registers->r[15] + (immed_8 << 1);
+    ClearPipeline();
+  } else {
+    registers->r[15] += 2;
+  }
   return true;
 }
 
