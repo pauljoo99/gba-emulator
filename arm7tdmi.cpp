@@ -286,6 +286,8 @@ inline U32 generateMask(U8 a, U8 b) { return ((1U << (b - a + 1)) - 1) << a; }
   switch (opcode) {
   case (Thumb::ThumbOpcode::MOV1):
     return cpu.dispatch_thumb_MOV1(instr);
+  case (Thumb::ThumbOpcode::MVN):
+    return cpu.dispatch_thumb_MVN(instr);
   case (Thumb::ThumbOpcode::LDR3):
     return cpu.dispatch_thumb_LDR3(instr, memory);
   case (Thumb::ThumbOpcode::STR2):
@@ -964,6 +966,26 @@ bool CPU::dispatch_thumb_MOV1(U16 instr) noexcept {
   U32 rd = GetBitsInRange(instr, 8, 11);
 
   registers->r[rd] = immed_8;
+
+  CPSR_Register cpsr{};
+  cpsr.bits.N = GetBit(registers->r[rd], 31);
+  cpsr.bits.Z = registers->r[rd] == 0;
+
+  CPSR_Register mask{};
+  mask.bits.N = 1;
+  mask.bits.Z = 1;
+
+  registers->CPSR = SetBitsInMask(registers->CPSR, cpsr, mask);
+
+  registers->r[15] += 2;
+  return true;
+}
+
+bool CPU::dispatch_thumb_MVN(U16 instr) noexcept {
+  U32 rd = GetBitsInRange(instr, 0, 3);
+  U32 rm = GetBitsInRange(instr, 3, 6);
+
+  registers->r[rd] = ~(registers->r[rm]);
 
   CPSR_Register cpsr{};
   cpsr.bits.N = GetBit(registers->r[rd], 31);
