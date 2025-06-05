@@ -123,6 +123,7 @@ struct CPU {
   [[nodiscard]] bool dispatch_thumb_MOV1(U16 instr) noexcept;
   [[nodiscard]] bool dispatch_thumb_ADD1(U16 instr) noexcept;
   [[nodiscard]] bool dispatch_thumb_B1(U16 instr) noexcept;
+  [[nodiscard]] bool dispatch_thumb_BX(U16 instr) noexcept;
   [[nodiscard]] bool dispatch_thumb_LDR3(U16 instr,
                                          const Memory::Memory &memory) noexcept;
   [[nodiscard]] bool dispatch_thumb_STR2(U16 instr,
