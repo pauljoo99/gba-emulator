@@ -131,6 +131,7 @@ struct CPU {
   [[nodiscard]] bool dispatch_thumb_MOV3(U16 instr) noexcept;
   [[nodiscard]] bool dispatch_thumb_MVN(U16 instr) noexcept;
   [[nodiscard]] bool dispatch_thumb_ADD1(U16 instr) noexcept;
+  [[nodiscard]] bool dispatch_thumb_ADD2(U16 instr) noexcept;
   [[nodiscard]] bool dispatch_thumb_ADD3(U16 instr) noexcept;
   [[nodiscard]] bool dispatch_thumb_ORR(U16 instr) noexcept;
   [[nodiscard]] bool dispatch_thumb_SUB1(U16 instr) noexcept;
@@ -147,11 +148,17 @@ struct CPU {
   [[nodiscard]] bool dispatch_thumb_TST(U16 instr) noexcept;
   [[nodiscard]] bool dispatch_thumb_LDR3(U16 instr,
                                          const Memory::Memory &memory) noexcept;
+  [[nodiscard]] bool
+  dispatch_thumb_LDRH1(U16 instr, const Memory::Memory &memory) noexcept;
+  [[nodiscard]] bool
+  dispatch_thumb_LDRH2(U16 instr, const Memory::Memory &memory) noexcept;
   [[nodiscard]] bool dispatch_thumb_STR2(U16 instr,
                                          Memory::Memory &memory) noexcept;
   [[nodiscard]] bool dispatch_thumb_STR3(U16 instr,
                                          Memory::Memory &memory) noexcept;
   [[nodiscard]] bool dispatch_thumb_STRH1(U16 instr,
+                                          Memory::Memory &memory) noexcept;
+  [[nodiscard]] bool dispatch_thumb_STRH2(U16 instr,
                                           Memory::Memory &memory) noexcept;
   [[nodiscard]] bool dispatch_thumb_PUSH(U16 instr,
                                          Memory::Memory &memory) noexcept;

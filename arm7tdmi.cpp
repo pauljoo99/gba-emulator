@@ -294,16 +294,24 @@ inline U32 generateMask(U8 a, U8 b) { return ((1U << (b - a + 1)) - 1) << a; }
     return cpu.dispatch_thumb_MVN(instr);
   case (Thumb::ThumbOpcode::LDR3):
     return cpu.dispatch_thumb_LDR3(instr, memory);
+  case (Thumb::ThumbOpcode::LDRH1):
+    return cpu.dispatch_thumb_LDRH1(instr, memory);
+  case (Thumb::ThumbOpcode::LDRH2):
+    return cpu.dispatch_thumb_LDRH2(instr, memory);
   case (Thumb::ThumbOpcode::STR2):
     return cpu.dispatch_thumb_STR2(instr, memory);
   case (Thumb::ThumbOpcode::STR3):
     return cpu.dispatch_thumb_STR3(instr, memory);
   case (Thumb::ThumbOpcode::STRH1):
     return cpu.dispatch_thumb_STRH1(instr, memory);
+  case (Thumb::ThumbOpcode::STRH2):
+    return cpu.dispatch_thumb_STRH2(instr, memory);
   case (Thumb::ThumbOpcode::ORR):
     return cpu.dispatch_thumb_ORR(instr);
   case (Thumb::ThumbOpcode::ADD1):
     return cpu.dispatch_thumb_ADD1(instr);
+  case (Thumb::ThumbOpcode::ADD2):
+    return cpu.dispatch_thumb_ADD2(instr);
   case (Thumb::ThumbOpcode::ADD3):
     return cpu.dispatch_thumb_ADD3(instr);
   case (Thumb::ThumbOpcode::LSL1):
@@ -1077,21 +1085,30 @@ bool CPU::dispatch_thumb_ADD1(U16 instr) noexcept {
 
   registers->r[rd] = registers->r[rn] + immed_3;
 
-  CPSR_Register cpsr{};
-  cpsr.bits.N = GetBit(registers->r[rd], 31);
-  cpsr.bits.Z = registers->r[rd] == 0;
+  CPSR_SetN(GetBit(registers->r[rd], 31));
+  CPSR_SetZ(registers->r[rd] == 0);
   U32 carry_from_args[] = {registers->r[rn], immed_3};
-  cpsr.bits.C = CarryFrom(2, carry_from_args);
+  CPSR_SetC(CarryFrom(2, carry_from_args));
+  CPSR_SetV(OverflowFrom(registers->r[rn], immed_3, registers->r[rd]));
 
-  cpsr.bits.V = OverflowFrom(registers->r[rn], immed_3, registers->r[rd]);
+  registers->r[PC] += 2;
+  return true;
+}
 
-  CPSR_Register mask{};
-  mask.bits.N = 1;
-  mask.bits.Z = 1;
-  mask.bits.C = 1;
-  mask.bits.V = 1;
+bool CPU::dispatch_thumb_ADD2(U16 instr) noexcept {
+  U32 immed_8 = GetBitsInRange(instr, 0, 8);
+  U32 rd = GetBitsInRange(instr, 8, 11);
 
-  registers->CPSR = SetBitsInMask(registers->CPSR, cpsr, mask);
+  U32 result = registers->r[rd] + immed_8;
+
+  U32 carry_from_args[] = {registers->r[rd], immed_8};
+  CPSR_SetC(CarryFrom(2, carry_from_args));
+  CPSR_SetV(OverflowFrom(registers->r[rd], immed_8, result));
+
+  registers->r[rd] = result;
+
+  CPSR_SetN(GetBit(registers->r[rd], 31));
+  CPSR_SetZ(registers->r[rd] == 0);
 
   registers->r[PC] += 2;
   return true;
@@ -1389,6 +1406,40 @@ bool CPU::dispatch_thumb_LDR3(U16 instr,
   return true;
 }
 
+bool CPU::dispatch_thumb_LDRH1(U16 instr,
+                               const Memory::Memory &memory) noexcept {
+  U32 immed_5 = GetBitsInRange(instr, 6, 11);
+  U32 rn = GetBitsInRange(instr, 3, 6);
+  U32 rd = GetBitsInRange(instr, 0, 3);
+  U32 address = registers->r[rn] + immed_5 * 2;
+  U16 data;
+  if ((address & 0b1) == 0) {
+    data = ReadHalfWordFromGBAMemory(memory, address);
+  } else {
+    LOG_ABORT("Unpredictable");
+  }
+  registers->r[rd] = data;
+  registers->r[PC] += 2;
+  return true;
+}
+
+bool CPU::dispatch_thumb_LDRH2(U16 instr,
+                               const Memory::Memory &memory) noexcept {
+  U32 rm = GetBitsInRange(instr, 6, 9);
+  U32 rn = GetBitsInRange(instr, 3, 6);
+  U32 rd = GetBitsInRange(instr, 0, 3);
+  U32 address = registers->r[rn] + registers->r[rm];
+  U16 data;
+  if ((address & 0b1) == 0) {
+    data = ReadHalfWordFromGBAMemory(memory, address);
+  } else {
+    LOG_ABORT("Unpredictable");
+  }
+  registers->r[rd] = data;
+  registers->r[PC] += 2;
+  return true;
+}
+
 bool CPU::dispatch_thumb_PUSH(U16 instr, Memory::Memory &memory) noexcept {
   U32 register_list = GetBitsInRange(instr, 0, 8);
   U32 include_lr = GetBit(instr, 8);
@@ -1449,6 +1500,21 @@ bool CPU::dispatch_thumb_STRH1(U16 instr, Memory::Memory &memory) noexcept {
   U32 immed_5 = GetBitsInRange(instr, 6, 11);
 
   U32 address = registers->r[rn] + (immed_5 * 4);
+  if (GetBitsInRange(address, 0, 2) == 0) {
+    WriteHalfWordFromGBAMemory(memory, address, U16(registers->r[rd]));
+  } else {
+    LOG_ABORT("Unpredicatable: Bad address");
+  }
+  registers->r[PC] += 2;
+  return true;
+}
+
+bool CPU::dispatch_thumb_STRH2(U16 instr, Memory::Memory &memory) noexcept {
+  U32 rd = GetBitsInRange(instr, 0, 3);
+  U32 rn = GetBitsInRange(instr, 3, 6);
+  U32 rm = GetBitsInRange(instr, 6, 9);
+
+  U32 address = registers->r[rn] + registers->r[rm];
   if (GetBitsInRange(address, 0, 2) == 0) {
     WriteHalfWordFromGBAMemory(memory, address, U16(registers->r[rd]));
   } else {
