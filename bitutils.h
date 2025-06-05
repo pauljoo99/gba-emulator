@@ -58,7 +58,7 @@ inline bool CarryFrom(U32 num_args, const U32 *args) {
 
 inline bool BorrowFrom(U32 a, U32 b) { return a < b; }
 
-bool OverflowFrom(I32 a, I32 b, I32 result) {
+inline bool OverflowFrom(I32 a, I32 b, I32 result) {
   return ((a > 0 && b > 0 && result < 0) || (a < 0 && b < 0 && result > 0));
 }
 

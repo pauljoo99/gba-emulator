@@ -2,6 +2,7 @@
 
 #include "arm7tdmi_constants.h"
 #include "arm_instructions.h"
+#include "bitutils.h"
 #include "datatypes.h"
 #include "logging.h"
 #include "memory.h"
@@ -307,7 +308,7 @@ struct CPU {
     cpsr.bits.C = C;
     CPSR_Register mask;
     mask.bits.C = 1;
-    registers->CPSR = SetBitsInMask(registers->CPSR, cpsr, mask);
+    registers->CPSR = BitUtils::SetBitsInMask(registers->CPSR, cpsr, mask);
   }
 
   inline void CPSR_SetV(bool V) noexcept {
@@ -315,7 +316,7 @@ struct CPU {
     cpsr.bits.V = V;
     CPSR_Register mask;
     mask.bits.V = 1;
-    registers->CPSR = SetBitsInMask(registers->CPSR, cpsr, mask);
+    registers->CPSR = BitUtils::SetBitsInMask(registers->CPSR, cpsr, mask);
   }
 
   inline void CPSR_SetZ(bool Z) noexcept {
@@ -323,7 +324,7 @@ struct CPU {
     cpsr.bits.Z = Z;
     CPSR_Register mask;
     mask.bits.Z = 1;
-    registers->CPSR = SetBitsInMask(registers->CPSR, cpsr, mask);
+    registers->CPSR = BitUtils::SetBitsInMask(registers->CPSR, cpsr, mask);
   }
 
   inline void CPSR_SetN(bool N) noexcept {
@@ -331,7 +332,7 @@ struct CPU {
     cpsr.bits.N = N;
     CPSR_Register mask;
     mask.bits.N = 1;
-    registers->CPSR = SetBitsInMask(registers->CPSR, cpsr, mask);
+    registers->CPSR = BitUtils::SetBitsInMask(registers->CPSR, cpsr, mask);
   }
 };
 
