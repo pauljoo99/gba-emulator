@@ -269,6 +269,8 @@ inline U32 generateMask(U8 a, U8 b) { return ((1U << (b - a + 1)) - 1) << a; }
     return cpu.dispatch_STR(instr, memory);
   case Instr::Instr::ADD:
     return cpu.dispatch_ADD(instr);
+  case Instr::Instr::AND:
+    return cpu.dispatch_AND(instr);
   default:
     return false;
   }
@@ -915,6 +917,34 @@ bool CPU::dispatch_ADD(U32 instr_) noexcept {
       mask.bits.Z = 1;
       mask.bits.C = 1;
       mask.bits.V = 1;
+
+      registers->CPSR = SetBitsInMask(registers->CPSR, cpsr, mask);
+    }
+  }
+  registers->r[15] += kInstrSize;
+  return true;
+}
+
+bool CPU::dispatch_AND(U32 instr_) noexcept {
+  DataProcessingInstr instr(instr_);
+  if (evaluate_cond(ConditionCode(instr.fields.cond), registers->CPSR)) {
+    ShifterOperandResult shifter = ShifterOperand(instr);
+    registers->r[instr.fields.rd] =
+        registers->r[instr.fields.rn] & shifter.shifter_operand;
+    if (instr.fields.s == 1 && instr.fields.rd == 15) {
+      registers->CPSR = U32(registers->SPRS);
+      ClearPipeline();
+      return true;
+    } else if (instr.fields.s == 1) {
+      CPSR_Register cpsr{};
+      cpsr.bits.N = GetBit(registers->r[instr.fields.rd], 31);
+      cpsr.bits.Z = registers->r[instr.fields.rd] == 0;
+      cpsr.bits.C = shifter.shifter_carry_out;
+
+      CPSR_Register mask{};
+      mask.bits.N = 1;
+      mask.bits.Z = 1;
+      mask.bits.C = 1;
 
       registers->CPSR = SetBitsInMask(registers->CPSR, cpsr, mask);
     }
