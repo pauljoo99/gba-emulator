@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Load Remote Text File</title>
+</head>
+
+<body>
+    <h2>Loaded Text:</h2>
+    <pre id="output"></pre>
+
+    <script>
+        fetch('data/normal')
+            .then(response => response.text())
+            .then(data => {
+                document.getElementById("output").textContent = data;
+            })
+            .catch(err => {
+                console.error("Error loading file:", err);
+            });
+    </script>
+</body>
+
+</html>
