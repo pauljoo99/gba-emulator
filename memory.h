@@ -29,6 +29,10 @@ struct Memory {
                              // Wait State 2
 
   U8 GamePak_SRAM[0x10000]; // 0E000000-0E00FFFF   Game Pak SRAM (64 KB)
+
+  // Mystery addresses that are being accessed that I couldn't track down.
+  // 0x3FFFE00
+  U8 MysteryAddress[0x4000];
 };
 
 inline const U8 *GetPhysicalMemoryReadOnly(const Memory &mem,
@@ -55,6 +59,9 @@ inline const U8 *GetPhysicalMemoryReadOnly(const Memory &mem,
     return &mem.GamePak_WS2[address - 0x0C000000];
   } else if (address >= 0x0E000000 && address < 0x0E010000) {
     return &mem.GamePak_SRAM[address - 0x0E000000];
+  } else if (address == 0x03FFFE00) {
+    LOG("Accessing Mystery address: 0x%04X", address);
+    return &mem.MysteryAddress[0];
   } else {
     // Out of bounds or unused memory
     LOG_ABORT("Invalid memory address: 0x%04X", address);
@@ -84,6 +91,9 @@ inline U8 *GetPhysicalMemoryReadWrite(Memory &mem, U32 address) noexcept {
     return &mem.GamePak_WS2[address - 0x0C000000];
   } else if (address >= 0x0E000000 && address < 0x0E010000) {
     return &mem.GamePak_SRAM[address - 0x0E000000];
+  } else if (address == 0x03FFFE00) {
+    LOG("Accessing Mystery address: 0x%04X", address);
+    return &mem.MysteryAddress[0];
   } else {
     // Out of bounds or unused memory
     LOG_ABORT("Invalid memory address: 0x%04X", address);
