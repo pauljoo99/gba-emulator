@@ -83,6 +83,10 @@ struct Pipeline {
   U32 fetch = U32(-1);
   U32 decode = U32(-1);
   U32 execute = U32(-1);
+
+  U32 fetch_addr = U32(-1);
+  U32 decode_addr = U32(-1);
+  U32 execute_addr = U32(-1);
 };
 
 /* Based on ARM DDI 0100E */
@@ -93,6 +97,7 @@ struct CPU {
   [[nodiscard]] bool dispatch(Memory::Memory &memory) noexcept;
 
   [[nodiscard]] bool dispatch_B(U32 instr) noexcept;
+  [[nodiscard]] bool dispatch_BL(U32 instr) noexcept;
   [[nodiscard]] bool dispatch_BX(U32 instr) noexcept;
 
   [[nodiscard]] bool dispatch_CMP(U32 instr) noexcept;
@@ -108,8 +113,7 @@ struct CPU {
   [[nodiscard]] bool dispatch_SUB(U32 instr) noexcept;
   [[nodiscard]] bool dispatch_ADD(U32 instr) noexcept;
 
-  [[nodiscard]] bool AdvancePipeline(U32 instr) noexcept;
-  [[nodiscard]] bool AdvancePipeline(U16 instr) noexcept;
+  [[nodiscard]] bool AdvancePipeline(U32 instr, U32 addr) noexcept;
 
   [[nodiscard]] bool dispatch_STM(U32 instr, Memory::Memory &memory) noexcept;
   [[nodiscard]] bool dispatch_STR(U32 instr, Memory::Memory &memory) noexcept;

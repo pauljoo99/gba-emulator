@@ -207,10 +207,14 @@ ShifterOperandResult CPU::ShifterOperandRotateRightByRegister(
   return result;
 }
 
-bool CPU::AdvancePipeline(U32 instr) noexcept {
+bool CPU::AdvancePipeline(U32 instr, U32 addr) noexcept {
   pipeline.execute = pipeline.decode;
   pipeline.decode = pipeline.fetch;
   pipeline.fetch = instr;
+
+  pipeline.execute_addr = pipeline.decode_addr;
+  pipeline.decode_addr = pipeline.fetch_addr;
+  pipeline.fetch_addr = addr;
   return pipeline.execute != U32(-1);
 }
 
@@ -218,6 +222,10 @@ void CPU::ClearPipeline() noexcept {
   pipeline.fetch = U32(-1);
   pipeline.decode = U32(-1);
   pipeline.execute = U32(-1);
+
+  pipeline.execute_addr = U32(-1);
+  pipeline.decode_addr = U32(-1);
+  pipeline.fetch_addr = U32(-1);
 }
 
 inline U32 generateMask(U8 a, U8 b) { return ((1U << (b - a + 1)) - 1) << a; }
@@ -230,6 +238,8 @@ inline U32 generateMask(U8 a, U8 b) { return ((1U << (b - a + 1)) - 1) << a; }
   switch (instr_type) {
   case Instr::Instr::B:
     return cpu.dispatch_B(instr);
+  case Instr::Instr::BL:
+    return cpu.dispatch_BL(instr);
   case Instr::Instr::BX:
     return cpu.dispatch_BX(instr);
   case Instr::Instr::MOV:
@@ -471,7 +481,7 @@ CPU::LoadAndStoreMultipleAddr(U32 instr_) noexcept {
   CPSR_Register cpsr(registers->CPSR);
   if (cpsr.bits.T) {
     U16 instr = ReadHalfWordFromGBAMemory(memory, registers->r[15]);
-    if (AdvancePipeline((U32)instr)) {
+    if (AdvancePipeline((U32)instr, registers->r[15])) {
       if (!process_thumb((U16)pipeline.execute, memory, *this)) {
         return false;
       }
@@ -480,7 +490,7 @@ CPU::LoadAndStoreMultipleAddr(U32 instr_) noexcept {
     }
   } else {
     U32 instr = ReadWordFromGBAMemory(memory, registers->r[15]);
-    if (AdvancePipeline(instr)) {
+    if (AdvancePipeline(instr, registers->r[15])) {
       Instr::Instr instr_type;
       if (!get_instr_type(pipeline.execute, instr_type)) {
         return false;
@@ -503,6 +513,19 @@ CPU::LoadAndStoreMultipleAddr(U32 instr_) noexcept {
   }
   registers->r[15] = static_cast<I32>(registers->r[15]) +
                      SignExtend(ConcatBits(instr.fields.offset, 0, 2), 26);
+  ClearPipeline();
+  return true;
+}
+
+[[nodiscard]] bool CPU::dispatch_BL(U32 instr_) noexcept {
+  const BranchInstr instr(instr_);
+  if (!evaluate_cond(ConditionCode(instr.fields.cond), registers->CPSR)) {
+    registers->r[15] += kInstrSize;
+    return true;
+  }
+  registers->r[15] = (I32)registers->r[15] +
+                     SignExtend(ConcatBits(instr.fields.offset, 0, 2), 26);
+  registers->r[14] = pipeline.execute_addr + 4;
   ClearPipeline();
   return true;
 }
