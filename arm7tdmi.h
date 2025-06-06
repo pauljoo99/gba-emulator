@@ -126,46 +126,46 @@ struct CPU {
   [[nodiscard]] bool Dispatch_LDM(U32 instr,
                                   const Memory::Memory &memory) noexcept;
 
-  [[nodiscard]] bool Dispatch_thumb_CMP1(U16 instr) noexcept;
-  [[nodiscard]] bool Dispatch_thumb_MOV1(U16 instr) noexcept;
-  [[nodiscard]] bool Dispatch_thumb_MOV3(U16 instr) noexcept;
-  [[nodiscard]] bool Dispatch_thumb_MVN(U16 instr) noexcept;
-  [[nodiscard]] bool Dispatch_thumb_ADD1(U16 instr) noexcept;
-  [[nodiscard]] bool Dispatch_thumb_ADD2(U16 instr) noexcept;
-  [[nodiscard]] bool Dispatch_thumb_ADD3(U16 instr) noexcept;
-  [[nodiscard]] bool Dispatch_thumb_ADD5(U16 instr) noexcept;
-  [[nodiscard]] bool Dispatch_thumb_ORR(U16 instr) noexcept;
-  [[nodiscard]] bool Dispatch_thumb_SUB1(U16 instr) noexcept;
-  [[nodiscard]] bool Dispatch_thumb_SUB2(U16 instr) noexcept;
-  [[nodiscard]] bool Dispatch_thumb_SUB3(U16 instr) noexcept;
-  [[nodiscard]] bool Dispatch_thumb_SUB4(U16 instr) noexcept;
-  [[nodiscard]] bool Dispatch_thumb_LSL1(U16 instr) noexcept;
-  [[nodiscard]] bool Dispatch_thumb_LSL2(U16 instr) noexcept;
-  [[nodiscard]] bool Dispatch_thumb_LSR1(U16 instr) noexcept;
-  [[nodiscard]] bool Dispatch_thumb_LDR3(U16 instr,
+  [[nodiscard]] bool Dispatch_Thumb_CMP1(U16 instr) noexcept;
+  [[nodiscard]] bool Dispatch_Thumb_MOV1(U16 instr) noexcept;
+  [[nodiscard]] bool Dispatch_Thumb_MOV3(U16 instr) noexcept;
+  [[nodiscard]] bool Dispatch_Thumb_MVN(U16 instr) noexcept;
+  [[nodiscard]] bool Dispatch_Thumb_ADD1(U16 instr) noexcept;
+  [[nodiscard]] bool Dispatch_Thumb_ADD2(U16 instr) noexcept;
+  [[nodiscard]] bool Dispatch_Thumb_ADD3(U16 instr) noexcept;
+  [[nodiscard]] bool Dispatch_Thumb_ADD5(U16 instr) noexcept;
+  [[nodiscard]] bool Dispatch_Thumb_ORR(U16 instr) noexcept;
+  [[nodiscard]] bool Dispatch_Thumb_SUB1(U16 instr) noexcept;
+  [[nodiscard]] bool Dispatch_Thumb_SUB2(U16 instr) noexcept;
+  [[nodiscard]] bool Dispatch_Thumb_SUB3(U16 instr) noexcept;
+  [[nodiscard]] bool Dispatch_Thumb_SUB4(U16 instr) noexcept;
+  [[nodiscard]] bool Dispatch_Thumb_LSL1(U16 instr) noexcept;
+  [[nodiscard]] bool Dispatch_Thumb_LSL2(U16 instr) noexcept;
+  [[nodiscard]] bool Dispatch_Thumb_LSR1(U16 instr) noexcept;
+  [[nodiscard]] bool Dispatch_Thumb_LDR3(U16 instr,
                                          const Memory::Memory &memory) noexcept;
-  [[nodiscard]] bool Dispatch_thumb_ASR1(U16 instr) noexcept;
-  [[nodiscard]] bool Dispatch_thumb_B1(U16 instr) noexcept;
-  [[nodiscard]] bool Dispatch_thumb_B2(U16 instr) noexcept;
-  [[nodiscard]] bool Dispatch_thumb_BL(U16 instr) noexcept;
-  [[nodiscard]] bool Dispatch_thumb_BX(U16 instr) noexcept;
-  [[nodiscard]] bool Dispatch_thumb_TST(U16 instr) noexcept;
+  [[nodiscard]] bool Dispatch_Thumb_ASR1(U16 instr) noexcept;
+  [[nodiscard]] bool Dispatch_Thumb_B1(U16 instr) noexcept;
+  [[nodiscard]] bool Dispatch_Thumb_B2(U16 instr) noexcept;
+  [[nodiscard]] bool Dispatch_Thumb_BL(U16 instr) noexcept;
+  [[nodiscard]] bool Dispatch_Thumb_BX(U16 instr) noexcept;
+  [[nodiscard]] bool Dispatch_Thumb_TST(U16 instr) noexcept;
 
   [[nodiscard]] bool
-  Dispatch_thumb_LDRH1(U16 instr, const Memory::Memory &memory) noexcept;
+  Dispatch_Thumb_LDRH1(U16 instr, const Memory::Memory &memory) noexcept;
   [[nodiscard]] bool
-  Dispatch_thumb_LDRH2(U16 instr, const Memory::Memory &memory) noexcept;
+  Dispatch_Thumb_LDRH2(U16 instr, const Memory::Memory &memory) noexcept;
   [[nodiscard]] bool
-  Dispatch_thumb_LDMIA(U16 instr, const Memory::Memory &memory) noexcept;
-  [[nodiscard]] bool Dispatch_thumb_STR2(U16 instr,
+  Dispatch_Thumb_LDMIA(U16 instr, const Memory::Memory &memory) noexcept;
+  [[nodiscard]] bool Dispatch_Thumb_STR2(U16 instr,
                                          Memory::Memory &memory) noexcept;
-  [[nodiscard]] bool Dispatch_thumb_STR3(U16 instr,
+  [[nodiscard]] bool Dispatch_Thumb_STR3(U16 instr,
                                          Memory::Memory &memory) noexcept;
-  [[nodiscard]] bool Dispatch_thumb_STRH1(U16 instr,
+  [[nodiscard]] bool Dispatch_Thumb_STRH1(U16 instr,
                                           Memory::Memory &memory) noexcept;
-  [[nodiscard]] bool Dispatch_thumb_STRH2(U16 instr,
+  [[nodiscard]] bool Dispatch_Thumb_STRH2(U16 instr,
                                           Memory::Memory &memory) noexcept;
-  [[nodiscard]] bool Dispatch_thumb_PUSH(U16 instr,
+  [[nodiscard]] bool Dispatch_Thumb_PUSH(U16 instr,
                                          Memory::Memory &memory) noexcept;
 
   ShifterOperandResult ShifterOperand(DataProcessingInstr instr) noexcept;
