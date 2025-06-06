@@ -783,15 +783,13 @@ CPU::LoadAndStoreMultipleAddr(U32 instr_) noexcept {
   const DataProcessingInstr instr(instr_);
   if (evaluate_cond(ConditionCode(instr.fields.cond), registers->CPSR)) {
     ShifterOperandResult shifter = ShifterOperand(instr);
-    I32 alu_out =
-        (I32)registers->r[instr.fields.rn] - (I32)shifter.shifter_operand;
-
+    U32 alu_out = registers->r[instr.fields.rn] - shifter.shifter_operand;
     CPSR_SetN(GetBit(alu_out, 31));
-    CPSR_SetZ(alu_out == 1);
-    CPSR_SetC(
-        !BorrowFrom(registers->r[instr.fields.rn], shifter.shifter_operand));
-    CPSR_SetV(OverflowFrom((I32)registers->r[instr.fields.rn],
-                           (I32)shifter.shifter_operand, alu_out));
+    CPSR_SetZ(alu_out == 0);
+    CPSR_SetC(!UnsignedSubBorrow(registers->r[instr.fields.rn],
+                                 shifter.shifter_operand));
+    CPSR_SetV(SignedSubOverflow(registers->r[instr.fields.rn],
+                                shifter.shifter_operand));
   }
   registers->r[PC] += kInstrSize;
   return true;
@@ -868,22 +866,12 @@ bool CPU::dispatch_CMN(U32 instr_) noexcept {
     ShifterOperandResult shifter = ShifterOperand(instr);
     U32 alu_out = registers->r[instr.fields.rn] + shifter.shifter_operand;
 
-    CPSR_Register cpsr{};
-    cpsr.bits.N = GetBit(alu_out, 31);
-    cpsr.bits.Z = alu_out == 0;
-    U32 carry_from_args[] = {registers->r[instr.fields.rn],
-                             shifter.shifter_operand};
-    cpsr.bits.C = CarryFrom(2, carry_from_args);
-    cpsr.bits.V = OverflowFrom(registers->r[instr.fields.rn],
-                               shifter.shifter_operand, (I32)alu_out);
-
-    CPSR_Register mask{};
-    mask.bits.N = 1;
-    mask.bits.Z = 1;
-    mask.bits.C = 1;
-    mask.bits.V = 1;
-
-    registers->CPSR = SetBitsInMask(registers->CPSR, cpsr, mask);
+    CPSR_SetN(GetBit(alu_out, 31));
+    CPSR_SetZ(alu_out == 0);
+    CPSR_SetC(UnsignedAddCarry(registers->r[instr.fields.rn],
+                               shifter.shifter_operand));
+    CPSR_SetV(SignedAddOverflow(registers->r[instr.fields.rn],
+                                shifter.shifter_operand));
   }
   registers->r[PC] += kInstrSize;
   return true;
@@ -894,30 +882,19 @@ bool CPU::dispatch_SUB(U32 instr_) noexcept {
   if (evaluate_cond(ConditionCode(instr.fields.cond), registers->CPSR)) {
     ShifterOperandResult shifter = ShifterOperand(instr);
     registers->r[instr.fields.rd] =
-        U32((I32)registers->r[instr.fields.rn] - (I32)shifter.shifter_operand);
-
+        registers->r[instr.fields.rn] - shifter.shifter_operand;
     if (instr.fields.s == 1 && instr.fields.rd == PC) {
       registers->CPSR = U32(registers->SPRS);
       // Return early since pc is being updated.
       ClearPipeline();
       return true;
     } else if (instr.fields.s == 1) {
-      CPSR_Register cpsr{};
-      cpsr.bits.N = GetBit(registers->r[instr.fields.rd], 31);
-      cpsr.bits.Z = registers->r[instr.fields.rd] == 0;
-      cpsr.bits.C =
-          !BorrowFrom(registers->r[instr.fields.rn], shifter.shifter_operand);
-      cpsr.bits.V =
-          OverflowFrom(registers->r[instr.fields.rn], shifter.shifter_operand,
-                       registers->r[instr.fields.rd]);
-
-      CPSR_Register mask{};
-      mask.bits.N = 1;
-      mask.bits.Z = 1;
-      mask.bits.C = 1;
-      mask.bits.V = 1;
-
-      registers->CPSR = SetBitsInMask(registers->CPSR, cpsr, mask);
+      CPSR_SetN(GetBit(registers->r[instr.fields.rd], 31));
+      CPSR_SetZ(registers->r[instr.fields.rd] == 0);
+      CPSR_SetC(!UnsignedSubBorrow(registers->r[instr.fields.rn],
+                                   shifter.shifter_operand));
+      CPSR_SetV(SignedSubOverflow(registers->r[instr.fields.rn],
+                                  shifter.shifter_operand));
     }
   }
   registers->r[PC] += kInstrSize;
@@ -937,23 +914,13 @@ bool CPU::dispatch_ADD(U32 instr_) noexcept {
       ClearPipeline();
       return true;
     } else if (instr.fields.s == 1) {
-      CPSR_Register cpsr{};
-      cpsr.bits.N = GetBit(registers->r[instr.fields.rd], 31);
-      cpsr.bits.Z = registers->r[instr.fields.rd] == 0;
-      U32 carry_from_args[] = {registers->r[instr.fields.rn],
-                               shifter.shifter_operand};
-      cpsr.bits.C = CarryFrom(2, carry_from_args);
-      cpsr.bits.V =
-          OverflowFrom(registers->r[instr.fields.rn], shifter.shifter_operand,
-                       registers->r[instr.fields.rd]);
 
-      CPSR_Register mask{};
-      mask.bits.N = 1;
-      mask.bits.Z = 1;
-      mask.bits.C = 1;
-      mask.bits.V = 1;
-
-      registers->CPSR = SetBitsInMask(registers->CPSR, cpsr, mask);
+      CPSR_SetN(GetBit(registers->r[instr.fields.rd], 31));
+      CPSR_SetZ(registers->r[instr.fields.rd] == 0);
+      CPSR_SetC(UnsignedAddCarry(registers->r[instr.fields.rn],
+                                 shifter.shifter_operand));
+      CPSR_SetV(SignedAddOverflow(registers->r[instr.fields.rn],
+                                  shifter.shifter_operand));
     }
   }
   registers->r[PC] += kInstrSize;
@@ -1020,19 +987,10 @@ bool CPU::dispatch_thumb_CMP1(U16 instr) noexcept {
   U32 rn = GetBitsInRange(instr, 8, 11);
   U32 alu_out = registers->r[rn] - immed_8;
 
-  CPSR_Register cpsr{};
-  cpsr.bits.N = GetBit(alu_out, 31);
-  cpsr.bits.Z = alu_out == 0;
-  cpsr.bits.C = !BorrowFrom(registers->r[rn], immed_8);
-  cpsr.bits.V = OverflowFrom(registers->r[rn], immed_8, alu_out);
-
-  CPSR_Register mask{};
-  mask.bits.N = 1;
-  mask.bits.Z = 1;
-  mask.bits.C = 1;
-  mask.bits.V = 1;
-
-  registers->CPSR = SetBitsInMask(registers->CPSR, cpsr, mask);
+  CPSR_SetN(GetBit(alu_out, 31));
+  CPSR_SetZ(alu_out == 0);
+  CPSR_SetC(!UnsignedSubBorrow(registers->r[rn], immed_8));
+  CPSR_SetV(SignedSubOverflow(registers->r[rn], immed_8));
 
   registers->r[PC] += 2;
   return true;
@@ -1087,9 +1045,8 @@ bool CPU::dispatch_thumb_ADD1(U16 instr) noexcept {
 
   CPSR_SetN(GetBit(registers->r[rd], 31));
   CPSR_SetZ(registers->r[rd] == 0);
-  U32 carry_from_args[] = {registers->r[rn], immed_3};
-  CPSR_SetC(CarryFrom(2, carry_from_args));
-  CPSR_SetV(OverflowFrom(registers->r[rn], immed_3, registers->r[rd]));
+  CPSR_SetC(UnsignedAddCarry(registers->r[rn], immed_3));
+  CPSR_SetV(SignedAddOverflow(registers->r[rn], immed_3));
 
   registers->r[PC] += 2;
   return true;
@@ -1099,16 +1056,13 @@ bool CPU::dispatch_thumb_ADD2(U16 instr) noexcept {
   U32 immed_8 = GetBitsInRange(instr, 0, 8);
   U32 rd = GetBitsInRange(instr, 8, 11);
 
-  U32 result = registers->r[rd] + immed_8;
-
-  U32 carry_from_args[] = {registers->r[rd], immed_8};
-  CPSR_SetC(CarryFrom(2, carry_from_args));
-  CPSR_SetV(OverflowFrom(registers->r[rd], immed_8, result));
-
-  registers->r[rd] = result;
+  U32 original_rd = registers->r[rd];
+  registers->r[rd] = original_rd + immed_8;
 
   CPSR_SetN(GetBit(registers->r[rd], 31));
   CPSR_SetZ(registers->r[rd] == 0);
+  CPSR_SetC(UnsignedAddCarry(original_rd, immed_8));
+  CPSR_SetV(SignedAddOverflow(original_rd, immed_8));
 
   registers->r[PC] += 2;
   return true;
@@ -1121,21 +1075,10 @@ bool CPU::dispatch_thumb_ADD3(U16 instr) noexcept {
 
   registers->r[rd] = registers->r[rn] + registers->r[rm];
 
-  CPSR_Register cpsr{};
-  cpsr.bits.N = GetBit(registers->r[rd], 31);
-  cpsr.bits.Z = registers->r[rd] == 0;
-  U32 carry_from_args[] = {registers->r[rn], registers->r[rm]};
-  cpsr.bits.C = CarryFrom(2, carry_from_args);
-  cpsr.bits.V =
-      OverflowFrom(registers->r[rn], registers->r[rm], registers->r[rd]);
-
-  CPSR_Register mask{};
-  mask.bits.N = 1;
-  mask.bits.Z = 1;
-  mask.bits.C = 1;
-  mask.bits.V = 1;
-
-  registers->CPSR = SetBitsInMask(registers->CPSR, cpsr, mask);
+  CPSR_SetN(GetBit(registers->r[rd], 31));
+  CPSR_SetZ(registers->r[rd] == 0);
+  CPSR_SetC(UnsignedAddCarry(registers->r[rn], registers->r[rm]));
+  CPSR_SetV(SignedAddOverflow(registers->r[rn], registers->r[rm]));
 
   registers->r[PC] += 2;
   return true;
@@ -1285,18 +1228,10 @@ bool CPU::dispatch_thumb_SUB1(U16 instr) noexcept {
 
   registers->r[rd] = registers->r[rn] - immed_3;
 
-  CPSR_Register cpsr{};
-  cpsr.bits.N = GetBit(registers->r[rd], 31);
-  cpsr.bits.Z = registers->r[rd] == 0;
-  cpsr.bits.C = !BorrowFrom(registers->r[rn], immed_3);
-  cpsr.bits.V = OverflowFrom(registers->r[rn], immed_3, registers->r[rd]);
-
-  CPSR_Register mask{};
-  mask.bits.N = 1;
-  mask.bits.Z = 1;
-  mask.bits.C = 1;
-  mask.bits.V = 1;
-  registers->CPSR = SetBitsInMask(registers->CPSR, cpsr, mask);
+  CPSR_SetN(GetBit(registers->r[rd], 31));
+  CPSR_SetZ(registers->r[rd] == 0);
+  CPSR_SetC(!UnsignedSubBorrow(registers->r[rn], immed_3));
+  CPSR_SetV(SignedSubOverflow(registers->r[rn], immed_3));
 
   return true;
 }
@@ -1308,19 +1243,10 @@ bool CPU::dispatch_thumb_SUB3(U16 instr) noexcept {
 
   registers->r[rd] = U32(registers->r[rn]) - U32(registers->r[rm]);
 
-  CPSR_Register cpsr{};
-  cpsr.bits.N = GetBit(registers->r[rd], 31);
-  cpsr.bits.Z = registers->r[rd] == 0;
-  cpsr.bits.C = !BorrowFrom(registers->r[rn], registers->r[rm]);
-  cpsr.bits.V =
-      OverflowFrom(registers->r[rn], registers->r[rm], registers->r[rd]);
-
-  CPSR_Register mask{};
-  mask.bits.N = 1;
-  mask.bits.Z = 1;
-  mask.bits.C = 1;
-  mask.bits.V = 1;
-  registers->CPSR = SetBitsInMask(registers->CPSR, cpsr, mask);
+  CPSR_SetN(GetBit(registers->r[rd], 31));
+  CPSR_SetZ(registers->r[rd] == 0);
+  CPSR_SetC(!UnsignedSubBorrow(registers->r[rn], registers->r[rm]));
+  CPSR_SetV(SignedSubOverflow(registers->r[rn], registers->r[rm]));
 
   return true;
 }

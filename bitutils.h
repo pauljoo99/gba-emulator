@@ -2,6 +2,7 @@
 
 #include "datatypes.h"
 #include "logging.h"
+#include <limits.h>
 
 namespace Emulator::BitUtils {
 
@@ -44,24 +45,6 @@ inline I32 ArithmeticShiftRight(I32 imm, U8 num_bits) {
   return imm >> num_bits;
 }
 
-// Returns true if we overflow.
-inline bool CarryFrom(U32 num_args, const U32 *args) {
-  U32 sum = 0;
-  for (U32 i = 0; i < num_args; i++) {
-    if (sum + args[i] < sum) {
-      return true;
-    }
-    sum += args[i];
-  }
-  return false;
-}
-
-inline bool BorrowFrom(U32 a, U32 b) { return a < b; }
-
-inline bool OverflowFrom(I32 a, I32 b, I32 result) {
-  return ((a > 0 && b > 0 && result < 0) || (a < 0 && b < 0 && result > 0));
-}
-
 inline U32 CountSetBits(U32 n) {
   U32 count = 0;
   while (n) {
@@ -69,6 +52,31 @@ inline U32 CountSetBits(U32 n) {
     count++;
   }
   return count;
+}
+
+inline bool UnsignedAddCarry(U32 a, U32 b) {
+  U32 result = a + b;
+  return result < a; // carry out occurred
+}
+
+inline bool UnsignedSubBorrow(U32 a, U32 b) {
+  return a < b; // borrow occurred
+}
+
+inline bool SignedAddOverflow(I32 a, I32 b) {
+  if (b > 0 && a > INT32_MAX - b)
+    return true;
+  if (b < 0 && a < INT32_MIN - b)
+    return true;
+  return false;
+}
+
+inline bool SignedSubOverflow(I32 a, I32 b) {
+  if (b < 0 && a > INT32_MAX + b)
+    return true;
+  if (b > 0 && a < INT32_MIN + b)
+    return true;
+  return false;
 }
 
 } // namespace Emulator::BitUtils
