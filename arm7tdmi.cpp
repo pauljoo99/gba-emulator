@@ -936,6 +936,7 @@ bool CPU::dispatch_thumb_MOV3(U16 instr) noexcept {
   U32 rd = GetBitsInRange(instr, 0, 3);
   U32 rm = GetBitsInRange(instr, 3, 6);
   registers->r[rd] = U32(registers->r[rm]);
+  registers->r[PC] += 2;
   return true;
 }
 
@@ -1125,6 +1126,7 @@ bool CPU::dispatch_thumb_SUB1(U16 instr) noexcept {
   CPSR_SetC(!UnsignedSubBorrow(registers->r[rn], immed_3));
   CPSR_SetV(SignedSubOverflow(registers->r[rn], immed_3));
 
+  registers->r[PC] += 2;
   return true;
 }
 
@@ -1140,6 +1142,7 @@ bool CPU::dispatch_thumb_SUB3(U16 instr) noexcept {
   CPSR_SetC(!UnsignedSubBorrow(registers->r[rn], registers->r[rm]));
   CPSR_SetV(SignedSubOverflow(registers->r[rn], registers->r[rm]));
 
+  registers->r[PC] += 2;
   return true;
 }
 
@@ -1174,7 +1177,7 @@ bool CPU::dispatch_thumb_B1(U16 instr) noexcept {
 }
 
 bool CPU::dispatch_thumb_B2(U16 instr) noexcept {
-  I32 immed_11 = GetBitsInRange(instr, 0, 11);
+  U32 immed_11 = GetBitsInRange(instr, 0, 11);
   registers->r[PC] += (SignExtend(immed_11, 10) << 1);
   ClearPipeline();
   return true;

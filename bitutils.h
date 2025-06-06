@@ -26,9 +26,9 @@ inline U32 SetBitsInMask(U32 bits, U32 to_set, U32 mask) {
   return (bits & ~mask) | to_set;
 }
 
-inline I64 SignExtend(U32 imm, U8 num_bits) {
+inline I32 SignExtend(U32 imm, U8 num_bits) {
   U32 mask = ((1 << (32 - num_bits)) - GetBit(imm, num_bits - 1)) << num_bits;
-  return static_cast<I64>(mask | imm);
+  return static_cast<I32>(mask | imm);
 }
 
 inline U32 RotateRight(U32 imm, U8 num_bits) {
