@@ -228,56 +228,54 @@ void CPU::ClearPipeline() noexcept {
   pipeline.fetch_addr = U32(-1);
 }
 
-inline U32 generateMask(U8 a, U8 b) { return ((1U << (b - a + 1)) - 1) << a; }
-
-[[nodiscard]] bool process_instr(U32 instr, Instr::Instr instr_type,
-                                 Memory::Memory &memory, CPU &cpu) {
+[[nodiscard]] bool ProcessInstruction(U32 instr, Instr::Instr instr_type,
+                                      Memory::Memory &memory, CPU &cpu) {
 
   LOG("Instr: %s, Raw Instr: 0x%08X, PC: 0x%04X", toString(instr_type), instr,
       cpu.pipeline.execute_addr);
 
   switch (instr_type) {
   case Instr::Instr::B:
-    return cpu.dispatch_B(instr);
+    return cpu.Dispatch_B(instr);
   case Instr::Instr::BL:
-    return cpu.dispatch_BL(instr);
+    return cpu.Dispatch_BL(instr);
   case Instr::Instr::BX:
-    return cpu.dispatch_BX(instr);
+    return cpu.Dispatch_BX(instr);
   case Instr::Instr::MOV:
-    return cpu.dispatch_MOV(instr);
+    return cpu.Dispatch_MOV(instr);
   case Instr::Instr::MSR:
-    return cpu.dispatch_MSR(instr);
+    return cpu.Dispatch_MSR(instr);
   case Instr::Instr::LDR:
-    return cpu.dispatch_LDR(instr, memory);
+    return cpu.Dispatch_LDR(instr, memory);
   case Instr::Instr::CMP:
-    return cpu.dispatch_CMP(instr);
+    return cpu.Dispatch_CMP(instr);
   case Instr::Instr::TEQ:
-    return cpu.dispatch_TEQ(instr);
+    return cpu.Dispatch_TEQ(instr);
   case Instr::Instr::MRS:
-    return cpu.dispatch_MRS(instr);
+    return cpu.Dispatch_MRS(instr);
   case Instr::Instr::ORR:
-    return cpu.dispatch_ORR(instr);
+    return cpu.Dispatch_ORR(instr);
   case Instr::Instr::STM:
-    return cpu.dispatch_STM(instr, memory);
+    return cpu.Dispatch_STM(instr, memory);
   case Instr::Instr::LDM:
-    return cpu.dispatch_LDM(instr, memory);
+    return cpu.Dispatch_LDM(instr, memory);
   case Instr::Instr::CMN:
-    return cpu.dispatch_CMN(instr);
+    return cpu.Dispatch_CMN(instr);
   case Instr::Instr::SUB:
-    return cpu.dispatch_SUB(instr);
+    return cpu.Dispatch_SUB(instr);
   case Instr::Instr::STR:
-    return cpu.dispatch_STR(instr, memory);
+    return cpu.Dispatch_STR(instr, memory);
   case Instr::Instr::ADD:
-    return cpu.dispatch_ADD(instr);
+    return cpu.Dispatch_ADD(instr);
   case Instr::Instr::AND:
-    return cpu.dispatch_AND(instr);
+    return cpu.Dispatch_AND(instr);
   default:
     return false;
   }
 }
 
-[[nodiscard]] bool process_thumb(U16 instr, Memory::Memory &memory,
-                                 CPU &cpu) noexcept {
+[[nodiscard]] bool ProcessThumbInstruction(U16 instr, Memory::Memory &memory,
+                                           CPU &cpu) noexcept {
 
   const Thumb::ThumbOpcode opcode = Thumb::GetThumbOpcode(instr);
   LOG("Raw Thumb Instr: 0x%04X, Opcode: %s, PC: 0x%04X", instr,
@@ -285,67 +283,67 @@ inline U32 generateMask(U8 a, U8 b) { return ((1U << (b - a + 1)) - 1) << a; }
 
   switch (opcode) {
   case (Thumb::ThumbOpcode::CMP1):
-    return cpu.dispatch_thumb_CMP1(instr);
+    return cpu.Dispatch_thumb_CMP1(instr);
   case (Thumb::ThumbOpcode::MOV1):
-    return cpu.dispatch_thumb_MOV1(instr);
+    return cpu.Dispatch_thumb_MOV1(instr);
   case (Thumb::ThumbOpcode::MOV3):
-    return cpu.dispatch_thumb_MOV3(instr);
+    return cpu.Dispatch_thumb_MOV3(instr);
   case (Thumb::ThumbOpcode::MVN):
-    return cpu.dispatch_thumb_MVN(instr);
+    return cpu.Dispatch_thumb_MVN(instr);
   case (Thumb::ThumbOpcode::LDR3):
-    return cpu.dispatch_thumb_LDR3(instr, memory);
+    return cpu.Dispatch_thumb_LDR3(instr, memory);
   case (Thumb::ThumbOpcode::LDRH1):
-    return cpu.dispatch_thumb_LDRH1(instr, memory);
+    return cpu.Dispatch_thumb_LDRH1(instr, memory);
   case (Thumb::ThumbOpcode::LDRH2):
-    return cpu.dispatch_thumb_LDRH2(instr, memory);
+    return cpu.Dispatch_thumb_LDRH2(instr, memory);
   case (Thumb::ThumbOpcode::LDMIA):
-    return cpu.dispatch_thumb_LDMIA(instr, memory);
+    return cpu.Dispatch_thumb_LDMIA(instr, memory);
   case (Thumb::ThumbOpcode::STR2):
-    return cpu.dispatch_thumb_STR2(instr, memory);
+    return cpu.Dispatch_thumb_STR2(instr, memory);
   case (Thumb::ThumbOpcode::STR3):
-    return cpu.dispatch_thumb_STR3(instr, memory);
+    return cpu.Dispatch_thumb_STR3(instr, memory);
   case (Thumb::ThumbOpcode::STRH1):
-    return cpu.dispatch_thumb_STRH1(instr, memory);
+    return cpu.Dispatch_thumb_STRH1(instr, memory);
   case (Thumb::ThumbOpcode::STRH2):
-    return cpu.dispatch_thumb_STRH2(instr, memory);
+    return cpu.Dispatch_thumb_STRH2(instr, memory);
   case (Thumb::ThumbOpcode::ORR):
-    return cpu.dispatch_thumb_ORR(instr);
+    return cpu.Dispatch_thumb_ORR(instr);
   case (Thumb::ThumbOpcode::ADD1):
-    return cpu.dispatch_thumb_ADD1(instr);
+    return cpu.Dispatch_thumb_ADD1(instr);
   case (Thumb::ThumbOpcode::ADD2):
-    return cpu.dispatch_thumb_ADD2(instr);
+    return cpu.Dispatch_thumb_ADD2(instr);
   case (Thumb::ThumbOpcode::ADD3):
-    return cpu.dispatch_thumb_ADD3(instr);
+    return cpu.Dispatch_thumb_ADD3(instr);
   case (Thumb::ThumbOpcode::ADD5):
-    return cpu.dispatch_thumb_ADD5(instr);
+    return cpu.Dispatch_thumb_ADD5(instr);
   case (Thumb::ThumbOpcode::LSL1):
-    return cpu.dispatch_thumb_LSL1(instr);
+    return cpu.Dispatch_thumb_LSL1(instr);
   case (Thumb::ThumbOpcode::LSL2):
-    return cpu.dispatch_thumb_LSL2(instr);
+    return cpu.Dispatch_thumb_LSL2(instr);
   case (Thumb::ThumbOpcode::LSR1):
-    return cpu.dispatch_thumb_LSR1(instr);
+    return cpu.Dispatch_thumb_LSR1(instr);
   case (Thumb::ThumbOpcode::ASR1):
-    return cpu.dispatch_thumb_ASR1(instr);
+    return cpu.Dispatch_thumb_ASR1(instr);
   case (Thumb::ThumbOpcode::B1):
-    return cpu.dispatch_thumb_B1(instr);
+    return cpu.Dispatch_thumb_B1(instr);
   case (Thumb::ThumbOpcode::B2):
-    return cpu.dispatch_thumb_B2(instr);
+    return cpu.Dispatch_thumb_B2(instr);
   case (Thumb::ThumbOpcode::BL):
-    return cpu.dispatch_thumb_BL(instr);
+    return cpu.Dispatch_thumb_BL(instr);
   case (Thumb::ThumbOpcode::BX):
-    return cpu.dispatch_thumb_BX(instr);
+    return cpu.Dispatch_thumb_BX(instr);
   case (Thumb::ThumbOpcode::PUSH):
-    return cpu.dispatch_thumb_PUSH(instr, memory);
+    return cpu.Dispatch_thumb_PUSH(instr, memory);
   case (Thumb::ThumbOpcode::SUB1):
-    return cpu.dispatch_thumb_SUB1(instr);
+    return cpu.Dispatch_thumb_SUB1(instr);
   case (Thumb::ThumbOpcode::SUB2):
-    return cpu.dispatch_thumb_SUB2(instr);
+    return cpu.Dispatch_thumb_SUB2(instr);
   case (Thumb::ThumbOpcode::SUB3):
-    return cpu.dispatch_thumb_SUB3(instr);
+    return cpu.Dispatch_thumb_SUB3(instr);
   case (Thumb::ThumbOpcode::SUB4):
-    return cpu.dispatch_thumb_SUB4(instr);
+    return cpu.Dispatch_thumb_SUB4(instr);
   case (Thumb::ThumbOpcode::TST):
-    return cpu.dispatch_thumb_TST(instr);
+    return cpu.Dispatch_thumb_TST(instr);
   default:
     break;
   }
@@ -353,7 +351,7 @@ inline U32 generateMask(U8 a, U8 b) { return ((1U << (b - a + 1)) - 1) << a; }
   return false;
 }
 
-bool evaluate_cond(ConditionCode cond, U32 cpsr_) {
+bool EvaluateCondition(ConditionCode cond, U32 cpsr_) {
   CPSR_Register cpsr(cpsr_);
   switch (cond) {
   case ConditionCode::EQ:
@@ -393,7 +391,7 @@ U32 CPU::LoadAndStoreWordOrByteImmAddr(U32 instr_) noexcept {
   const SingleDataTransferInstr instr{instr_};
   const LoadAndStoreWordOrByteImm encoding{instr.fields.offset};
 
-  if (!evaluate_cond(ConditionCode(instr.fields.cond), registers->CPSR)) {
+  if (!EvaluateCondition(ConditionCode(instr.fields.cond), registers->CPSR)) {
     // Does not matter. The instruction will be skipped anyways.
     return 0;
   }
@@ -429,7 +427,7 @@ U32 CPU::LoadAndStoreWordOrByteRegAddr(U32 instr_) noexcept {
   const SingleDataTransferInstr instr{instr_};
   const LoadAndStoreWordOrByteReg encoding{instr.fields.offset};
 
-  if (!evaluate_cond(ConditionCode(instr.fields.cond), registers->CPSR)) {
+  if (!EvaluateCondition(ConditionCode(instr.fields.cond), registers->CPSR)) {
     // Does not matter. The instruction will be skipped anyways.
     return 0;
   }
@@ -497,7 +495,7 @@ LoadAndStoreMultipleAddrResult
 CPU::LoadAndStoreMultipleAddr(U32 instr_) noexcept {
   LoadAndStoreMultiple instr(instr_);
 
-  if (!evaluate_cond(ConditionCode(instr.fields.cond), registers->CPSR)) {
+  if (!EvaluateCondition(ConditionCode(instr.fields.cond), registers->CPSR)) {
     return {};
   }
 
@@ -534,7 +532,7 @@ CPU::LoadAndStoreMultipleAddr(U32 instr_) noexcept {
   return result;
 }
 
-[[nodiscard]] bool CPU::dispatch(Memory::Memory &memory) noexcept {
+[[nodiscard]] bool CPU::Dispatch(Memory::Memory &memory) noexcept {
   // Debug::debug_snapshot(all_registers, memory, pipeline,
   // "tools/visual/data/");
   ChangeRegistersOnMode();
@@ -543,7 +541,7 @@ CPU::LoadAndStoreMultipleAddr(U32 instr_) noexcept {
   if (cpsr.bits.T) {
     U16 instr = ReadHalfWordFromGBAMemory(memory, registers->r[PC]);
     if (AdvancePipeline((U32)instr, registers->r[PC])) {
-      if (!process_thumb((U16)pipeline.execute, memory, *this)) {
+      if (!ProcessThumbInstruction((U16)pipeline.execute, memory, *this)) {
         return false;
       }
     } else {
@@ -556,7 +554,7 @@ CPU::LoadAndStoreMultipleAddr(U32 instr_) noexcept {
       if (!get_instr_type(pipeline.execute, instr_type)) {
         return false;
       }
-      if (!process_instr(pipeline.execute, instr_type, memory, *this)) {
+      if (!ProcessInstruction(pipeline.execute, instr_type, memory, *this)) {
         return false;
       }
     } else {
@@ -566,9 +564,9 @@ CPU::LoadAndStoreMultipleAddr(U32 instr_) noexcept {
   return true;
 }
 
-[[nodiscard]] bool CPU::dispatch_B(U32 instr_) noexcept {
+[[nodiscard]] bool CPU::Dispatch_B(U32 instr_) noexcept {
   const BranchInstr instr(instr_);
-  if (!evaluate_cond(ConditionCode(instr.fields.cond), registers->CPSR)) {
+  if (!EvaluateCondition(ConditionCode(instr.fields.cond), registers->CPSR)) {
     registers->r[PC] += kInstrSize;
     return true;
   }
@@ -578,9 +576,9 @@ CPU::LoadAndStoreMultipleAddr(U32 instr_) noexcept {
   return true;
 }
 
-[[nodiscard]] bool CPU::dispatch_BL(U32 instr_) noexcept {
+[[nodiscard]] bool CPU::Dispatch_BL(U32 instr_) noexcept {
   const BranchInstr instr(instr_);
-  if (!evaluate_cond(ConditionCode(instr.fields.cond), registers->CPSR)) {
+  if (!EvaluateCondition(ConditionCode(instr.fields.cond), registers->CPSR)) {
     registers->r[PC] += kInstrSize;
     return true;
   }
@@ -591,9 +589,9 @@ CPU::LoadAndStoreMultipleAddr(U32 instr_) noexcept {
   return true;
 }
 
-[[nodiscard]] bool CPU::dispatch_BX(U32 instr_) noexcept {
+[[nodiscard]] bool CPU::Dispatch_BX(U32 instr_) noexcept {
   const BranchAndExchangeInstr instr(instr_);
-  if (evaluate_cond(ConditionCode(instr.fields.cond), registers->CPSR)) {
+  if (EvaluateCondition(ConditionCode(instr.fields.cond), registers->CPSR)) {
     CPSR_SetT(GetBit(registers->r[instr.fields.rm], 0));
     registers->r[PC] = registers->r[instr.fields.rm] & 0xFFFFFFFE;
     ClearPipeline();
@@ -603,9 +601,9 @@ CPU::LoadAndStoreMultipleAddr(U32 instr_) noexcept {
   return true;
 }
 
-[[nodiscard]] bool CPU::dispatch_MOV(U32 instr_) noexcept {
+[[nodiscard]] bool CPU::Dispatch_MOV(U32 instr_) noexcept {
   const DataProcessingInstr instr(instr_);
-  if (evaluate_cond(ConditionCode(instr.fields.cond), registers->CPSR)) {
+  if (EvaluateCondition(ConditionCode(instr.fields.cond), registers->CPSR)) {
     ShifterOperandResult shifter = ShifterOperand(instr);
     registers->r[instr.fields.rd] = shifter.shifter_operand;
     if (instr.fields.s && instr.fields.rd == PC) {
@@ -620,9 +618,9 @@ CPU::LoadAndStoreMultipleAddr(U32 instr_) noexcept {
   return true;
 }
 
-[[nodiscard]] bool CPU::dispatch_MSR(U32 instr_) noexcept {
+[[nodiscard]] bool CPU::Dispatch_MSR(U32 instr_) noexcept {
   MSRImmInstr instr(instr_);
-  if (evaluate_cond(ConditionCode(instr.fields.cond), registers->CPSR)) {
+  if (EvaluateCondition(ConditionCode(instr.fields.cond), registers->CPSR)) {
     U32 operand = 0;
     if (GetBit(instr_, 25)) {
       MSRImmInstr instr(instr_);
@@ -679,9 +677,9 @@ CPU::LoadAndStoreMultipleAddr(U32 instr_) noexcept {
   return true;
 }
 
-[[nodiscard]] bool CPU::dispatch_MRS(U32 instr_) noexcept {
+[[nodiscard]] bool CPU::Dispatch_MRS(U32 instr_) noexcept {
   MRSRegInstr instr(instr_);
-  if (evaluate_cond(ConditionCode(instr.fields.cond), registers->CPSR)) {
+  if (EvaluateCondition(ConditionCode(instr.fields.cond), registers->CPSR)) {
     if (instr.fields.r == 1) {
       registers->r[instr.fields.rd] = U32(registers->SPRS);
     } else {
@@ -692,9 +690,9 @@ CPU::LoadAndStoreMultipleAddr(U32 instr_) noexcept {
   return true;
 }
 
-[[nodiscard]] bool CPU::dispatch_ORR(U32 instr_) noexcept {
+[[nodiscard]] bool CPU::Dispatch_ORR(U32 instr_) noexcept {
   DataProcessingInstr instr(instr_);
-  if (evaluate_cond(ConditionCode(instr.fields.cond), registers->CPSR)) {
+  if (EvaluateCondition(ConditionCode(instr.fields.cond), registers->CPSR)) {
     ShifterOperandResult shifter = ShifterOperand(instr);
     registers->r[instr.fields.rd] =
         registers->r[instr.fields.rn] | shifter.shifter_operand;
@@ -710,10 +708,10 @@ CPU::LoadAndStoreMultipleAddr(U32 instr_) noexcept {
   return true;
 }
 
-[[nodiscard]] bool CPU::dispatch_LDR(U32 instr_,
+[[nodiscard]] bool CPU::Dispatch_LDR(U32 instr_,
                                      const Memory::Memory &memory) noexcept {
   const SingleDataTransferInstr instr{instr_};
-  if (evaluate_cond(ConditionCode(instr.fields.cond), registers->CPSR)) {
+  if (EvaluateCondition(ConditionCode(instr.fields.cond), registers->CPSR)) {
 
     U32 address;
     if (instr.fields.i == 0) {
@@ -749,10 +747,10 @@ CPU::LoadAndStoreMultipleAddr(U32 instr_) noexcept {
   return true;
 }
 
-[[nodiscard]] bool CPU::dispatch_STR(U32 instr_,
+[[nodiscard]] bool CPU::Dispatch_STR(U32 instr_,
                                      Memory::Memory &memory) noexcept {
   const SingleDataTransferInstr instr{instr_};
-  if (evaluate_cond(ConditionCode(instr.fields.cond), registers->CPSR)) {
+  if (EvaluateCondition(ConditionCode(instr.fields.cond), registers->CPSR)) {
     U32 address;
     if (instr.fields.i == 0) {
       address = LoadAndStoreWordOrByteImmAddr(instr_);
@@ -765,9 +763,9 @@ CPU::LoadAndStoreMultipleAddr(U32 instr_) noexcept {
   return true;
 }
 
-[[nodiscard]] bool CPU::dispatch_CMP(U32 instr_) noexcept {
+[[nodiscard]] bool CPU::Dispatch_CMP(U32 instr_) noexcept {
   const DataProcessingInstr instr(instr_);
-  if (evaluate_cond(ConditionCode(instr.fields.cond), registers->CPSR)) {
+  if (EvaluateCondition(ConditionCode(instr.fields.cond), registers->CPSR)) {
     ShifterOperandResult shifter = ShifterOperand(instr);
     U32 alu_out = registers->r[instr.fields.rn] - shifter.shifter_operand;
     CPSR_SetN(GetBit(alu_out, 31));
@@ -781,9 +779,9 @@ CPU::LoadAndStoreMultipleAddr(U32 instr_) noexcept {
   return true;
 }
 
-bool CPU::dispatch_TEQ(U32 instr_) noexcept {
+bool CPU::Dispatch_TEQ(U32 instr_) noexcept {
   const DataProcessingInstr instr(instr_);
-  if (evaluate_cond(ConditionCode(instr.fields.cond), registers->CPSR)) {
+  if (EvaluateCondition(ConditionCode(instr.fields.cond), registers->CPSR)) {
     ShifterOperandResult shifter = ShifterOperand(instr);
     U32 alu_out = registers->r[instr.fields.rn] ^ shifter.shifter_operand;
 
@@ -795,7 +793,7 @@ bool CPU::dispatch_TEQ(U32 instr_) noexcept {
   return true;
 }
 
-bool CPU::dispatch_STM(U32 instr_, Memory::Memory &memory) noexcept {
+bool CPU::Dispatch_STM(U32 instr_, Memory::Memory &memory) noexcept {
   LoadAndStoreMultipleAddrResult addr = LoadAndStoreMultipleAddr(instr_);
   LoadAndStoreMultiple instr(instr_);
   U32 address = addr.start_addr;
@@ -810,10 +808,10 @@ bool CPU::dispatch_STM(U32 instr_, Memory::Memory &memory) noexcept {
   return true;
 }
 
-bool CPU::dispatch_LDM(U32 instr_, const Memory::Memory &memory) noexcept {
+bool CPU::Dispatch_LDM(U32 instr_, const Memory::Memory &memory) noexcept {
   LoadAndStoreMultiple instr(instr_);
   if (instr.fields.s == 0) {
-    if (evaluate_cond(ConditionCode(instr.fields.cond), registers->CPSR)) {
+    if (EvaluateCondition(ConditionCode(instr.fields.cond), registers->CPSR)) {
       LoadAndStoreMultipleAddrResult addr = LoadAndStoreMultipleAddr(instr_);
       U32 address = addr.start_addr;
       for (U32 i = 0; i < 15; ++i) {
@@ -838,9 +836,9 @@ bool CPU::dispatch_LDM(U32 instr_, const Memory::Memory &memory) noexcept {
   return true;
 }
 
-bool CPU::dispatch_CMN(U32 instr_) noexcept {
+bool CPU::Dispatch_CMN(U32 instr_) noexcept {
   DataProcessingInstr instr(instr_);
-  if (evaluate_cond(ConditionCode(instr.fields.cond), registers->CPSR)) {
+  if (EvaluateCondition(ConditionCode(instr.fields.cond), registers->CPSR)) {
     ShifterOperandResult shifter = ShifterOperand(instr);
     U32 alu_out = registers->r[instr.fields.rn] + shifter.shifter_operand;
 
@@ -855,9 +853,9 @@ bool CPU::dispatch_CMN(U32 instr_) noexcept {
   return true;
 }
 
-bool CPU::dispatch_SUB(U32 instr_) noexcept {
+bool CPU::Dispatch_SUB(U32 instr_) noexcept {
   DataProcessingInstr instr(instr_);
-  if (evaluate_cond(ConditionCode(instr.fields.cond), registers->CPSR)) {
+  if (EvaluateCondition(ConditionCode(instr.fields.cond), registers->CPSR)) {
     ShifterOperandResult shifter = ShifterOperand(instr);
     registers->r[instr.fields.rd] =
         registers->r[instr.fields.rn] - shifter.shifter_operand;
@@ -879,9 +877,9 @@ bool CPU::dispatch_SUB(U32 instr_) noexcept {
   return true;
 }
 
-bool CPU::dispatch_ADD(U32 instr_) noexcept {
+bool CPU::Dispatch_ADD(U32 instr_) noexcept {
   DataProcessingInstr instr(instr_);
-  if (evaluate_cond(ConditionCode(instr.fields.cond), registers->CPSR)) {
+  if (EvaluateCondition(ConditionCode(instr.fields.cond), registers->CPSR)) {
     ShifterOperandResult shifter = ShifterOperand(instr);
     registers->r[instr.fields.rd] =
         U32((I32)registers->r[instr.fields.rn] + (I32)shifter.shifter_operand);
@@ -905,9 +903,9 @@ bool CPU::dispatch_ADD(U32 instr_) noexcept {
   return true;
 }
 
-bool CPU::dispatch_AND(U32 instr_) noexcept {
+bool CPU::Dispatch_AND(U32 instr_) noexcept {
   DataProcessingInstr instr(instr_);
-  if (evaluate_cond(ConditionCode(instr.fields.cond), registers->CPSR)) {
+  if (EvaluateCondition(ConditionCode(instr.fields.cond), registers->CPSR)) {
     ShifterOperandResult shifter = ShifterOperand(instr);
     registers->r[instr.fields.rd] =
         registers->r[instr.fields.rn] & shifter.shifter_operand;
@@ -925,7 +923,7 @@ bool CPU::dispatch_AND(U32 instr_) noexcept {
   return true;
 }
 
-bool CPU::dispatch_thumb_MOV1(U16 instr) noexcept {
+bool CPU::Dispatch_thumb_MOV1(U16 instr) noexcept {
   U32 immed_8 = GetBitsInRange(instr, 0, 8);
   U32 rd = GetBitsInRange(instr, 8, 11);
 
@@ -938,7 +936,7 @@ bool CPU::dispatch_thumb_MOV1(U16 instr) noexcept {
   return true;
 }
 
-bool CPU::dispatch_thumb_MOV3(U16 instr) noexcept {
+bool CPU::Dispatch_thumb_MOV3(U16 instr) noexcept {
   U32 rd = GetBitsInRange(instr, 0, 3);
   U32 rm = GetBitsInRange(instr, 3, 6);
   registers->r[rd] = U32(registers->r[rm]);
@@ -946,7 +944,7 @@ bool CPU::dispatch_thumb_MOV3(U16 instr) noexcept {
   return true;
 }
 
-bool CPU::dispatch_thumb_CMP1(U16 instr) noexcept {
+bool CPU::Dispatch_thumb_CMP1(U16 instr) noexcept {
   U32 immed_8 = GetBitsInRange(instr, 0, 8);
   U32 rn = GetBitsInRange(instr, 8, 11);
   U32 alu_out = registers->r[rn] - immed_8;
@@ -960,7 +958,7 @@ bool CPU::dispatch_thumb_CMP1(U16 instr) noexcept {
   return true;
 }
 
-bool CPU::dispatch_thumb_MVN(U16 instr) noexcept {
+bool CPU::Dispatch_thumb_MVN(U16 instr) noexcept {
   U32 rd = GetBitsInRange(instr, 0, 3);
   U32 rm = GetBitsInRange(instr, 3, 6);
 
@@ -973,7 +971,7 @@ bool CPU::dispatch_thumb_MVN(U16 instr) noexcept {
   return true;
 }
 
-bool CPU::dispatch_thumb_ORR(U16 instr) noexcept {
+bool CPU::Dispatch_thumb_ORR(U16 instr) noexcept {
   U32 rd = GetBitsInRange(instr, 3, 0);
   U32 rm = GetBitsInRange(instr, 3, 5);
 
@@ -986,7 +984,7 @@ bool CPU::dispatch_thumb_ORR(U16 instr) noexcept {
   return true;
 }
 
-bool CPU::dispatch_thumb_ADD1(U16 instr) noexcept {
+bool CPU::Dispatch_thumb_ADD1(U16 instr) noexcept {
   U32 immed_3 = GetBitsInRange(instr, 6, 9);
   U32 rn = GetBitsInRange(instr, 3, 6);
   U32 rd = GetBitsInRange(instr, 0, 3);
@@ -1002,7 +1000,7 @@ bool CPU::dispatch_thumb_ADD1(U16 instr) noexcept {
   return true;
 }
 
-bool CPU::dispatch_thumb_ADD2(U16 instr) noexcept {
+bool CPU::Dispatch_thumb_ADD2(U16 instr) noexcept {
   U32 immed_8 = GetBitsInRange(instr, 0, 8);
   U32 rd = GetBitsInRange(instr, 8, 11);
 
@@ -1018,7 +1016,7 @@ bool CPU::dispatch_thumb_ADD2(U16 instr) noexcept {
   return true;
 }
 
-bool CPU::dispatch_thumb_ADD3(U16 instr) noexcept {
+bool CPU::Dispatch_thumb_ADD3(U16 instr) noexcept {
   U32 rd = GetBitsInRange(instr, 0, 3);
   U32 rn = GetBitsInRange(instr, 3, 6);
   U32 rm = GetBitsInRange(instr, 6, 9);
@@ -1034,7 +1032,7 @@ bool CPU::dispatch_thumb_ADD3(U16 instr) noexcept {
   return true;
 }
 
-bool CPU::dispatch_thumb_ADD5(U16 instr) noexcept {
+bool CPU::Dispatch_thumb_ADD5(U16 instr) noexcept {
   U32 immed_8 = GetBitsInRange(instr, 0, 8);
   U32 rd = GetBitsInRange(instr, 8, 11);
   registers->r[rd] = (registers->r[PC] & 0xFFFFFFFC) + (immed_8 << 2);
@@ -1042,7 +1040,7 @@ bool CPU::dispatch_thumb_ADD5(U16 instr) noexcept {
   return true;
 }
 
-bool CPU::dispatch_thumb_LSL1(U16 instr) noexcept {
+bool CPU::Dispatch_thumb_LSL1(U16 instr) noexcept {
   U32 immed_5 = GetBitsInRange(instr, 6, 11);
   U32 rm = GetBitsInRange(instr, 3, 6);
   U32 rd = GetBitsInRange(instr, 0, 3);
@@ -1061,7 +1059,7 @@ bool CPU::dispatch_thumb_LSL1(U16 instr) noexcept {
   return true;
 }
 
-bool CPU::dispatch_thumb_LSL2(U16 instr) noexcept {
+bool CPU::Dispatch_thumb_LSL2(U16 instr) noexcept {
   U32 rs = GetBitsInRange(instr, 3, 6);
   U32 rd = GetBitsInRange(instr, 0, 3);
 
@@ -1085,7 +1083,7 @@ bool CPU::dispatch_thumb_LSL2(U16 instr) noexcept {
   return true;
 }
 
-bool CPU::dispatch_thumb_LSR1(U16 instr) noexcept {
+bool CPU::Dispatch_thumb_LSR1(U16 instr) noexcept {
   U32 rd = GetBitsInRange(instr, 0, 3);
   U32 rm = GetBitsInRange(instr, 3, 6);
   U32 immed_5 = GetBitsInRange(instr, 6, 11);
@@ -1104,7 +1102,7 @@ bool CPU::dispatch_thumb_LSR1(U16 instr) noexcept {
   return true;
 }
 
-bool CPU::dispatch_thumb_ASR1(U16 instr) noexcept {
+bool CPU::Dispatch_thumb_ASR1(U16 instr) noexcept {
   U32 rd = GetBitsInRange(instr, 0, 3);
   U32 rm = GetBitsInRange(instr, 3, 6);
   U32 immed_5 = GetBitsInRange(instr, 6, 11);
@@ -1128,7 +1126,7 @@ bool CPU::dispatch_thumb_ASR1(U16 instr) noexcept {
   return true;
 }
 
-bool CPU::dispatch_thumb_SUB1(U16 instr) noexcept {
+bool CPU::Dispatch_thumb_SUB1(U16 instr) noexcept {
   U32 rd = GetBitsInRange(instr, 0, 3);
   U32 rn = GetBitsInRange(instr, 3, 6);
   U32 immed_3 = GetBitsInRange(instr, 6, 9);
@@ -1144,7 +1142,7 @@ bool CPU::dispatch_thumb_SUB1(U16 instr) noexcept {
   return true;
 }
 
-bool CPU::dispatch_thumb_SUB2(U16 instr) noexcept {
+bool CPU::Dispatch_thumb_SUB2(U16 instr) noexcept {
   U32 immed_8 = GetBitsInRange(instr, 0, 8);
   U32 rd = GetBitsInRange(instr, 8, 11);
 
@@ -1160,7 +1158,7 @@ bool CPU::dispatch_thumb_SUB2(U16 instr) noexcept {
   return true;
 }
 
-bool CPU::dispatch_thumb_SUB3(U16 instr) noexcept {
+bool CPU::Dispatch_thumb_SUB3(U16 instr) noexcept {
   U32 rd = GetBitsInRange(instr, 0, 3);
   U32 rn = GetBitsInRange(instr, 3, 6);
   U32 rm = GetBitsInRange(instr, 6, 9);
@@ -1176,14 +1174,14 @@ bool CPU::dispatch_thumb_SUB3(U16 instr) noexcept {
   return true;
 }
 
-bool CPU::dispatch_thumb_SUB4(U16 instr) noexcept {
+bool CPU::Dispatch_thumb_SUB4(U16 instr) noexcept {
   U32 immed_7 = GetBitsInRange(instr, 0, 7);
   registers->r[SP] -= (immed_7 << 2);
   registers->r[PC] += 2;
   return true;
 }
 
-bool CPU::dispatch_thumb_TST(U16 instr) noexcept {
+bool CPU::Dispatch_thumb_TST(U16 instr) noexcept {
   U32 rn = GetBitsInRange(instr, 0, 3);
   U32 rm = GetBitsInRange(instr, 3, 6);
   U32 alu_out = registers->r[rn] & registers->r[rm];
@@ -1193,11 +1191,11 @@ bool CPU::dispatch_thumb_TST(U16 instr) noexcept {
   return true;
 }
 
-bool CPU::dispatch_thumb_B1(U16 instr) noexcept {
+bool CPU::Dispatch_thumb_B1(U16 instr) noexcept {
   I32 immed_8 = SignExtend(GetBitsInRange(instr, 0, 8), 8);
   U32 cond = GetBitsInRange(instr, 8, 11);
 
-  if (evaluate_cond(ConditionCode(cond), registers->CPSR)) {
+  if (EvaluateCondition(ConditionCode(cond), registers->CPSR)) {
     registers->r[PC] = registers->r[PC] + (immed_8 << 1);
     ClearPipeline();
   } else {
@@ -1206,14 +1204,14 @@ bool CPU::dispatch_thumb_B1(U16 instr) noexcept {
   return true;
 }
 
-bool CPU::dispatch_thumb_B2(U16 instr) noexcept {
+bool CPU::Dispatch_thumb_B2(U16 instr) noexcept {
   U32 immed_11 = GetBitsInRange(instr, 0, 11);
   registers->r[PC] += (SignExtend(immed_11, 11) << 1);
   ClearPipeline();
   return true;
 }
 
-bool CPU::dispatch_thumb_BL(U16 instr) noexcept {
+bool CPU::Dispatch_thumb_BL(U16 instr) noexcept {
   U32 h = GetBitsInRange(instr, 11, 13);
   U32 offset_11 = GetBitsInRange(instr, 0, 11);
 
@@ -1229,7 +1227,7 @@ bool CPU::dispatch_thumb_BL(U16 instr) noexcept {
   return true;
 }
 
-bool CPU::dispatch_thumb_BX(U16 instr) noexcept {
+bool CPU::Dispatch_thumb_BX(U16 instr) noexcept {
   U32 rm = GetBitsInRange(instr, 3, 7);
   CPSR_SetT(GetBit(registers->r[rm], 0));
   registers->r[PC] = GetBitsInRange(registers->r[rm], 1, 32) << 1;
@@ -1237,7 +1235,7 @@ bool CPU::dispatch_thumb_BX(U16 instr) noexcept {
   return true;
 }
 
-bool CPU::dispatch_thumb_LDR3(U16 instr,
+bool CPU::Dispatch_thumb_LDR3(U16 instr,
                               const Memory::Memory &memory) noexcept {
   U32 immed_8 = GetBitsInRange(instr, 0, 8);
   U32 rd = GetBitsInRange(instr, 8, 11);
@@ -1247,7 +1245,7 @@ bool CPU::dispatch_thumb_LDR3(U16 instr,
   return true;
 }
 
-bool CPU::dispatch_thumb_LDRH1(U16 instr,
+bool CPU::Dispatch_thumb_LDRH1(U16 instr,
                                const Memory::Memory &memory) noexcept {
   U32 immed_5 = GetBitsInRange(instr, 6, 11);
   U32 rn = GetBitsInRange(instr, 3, 6);
@@ -1264,7 +1262,7 @@ bool CPU::dispatch_thumb_LDRH1(U16 instr,
   return true;
 }
 
-bool CPU::dispatch_thumb_LDRH2(U16 instr,
+bool CPU::Dispatch_thumb_LDRH2(U16 instr,
                                const Memory::Memory &memory) noexcept {
   U32 rm = GetBitsInRange(instr, 6, 9);
   U32 rn = GetBitsInRange(instr, 3, 6);
@@ -1281,7 +1279,7 @@ bool CPU::dispatch_thumb_LDRH2(U16 instr,
   return true;
 }
 
-bool CPU::dispatch_thumb_LDMIA(U16 instr,
+bool CPU::Dispatch_thumb_LDMIA(U16 instr,
                                const Memory::Memory &memory) noexcept {
   U32 rn = GetBitsInRange(instr, 8, 11);
   U32 register_list = GetBitsInRange(instr, 0, 8);
@@ -1303,7 +1301,7 @@ bool CPU::dispatch_thumb_LDMIA(U16 instr,
   return true;
 }
 
-bool CPU::dispatch_thumb_PUSH(U16 instr, Memory::Memory &memory) noexcept {
+bool CPU::Dispatch_thumb_PUSH(U16 instr, Memory::Memory &memory) noexcept {
   U32 register_list = GetBitsInRange(instr, 0, 8);
   U32 include_lr = GetBit(instr, 8);
 
@@ -1330,7 +1328,7 @@ bool CPU::dispatch_thumb_PUSH(U16 instr, Memory::Memory &memory) noexcept {
   return true;
 }
 
-bool CPU::dispatch_thumb_STR2(U16 instr, Memory::Memory &memory) noexcept {
+bool CPU::Dispatch_thumb_STR2(U16 instr, Memory::Memory &memory) noexcept {
   U32 rd = GetBitsInRange(instr, 0, 3);
   U32 rn = GetBitsInRange(instr, 3, 6);
   U32 rm = GetBitsInRange(instr, 6, 9);
@@ -1344,7 +1342,7 @@ bool CPU::dispatch_thumb_STR2(U16 instr, Memory::Memory &memory) noexcept {
   return true;
 }
 
-bool CPU::dispatch_thumb_STR3(U16 instr, Memory::Memory &memory) noexcept {
+bool CPU::Dispatch_thumb_STR3(U16 instr, Memory::Memory &memory) noexcept {
   U32 immed_8 = GetBitsInRange(instr, 0, 8);
   U32 rd = GetBitsInRange(instr, 8, 11);
   U32 address = registers->r[SP] + (immed_8 * 4);
@@ -1357,7 +1355,7 @@ bool CPU::dispatch_thumb_STR3(U16 instr, Memory::Memory &memory) noexcept {
   return true;
 }
 
-bool CPU::dispatch_thumb_STRH1(U16 instr, Memory::Memory &memory) noexcept {
+bool CPU::Dispatch_thumb_STRH1(U16 instr, Memory::Memory &memory) noexcept {
   U32 rd = GetBitsInRange(instr, 0, 3);
   U32 rn = GetBitsInRange(instr, 3, 6);
   U32 immed_5 = GetBitsInRange(instr, 6, 11);
@@ -1372,7 +1370,7 @@ bool CPU::dispatch_thumb_STRH1(U16 instr, Memory::Memory &memory) noexcept {
   return true;
 }
 
-bool CPU::dispatch_thumb_STRH2(U16 instr, Memory::Memory &memory) noexcept {
+bool CPU::Dispatch_thumb_STRH2(U16 instr, Memory::Memory &memory) noexcept {
   U32 rd = GetBitsInRange(instr, 0, 3);
   U32 rn = GetBitsInRange(instr, 3, 6);
   U32 rm = GetBitsInRange(instr, 6, 9);

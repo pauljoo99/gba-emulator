@@ -57,7 +57,7 @@ int main(int argc, char *argv[]) {
 
   cpu->reset();
   Reset(*memory);
-  while (cpu->dispatch(*memory)) {
+  while (cpu->Dispatch(*memory)) {
   }
 
   LOG("Dispatch failed!");
