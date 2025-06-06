@@ -26,6 +26,8 @@ inline U32 SetBitsInMask(U32 bits, U32 to_set, U32 mask) {
   return (bits & ~mask) | to_set;
 }
 
+/// imm is the number to sign extend and num_bits is the number of bits that imm
+/// represents.
 inline I32 SignExtend(U32 imm, U8 num_bits) {
   U32 mask = ((1 << (32 - num_bits)) - GetBit(imm, num_bits - 1)) << num_bits;
   return static_cast<I32>(mask | imm);
