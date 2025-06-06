@@ -341,6 +341,14 @@ struct CPU {
     mask.bits.N = 1;
     registers->CPSR = BitUtils::SetBitsInMask(registers->CPSR, cpsr, mask);
   }
+
+  inline void CPSR_SetT(bool T) noexcept {
+    CPSR_Register cpsr;
+    cpsr.bits.T = T;
+    CPSR_Register mask;
+    mask.bits.T = 1;
+    registers->CPSR = BitUtils::SetBitsInMask(registers->CPSR, cpsr, mask);
+  }
 };
 
 } // namespace Emulator::Arm

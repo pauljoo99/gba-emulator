@@ -588,11 +588,7 @@ CPU::LoadAndStoreMultipleAddr(U32 instr_) noexcept {
 [[nodiscard]] bool CPU::dispatch_BX(U32 instr_) noexcept {
   const BranchAndExchangeInstr instr(instr_);
   if (evaluate_cond(ConditionCode(instr.fields.cond), registers->CPSR)) {
-    CPSR_Register cpsr{};
-    cpsr.bits.T = GetBit(registers->r[instr.fields.rm], 0);
-    CPSR_Register mask{};
-    mask.bits.T = 1;
-    registers->CPSR = SetBitsInMask(registers->CPSR, cpsr, mask);
+    CPSR_SetT(GetBit(registers->r[instr.fields.rm], 0));
     registers->r[PC] = registers->r[instr.fields.rm] & 0xFFFFFFFE;
     ClearPipeline();
   } else {
@@ -609,17 +605,9 @@ CPU::LoadAndStoreMultipleAddr(U32 instr_) noexcept {
     if (instr.fields.s && instr.fields.rd == PC) {
       registers->CPSR = U32(registers->SPRS);
     } else if (instr.fields.s) {
-      CPSR_Register cpsr{};
-      cpsr.bits.N = GetBit(registers->r[instr.fields.rd], 31);
-      cpsr.bits.Z = instr.fields.rd == 0;
-      cpsr.bits.C = shifter.shifter_carry_out;
-
-      CPSR_Register mask{};
-      mask.bits.N = 1;
-      mask.bits.Z = 1;
-      mask.bits.C = 1;
-
-      registers->CPSR = SetBitsInMask(registers->CPSR, cpsr, mask);
+      CPSR_SetN(GetBit(registers->r[instr.fields.rd], 31));
+      CPSR_SetZ(instr.fields.rd == 0);
+      CPSR_SetC(shifter.shifter_carry_out);
     }
   }
   registers->r[PC] += kInstrSize;
@@ -707,17 +695,9 @@ CPU::LoadAndStoreMultipleAddr(U32 instr_) noexcept {
     if (instr.fields.s == 1 && instr.fields.rn == PC) {
       registers->CPSR = U32(registers->SPRS);
     } else if (instr.fields.s == 1) {
-      CPSR_Register cpsr{};
-      cpsr.bits.N = GetBit(registers->r[instr.fields.rd], 31);
-      cpsr.bits.Z = instr.fields.rd == 0;
-      cpsr.bits.C = shifter.shifter_carry_out;
-
-      CPSR_Register mask{};
-      mask.bits.N = 1;
-      mask.bits.Z = 1;
-      mask.bits.C = 1;
-
-      registers->CPSR = SetBitsInMask(registers->CPSR, cpsr, mask);
+      CPSR_SetN(GetBit(registers->r[instr.fields.rd], 31));
+      CPSR_SetZ(registers->r[instr.fields.rd] == 0);
+      CPSR_SetC(shifter.shifter_carry_out);
     }
   }
   registers->r[PC] += kInstrSize;
@@ -801,17 +781,9 @@ bool CPU::dispatch_TEQ(U32 instr_) noexcept {
     ShifterOperandResult shifter = ShifterOperand(instr);
     U32 alu_out = registers->r[instr.fields.rn] ^ shifter.shifter_operand;
 
-    CPSR_Register cpsr;
-    cpsr.bits.N = GetBit(alu_out, 31);
-    cpsr.bits.Z = alu_out == 0;
-    cpsr.bits.C = shifter.shifter_carry_out;
-
-    CPSR_Register mask;
-    mask.bits.N = 1;
-    mask.bits.Z = 1;
-    mask.bits.C = 1;
-
-    registers->CPSR = SetBitsInMask(registers->CPSR, cpsr, mask);
+    CPSR_SetN(GetBit(alu_out, 31));
+    CPSR_SetZ(alu_out == 0);
+    CPSR_SetC(shifter.shifter_carry_out);
   }
   registers->r[PC] += kInstrSize;
   return true;
@@ -938,17 +910,9 @@ bool CPU::dispatch_AND(U32 instr_) noexcept {
       ClearPipeline();
       return true;
     } else if (instr.fields.s == 1) {
-      CPSR_Register cpsr{};
-      cpsr.bits.N = GetBit(registers->r[instr.fields.rd], 31);
-      cpsr.bits.Z = registers->r[instr.fields.rd] == 0;
-      cpsr.bits.C = shifter.shifter_carry_out;
-
-      CPSR_Register mask{};
-      mask.bits.N = 1;
-      mask.bits.Z = 1;
-      mask.bits.C = 1;
-
-      registers->CPSR = SetBitsInMask(registers->CPSR, cpsr, mask);
+      CPSR_SetN(GetBit(registers->r[instr.fields.rd], 31));
+      CPSR_SetZ(registers->r[instr.fields.rd] == 0);
+      CPSR_SetC(shifter.shifter_carry_out);
     }
   }
   registers->r[PC] += kInstrSize;
@@ -961,15 +925,8 @@ bool CPU::dispatch_thumb_MOV1(U16 instr) noexcept {
 
   registers->r[rd] = immed_8;
 
-  CPSR_Register cpsr{};
-  cpsr.bits.N = GetBit(registers->r[rd], 31);
-  cpsr.bits.Z = registers->r[rd] == 0;
-
-  CPSR_Register mask{};
-  mask.bits.N = 1;
-  mask.bits.Z = 1;
-
-  registers->CPSR = SetBitsInMask(registers->CPSR, cpsr, mask);
+  CPSR_SetN(GetBit(registers->r[rd], 31));
+  CPSR_SetZ(registers->r[rd] == 0);
 
   registers->r[PC] += 2;
   return true;
@@ -1002,15 +959,8 @@ bool CPU::dispatch_thumb_MVN(U16 instr) noexcept {
 
   registers->r[rd] = ~(registers->r[rm]);
 
-  CPSR_Register cpsr{};
-  cpsr.bits.N = GetBit(registers->r[rd], 31);
-  cpsr.bits.Z = registers->r[rd] == 0;
-
-  CPSR_Register mask{};
-  mask.bits.N = 1;
-  mask.bits.Z = 1;
-
-  registers->CPSR = SetBitsInMask(registers->CPSR, cpsr, mask);
+  CPSR_SetN(GetBit(registers->r[rd], 31));
+  CPSR_SetZ(registers->r[rd] == 0);
 
   registers->r[PC] += 2;
   return true;
@@ -1022,15 +972,8 @@ bool CPU::dispatch_thumb_ORR(U16 instr) noexcept {
 
   registers->r[rd] = registers->r[rd] | registers->r[rm];
 
-  CPSR_Register cpsr{};
-  cpsr.bits.N = GetBit(registers->r[rd], 31);
-  cpsr.bits.Z = registers->r[rd] == 0;
-
-  CPSR_Register mask{};
-  mask.bits.N = 1;
-  mask.bits.Z = 1;
-
-  registers->CPSR = SetBitsInMask(registers->CPSR, cpsr, mask);
+  CPSR_SetN(GetBit(registers->r[rd], 31));
+  CPSR_SetZ(registers->r[rd] == 0);
 
   registers->r[PC] += 2;
   return true;
@@ -1092,21 +1035,12 @@ bool CPU::dispatch_thumb_LSL1(U16 instr) noexcept {
   if (immed_5 == 0) {
     registers->r[rd] = U32(registers->r[rm]);
   } else {
-    CPSR_Register cpsr{};
-    cpsr.bits.C = GetBit(registers->r[rm], 32 - immed_5);
-    CPSR_Register mask{};
-    mask.bits.C = 1;
+    CPSR_SetC(GetBit(registers->r[rm], 32 - immed_5));
     registers->r[rd] = LogicalShiftLeft(registers->r[rm], immed_5);
-    registers->CPSR = SetBitsInMask(registers->CPSR, cpsr, mask);
   }
 
-  CPSR_Register cpsr{};
-  cpsr.bits.N = GetBit(registers->r[rd], 31);
-  cpsr.bits.Z = registers->r[rd] == 0;
-  CPSR_Register mask{};
-  mask.bits.N = 1;
-  mask.bits.Z = 1;
-  registers->CPSR = SetBitsInMask(registers->CPSR, cpsr, mask);
+  CPSR_SetN(GetBit(registers->r[rd], 31));
+  CPSR_SetZ(registers->r[rd] == 0);
 
   registers->r[PC] += 2;
   return true;
@@ -1119,33 +1053,18 @@ bool CPU::dispatch_thumb_LSL2(U16 instr) noexcept {
   U32 rs_byte = GetBitsInRange(registers->r[rs], 0, 8);
   if (rs_byte == 0) {
   } else if (rs_byte < 32) {
-    CPSR_Register cpsr{};
-    cpsr.bits.C = GetBit(registers->r[rd], rs_byte - 1);
-    CPSR_Register mask{};
-    mask.bits.C = 1;
-    registers->CPSR = SetBitsInMask(registers->CPSR, cpsr, mask);
+    CPSR_SetC(GetBit(registers->r[rd], rs_byte - 1));
     registers->r[rd] = LogicalShiftRight(registers->r[rd], rs_byte);
   } else if (rs_byte == 32) {
-    CPSR_Register cpsr{};
-    cpsr.bits.C = GetBit(registers->r[rd], 31);
-    CPSR_Register mask{};
-    mask.bits.C = 1;
+    CPSR_SetC(GetBit(registers->r[rd], 31));
     registers->r[rd] = 0;
   } else {
-    CPSR_Register cpsr{};
-    cpsr.bits.C = 0;
-    CPSR_Register mask{};
-    mask.bits.C = 1;
+    CPSR_SetC(0);
     registers->r[rd] = 0;
   }
 
-  CPSR_Register cpsr{};
-  cpsr.bits.N = GetBit(registers->r[rd], 31);
-  cpsr.bits.Z = registers->r[rd] == 0;
-  CPSR_Register mask{};
-  mask.bits.N = 1;
-  mask.bits.Z = 1;
-  registers->CPSR = SetBitsInMask(registers->CPSR, cpsr, mask);
+  CPSR_SetN(GetBit(registers->r[rd], 31));
+  CPSR_SetZ(registers->r[rd] == 0);
 
   registers->r[PC] += 2;
   return true;
@@ -1157,28 +1076,14 @@ bool CPU::dispatch_thumb_LSR1(U16 instr) noexcept {
   U32 immed_5 = GetBitsInRange(instr, 6, 11);
 
   if (immed_5 == 0) {
-    CPSR_Register cpsr{};
-    cpsr.bits.C = GetBit(registers->r[rd], 31);
-    CPSR_Register mask{};
-    mask.bits.C = 1;
-    registers->CPSR = SetBitsInMask(registers->CPSR, cpsr, mask);
+    CPSR_SetC(GetBit(registers->r[rd], 31));
     registers->r[rd] = 0;
   } else {
-    CPSR_Register cpsr{};
-    cpsr.bits.C = GetBit(registers->r[rd], immed_5 - 1);
-    CPSR_Register mask{};
-    mask.bits.C = 1;
-    registers->CPSR = SetBitsInMask(registers->CPSR, cpsr, mask);
+    CPSR_SetC(GetBit(registers->r[rd], immed_5 - 1));
     registers->r[rd] = LogicalShiftRight(registers->r[rm], immed_5);
   }
-
-  CPSR_Register cpsr{};
-  cpsr.bits.N = GetBit(registers->r[rd], 31);
-  cpsr.bits.Z = registers->r[rd] == 0;
-  CPSR_Register mask{};
-  mask.bits.N = 1;
-  mask.bits.Z = 1;
-  registers->CPSR = SetBitsInMask(registers->CPSR, cpsr, mask);
+  CPSR_SetN(GetBit(registers->r[rd], 31));
+  CPSR_SetZ(registers->r[rd] == 0);
 
   registers->r[PC] += 2;
   return true;
@@ -1190,32 +1095,19 @@ bool CPU::dispatch_thumb_ASR1(U16 instr) noexcept {
   U32 immed_5 = GetBitsInRange(instr, 6, 11);
 
   if (immed_5 == 0) {
-    CPSR_Register cpsr{};
-    cpsr.bits.C = GetBit(registers->r[rm], 31);
-    CPSR_Register mask{};
-    mask.bits.C = 1;
-    registers->CPSR = SetBitsInMask(registers->CPSR, cpsr, mask);
+    CPSR_SetC(GetBit(registers->r[rm], 31));
     if (GetBit(registers->r[rm], 31) == 0) {
       registers->r[rd] = 0;
     } else {
       registers->r[rd] = 0xFFFFFFFF;
     }
   } else {
-    CPSR_Register cpsr{};
-    cpsr.bits.C = GetBit(registers->r[rd], immed_5 - 1);
-    CPSR_Register mask{};
-    mask.bits.C = 1;
-    registers->CPSR = SetBitsInMask(registers->CPSR, cpsr, mask);
+    CPSR_SetC(GetBit(registers->r[rd], immed_5 - 1));
     registers->r[rd] = ArithmeticShiftRight(registers->r[rm], immed_5);
   }
 
-  CPSR_Register cpsr{};
-  cpsr.bits.N = GetBit(registers->r[rd], 31);
-  cpsr.bits.Z = registers->r[rd] == 0;
-  CPSR_Register mask{};
-  mask.bits.N = 1;
-  mask.bits.Z = 1;
-  registers->CPSR = SetBitsInMask(registers->CPSR, cpsr, mask);
+  CPSR_SetN(GetBit(registers->r[rd], 31));
+  CPSR_SetZ(registers->r[rd] == 0);
 
   registers->r[PC] += 2;
   return true;
@@ -1262,13 +1154,8 @@ bool CPU::dispatch_thumb_TST(U16 instr) noexcept {
   U32 rn = GetBitsInRange(instr, 0, 3);
   U32 rm = GetBitsInRange(instr, 3, 6);
   U32 alu_out = registers->r[rn] & registers->r[rm];
-  CPSR_Register cpsr{};
-  cpsr.bits.N = GetBit(alu_out, 31);
-  cpsr.bits.Z = alu_out == 0;
-  CPSR_Register mask{};
-  mask.bits.N = 1;
-  mask.bits.Z = 1;
-  registers->CPSR = SetBitsInMask(registers->CPSR, cpsr, mask);
+  CPSR_SetN(GetBit(alu_out, 31));
+  CPSR_SetZ(alu_out == 0);
   registers->r[PC] += 2;
   return true;
 }
@@ -1311,12 +1198,7 @@ bool CPU::dispatch_thumb_BL(U16 instr) noexcept {
 
 bool CPU::dispatch_thumb_BX(U16 instr) noexcept {
   U32 rm = GetBitsInRange(instr, 3, 7);
-
-  CPSR_Register cpsr{};
-  cpsr.bits.T = GetBit(registers->r[rm], 0);
-  CPSR_Register mask{};
-  mask.bits.T = 1;
-  registers->CPSR = SetBitsInMask(registers->CPSR, cpsr, mask);
+  CPSR_SetT(GetBit(registers->r[rm], 0));
   registers->r[PC] = GetBitsInRange(registers->r[rm], 1, 32) << 1;
   ClearPipeline();
   return true;
