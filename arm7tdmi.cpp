@@ -937,8 +937,8 @@ bool CPU::Dispatch_Thumb_MOV1(U16 instr) noexcept {
 }
 
 bool CPU::Dispatch_Thumb_MOV3(U16 instr) noexcept {
-  U32 rd = GetBitsInRange(instr, 0, 3);
-  U32 rm = GetBitsInRange(instr, 3, 6);
+  U32 rd = ConcatBits(GetBit(instr, 7), GetBitsInRange(instr, 0, 3), 3);
+  U32 rm = ConcatBits(GetBit(instr, 6), GetBitsInRange(instr, 3, 6), 3);
   registers->r[rd] = U32(registers->r[rm]);
   registers->r[PC] += 2;
   return true;
@@ -1193,7 +1193,7 @@ bool CPU::Dispatch_Thumb_TST(U16 instr) noexcept {
 
 bool CPU::Dispatch_Thumb_B1(U16 instr) noexcept {
   I32 immed_8 = SignExtend(GetBitsInRange(instr, 0, 8), 8);
-  U32 cond = GetBitsInRange(instr, 8, 11);
+  U32 cond = GetBitsInRange(instr, 8, 12);
 
   if (EvaluateCondition(ConditionCode(cond), registers->CPSR)) {
     registers->r[PC] = registers->r[PC] + (immed_8 << 1);
