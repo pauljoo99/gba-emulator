@@ -845,15 +845,14 @@ bool CPU::Dispatch_STM(U32 instr_, Memory::Memory &memory) noexcept {
   LoadAndStoreMultipleAddrResult addr = LoadAndStoreMultipleAddr(instr_);
   U32 address = addr.start_addr;
   for (U32 i = 0; i < 15; ++i) {
+    U32 val = instr.fields.s == 1 ? user_registers.r[i] : registers->r[i];
     if (GetBit(instr.fields.register_list, i) == 1) {
-      WriteWordFromGBAMemory(memory, address, registers->r[i]);
+      WriteWordFromGBAMemory(memory, address, val);
       address += 4;
     }
   }
   assert(addr.end_addr == address - 4);
   registers->r[PC] += kInstrSize;
-
-  // TODO: Implement STM1
   return true;
 }
 
