@@ -852,6 +852,8 @@ bool CPU::Dispatch_STM(U32 instr_, Memory::Memory &memory) noexcept {
   }
   assert(addr.end_addr == address - 4);
   registers->r[PC] += kInstrSize;
+
+  // TODO: Implement STM1
   return true;
 }
 
