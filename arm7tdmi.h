@@ -103,6 +103,7 @@ struct CPU {
 
   [[nodiscard]] bool Dispatch_B(U32 instr) noexcept;
   [[nodiscard]] bool Dispatch_BL(U32 instr) noexcept;
+  [[nodiscard]] bool Dispatch_BIC(U32 instr) noexcept;
   [[nodiscard]] bool Dispatch_BX(U32 instr) noexcept;
 
   [[nodiscard]] bool Dispatch_CMP(U32 instr) noexcept;
@@ -111,7 +112,10 @@ struct CPU {
   [[nodiscard]] bool Dispatch_MSR(U32 instr) noexcept;
   [[nodiscard]] bool Dispatch_LDR(U32 instr,
                                   const Memory::Memory &memory) noexcept;
+  [[nodiscard]] bool Dispatch_LDM(U32 instr,
+                                  const Memory::Memory &memory) noexcept;
   [[nodiscard]] bool Dispatch_TEQ(U32 instr_) noexcept;
+  [[nodiscard]] bool Dispatch_TST(U32 instr_) noexcept;
   [[nodiscard]] bool Dispatch_MRS(U32 instr) noexcept;
   [[nodiscard]] bool Dispatch_ORR(U32 instr) noexcept;
   [[nodiscard]] bool Dispatch_CMN(U32 instr) noexcept;
@@ -123,8 +127,6 @@ struct CPU {
 
   [[nodiscard]] bool Dispatch_STM(U32 instr, Memory::Memory &memory) noexcept;
   [[nodiscard]] bool Dispatch_STR(U32 instr, Memory::Memory &memory) noexcept;
-  [[nodiscard]] bool Dispatch_LDM(U32 instr,
-                                  const Memory::Memory &memory) noexcept;
 
   [[nodiscard]] bool Dispatch_Thumb_CMP1(U16 instr) noexcept;
   [[nodiscard]] bool Dispatch_Thumb_MOV1(U16 instr) noexcept;
@@ -147,6 +149,7 @@ struct CPU {
   [[nodiscard]] bool Dispatch_Thumb_ASR1(U16 instr) noexcept;
   [[nodiscard]] bool Dispatch_Thumb_B1(U16 instr) noexcept;
   [[nodiscard]] bool Dispatch_Thumb_B2(U16 instr) noexcept;
+  [[nodiscard]] bool Dispatch_Thumb_BIC(U16 instr) noexcept;
   [[nodiscard]] bool Dispatch_Thumb_BL(U16 instr) noexcept;
   [[nodiscard]] bool Dispatch_Thumb_BX(U16 instr) noexcept;
   [[nodiscard]] bool Dispatch_Thumb_TST(U16 instr) noexcept;

@@ -45,8 +45,8 @@ inline const U8 *GetPhysicalMemoryReadOnly(const Memory &mem,
     return &((U8 *)mem.PaletteRAM)[address - 0x05000000];
   } else if (address >= 0x06000000 && address < 0x06018000) {
     return &((U8 *)mem.VRAM)[address - 0x06000000];
-  } else if (address >= 0x07000000 && address < 0x07000400) {
-    return &((U8 *)mem.OAM)[address - 0x07000000];
+  } else if (address >= 0x07000000 && address < 0x08000000) {
+    return &((U8 *)mem.OAM)[address & 0x3FF];
   } else if (address >= 0x08000000 && address < 0x0A000000) {
     return &mem.GamePak_WS0[address - 0x08000000];
   } else if (address >= 0x0A000000 && address < 0x0C000000) {
