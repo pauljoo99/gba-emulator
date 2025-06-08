@@ -136,6 +136,7 @@ struct CPU {
   [[nodiscard]] bool Dispatch_Thumb_ADD2(U16 instr) noexcept;
   [[nodiscard]] bool Dispatch_Thumb_ADD3(U16 instr) noexcept;
   [[nodiscard]] bool Dispatch_Thumb_ADD5(U16 instr) noexcept;
+  [[nodiscard]] bool Dispatch_Thumb_ADD7(U16 instr) noexcept;
   [[nodiscard]] bool Dispatch_Thumb_ORR(U16 instr) noexcept;
   [[nodiscard]] bool Dispatch_Thumb_SUB1(U16 instr) noexcept;
   [[nodiscard]] bool Dispatch_Thumb_SUB2(U16 instr) noexcept;
@@ -162,6 +163,8 @@ struct CPU {
   Dispatch_Thumb_LDMIA(U16 instr, const Memory::Memory &memory) noexcept;
   [[nodiscard]] bool Dispatch_Thumb_STRB1(U16 instr,
                                           Memory::Memory &memory) noexcept;
+  [[nodiscard]] bool Dispatch_Thumb_STR1(U16 instr,
+                                         Memory::Memory &memory) noexcept;
   [[nodiscard]] bool Dispatch_Thumb_STR2(U16 instr,
                                          Memory::Memory &memory) noexcept;
   [[nodiscard]] bool Dispatch_Thumb_STR3(U16 instr,
@@ -172,6 +175,8 @@ struct CPU {
                                           Memory::Memory &memory) noexcept;
   [[nodiscard]] bool Dispatch_Thumb_PUSH(U16 instr,
                                          Memory::Memory &memory) noexcept;
+  [[nodiscard]] bool Dispatch_Thumb_POP(U16 instr,
+                                        const Memory::Memory &memory) noexcept;
 
   ShifterOperandResult ShifterOperand(DataProcessingInstr instr) noexcept;
 
