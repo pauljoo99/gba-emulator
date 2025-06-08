@@ -288,6 +288,8 @@ void CPU::ClearPipeline() noexcept {
   switch (opcode) {
   case (Thumb::ThumbOpcode::CMP1):
     return cpu.Dispatch_Thumb_CMP1(instr);
+  case (Thumb::ThumbOpcode::CMP2):
+    return cpu.Dispatch_Thumb_CMP2(instr);
   case (Thumb::ThumbOpcode::CMP3):
     return cpu.Dispatch_Thumb_CMP3(instr);
   case (Thumb::ThumbOpcode::MOV1):
@@ -298,6 +300,8 @@ void CPU::ClearPipeline() noexcept {
     return cpu.Dispatch_Thumb_MVN(instr);
   case (Thumb::ThumbOpcode::LDR3):
     return cpu.Dispatch_Thumb_LDR3(instr, memory);
+  case (Thumb::ThumbOpcode::LDRB1):
+    return cpu.Dispatch_Thumb_LDRB1(instr, memory);
   case (Thumb::ThumbOpcode::LDRH1):
     return cpu.Dispatch_Thumb_LDRH1(instr, memory);
   case (Thumb::ThumbOpcode::LDRH2):
@@ -312,6 +316,8 @@ void CPU::ClearPipeline() noexcept {
     return cpu.Dispatch_Thumb_STR2(instr, memory);
   case (Thumb::ThumbOpcode::STR3):
     return cpu.Dispatch_Thumb_STR3(instr, memory);
+  case (Thumb::ThumbOpcode::STMIA):
+    return cpu.Dispatch_Thumb_STMIA(instr, memory);
   case (Thumb::ThumbOpcode::STRH1):
     return cpu.Dispatch_Thumb_STRH1(instr, memory);
   case (Thumb::ThumbOpcode::STRH2):
@@ -1054,6 +1060,20 @@ bool CPU::Dispatch_Thumb_CMP1(U16 instr) noexcept {
   return true;
 }
 
+bool CPU::Dispatch_Thumb_CMP2(U16 instr) noexcept {
+  U32 rn = GetBitsInRange(instr, 0, 3);
+  U32 rm = GetBitsInRange(instr, 3, 6);
+  U32 alu_out = U32(registers->r[rn]) - U32(registers->r[rm]);
+
+  CPSR_SetN(GetBit(alu_out, 31));
+  CPSR_SetZ(alu_out == 0);
+  CPSR_SetC(!UnsignedSubBorrow(registers->r[rn], registers->r[rm]));
+  CPSR_SetV(SignedSubOverflow(registers->r[rn], registers->r[rm]));
+
+  registers->r[PC] += 2;
+  return true;
+}
+
 bool CPU::Dispatch_Thumb_CMP3(U16 instr) noexcept {
   U32 rn = ConcatBits(GetBit(instr, 7), GetBitsInRange(instr, 0, 3), 3);
   U32 rm = ConcatBits(GetBit(instr, 6), GetBitsInRange(instr, 3, 6), 3);
@@ -1380,6 +1400,17 @@ bool CPU::Dispatch_Thumb_LDR3(U16 instr,
   return true;
 }
 
+bool CPU::Dispatch_Thumb_LDRB1(U16 instr,
+                               const Memory::Memory &memory) noexcept {
+  U32 rd = GetBitsInRange(instr, 0, 3);
+  U32 rn = GetBitsInRange(instr, 3, 6);
+  U32 immed_5 = GetBitsInRange(instr, 6, 11);
+  U32 address = registers->r[rn] + immed_5;
+  registers->r[rd] = ReadByteFromGBAMemory(memory, address);
+  registers->r[PC] += 2;
+  return true;
+}
+
 bool CPU::Dispatch_Thumb_LDRH1(U16 instr,
                                const Memory::Memory &memory) noexcept {
   U32 immed_5 = GetBitsInRange(instr, 6, 11);
@@ -1540,6 +1571,24 @@ bool CPU::Dispatch_Thumb_STR3(U16 instr, Memory::Memory &memory) noexcept {
   } else {
     LOG_ABORT("Unpredicatable: Bad address");
   }
+  registers->r[PC] += 2;
+  return true;
+}
+
+bool CPU::Dispatch_Thumb_STMIA(U16 instr, Memory::Memory &memory) noexcept {
+  U32 register_list = GetBitsInRange(instr, 0, 8);
+  U32 rn = GetBitsInRange(instr, 8, 11);
+  U32 start_address = registers->r[rn];
+  U32 end_address = registers->r[rn] + (CountSetBits(register_list) * 4) - 4;
+  U32 address = start_address;
+  for (U32 i = 0; i < 8; ++i) {
+    if (GetBit(register_list, i) == 1) {
+      WriteWordFromGBAMemory(memory, address, registers->r[i]);
+      address += 4;
+    }
+  }
+  assert(end_address == address - 4);
+  registers->r[rn] += CountSetBits(register_list) * 4;
   registers->r[PC] += 2;
   return true;
 }
