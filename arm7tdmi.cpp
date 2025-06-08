@@ -288,6 +288,8 @@ void CPU::ClearPipeline() noexcept {
   switch (opcode) {
   case (Thumb::ThumbOpcode::CMP1):
     return cpu.Dispatch_Thumb_CMP1(instr);
+  case (Thumb::ThumbOpcode::CMP3):
+    return cpu.Dispatch_Thumb_CMP3(instr);
   case (Thumb::ThumbOpcode::MOV1):
     return cpu.Dispatch_Thumb_MOV1(instr);
   case (Thumb::ThumbOpcode::MOV3):
@@ -324,6 +326,8 @@ void CPU::ClearPipeline() noexcept {
     return cpu.Dispatch_Thumb_ADD3(instr);
   case (Thumb::ThumbOpcode::ADD5):
     return cpu.Dispatch_Thumb_ADD5(instr);
+  case (Thumb::ThumbOpcode::ADD6):
+    return cpu.Dispatch_Thumb_ADD6(instr);
   case (Thumb::ThumbOpcode::ADD7):
     return cpu.Dispatch_Thumb_ADD7(instr);
   case (Thumb::ThumbOpcode::LSL1):
@@ -1050,6 +1054,20 @@ bool CPU::Dispatch_Thumb_CMP1(U16 instr) noexcept {
   return true;
 }
 
+bool CPU::Dispatch_Thumb_CMP3(U16 instr) noexcept {
+  U32 rn = ConcatBits(GetBit(instr, 7), GetBitsInRange(instr, 0, 3), 3);
+  U32 rm = ConcatBits(GetBit(instr, 6), GetBitsInRange(instr, 3, 6), 3);
+  U32 alu_out = U32(registers->r[rn]) - U32(registers->r[rm]);
+
+  CPSR_SetN(GetBit(alu_out, 31));
+  CPSR_SetZ(alu_out == 0);
+  CPSR_SetC(!UnsignedSubBorrow(registers->r[rn], registers->r[rm]));
+  CPSR_SetV(SignedSubOverflow(registers->r[rn], registers->r[rm]));
+
+  registers->r[PC] += 2;
+  return true;
+}
+
 bool CPU::Dispatch_Thumb_MVN(U16 instr) noexcept {
   U32 rd = GetBitsInRange(instr, 0, 3);
   U32 rm = GetBitsInRange(instr, 3, 6);
@@ -1128,6 +1146,14 @@ bool CPU::Dispatch_Thumb_ADD5(U16 instr) noexcept {
   U32 immed_8 = GetBitsInRange(instr, 0, 8);
   U32 rd = GetBitsInRange(instr, 8, 11);
   registers->r[rd] = (registers->r[PC] & 0xFFFFFFFC) + (immed_8 << 2);
+  registers->r[PC] += 2;
+  return true;
+}
+
+bool CPU::Dispatch_Thumb_ADD6(U16 instr) noexcept {
+  U32 immed_8 = GetBitsInRange(instr, 0, 8);
+  U32 rd = GetBitsInRange(instr, 8, 11);
+  registers->r[rd] = registers->r[SP] + (immed_8 << 2);
   registers->r[PC] += 2;
   return true;
 }
