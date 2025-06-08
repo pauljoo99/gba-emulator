@@ -284,6 +284,8 @@ struct CPU {
   Registers *registers;
   Pipeline pipeline;
 
+  U32 dispatch_num = 0;
+
   inline Mode GetMode() {
     CPSR_Register cpsr(registers->CPSR);
     switch (cpsr.bits.M) {

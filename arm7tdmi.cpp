@@ -231,8 +231,8 @@ void CPU::ClearPipeline() noexcept {
 [[nodiscard]] bool ProcessInstruction(U32 instr, Instr::Instr instr_type,
                                       Memory::Memory &memory, CPU &cpu) {
 
-  LOG("Instr: %s, Raw Instr: 0x%08X, PC: 0x%04X", toString(instr_type), instr,
-      cpu.pipeline.execute_addr);
+  LOG("Dispatch %u - Instr: %s, Raw Instr: 0x%08X, PC: 0x%04X",
+      cpu.dispatch_num, toString(instr_type), instr, cpu.pipeline.execute_addr);
 
   switch (instr_type) {
   case Instr::Instr::B:
@@ -282,8 +282,9 @@ void CPU::ClearPipeline() noexcept {
                                            CPU &cpu) noexcept {
 
   const Thumb::ThumbOpcode opcode = Thumb::GetThumbOpcode(instr);
-  LOG("Raw Thumb Instr: 0x%04X, Opcode: %s, PC: 0x%04X", instr,
-      Thumb::ToString(opcode), cpu.pipeline.execute_addr);
+  LOG("Dispatch %u - Raw Thumb Instr: 0x%04X, Opcode: %s, PC: 0x%04X",
+      cpu.dispatch_num, instr, Thumb::ToString(opcode),
+      cpu.pipeline.execute_addr);
 
   switch (opcode) {
   case (Thumb::ThumbOpcode::CMP1):
@@ -585,6 +586,7 @@ CPU::LoadAndStoreMultipleAddr(U32 instr_) noexcept {
       registers->r[PC] += 4;
     }
   }
+  dispatch_num++;
   return true;
 }
 
