@@ -29,6 +29,10 @@ struct Memory {
                              // Wait State 2
 
   U8 GamePak_SRAM[0x10000]; // 0E000000-0E00FFFF   Game Pak SRAM (64 KB)
+
+  // List of mystery addresses
+  // 0x4000410 -> 0. (https://www.chibialiens.com/arm/gba.php?noui=1)
+  U8 Mystery_Addresses[0x1];
 };
 
 inline const U8 *GetPhysicalMemoryReadOnly(const Memory &mem,
@@ -55,6 +59,8 @@ inline const U8 *GetPhysicalMemoryReadOnly(const Memory &mem,
     return &mem.GamePak_WS2[address - 0x0C000000];
   } else if (address >= 0x0E000000 && address < 0x0E010000) {
     return &mem.GamePak_SRAM[address - 0x0E000000];
+  } else if (address == 0x4000410) {
+    return &mem.Mystery_Addresses[0];
   } else {
     // Out of bounds or unused memory
     LOG_ABORT("Invalid memory address: 0x%04X", address);
@@ -84,6 +90,8 @@ inline U8 *GetPhysicalMemoryReadWrite(Memory &mem, U32 address) noexcept {
     return &mem.GamePak_WS2[address - 0x0C000000];
   } else if (address >= 0x0E000000 && address < 0x0E010000) {
     return &mem.GamePak_SRAM[address - 0x0E000000];
+  } else if (address == 0x4000410) {
+    return &mem.Mystery_Addresses[0];
   } else {
     // Out of bounds or unused memory
     LOG_ABORT("Invalid memory address: 0x%04X", address);

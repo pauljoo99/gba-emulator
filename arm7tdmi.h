@@ -160,6 +160,8 @@ struct CPU {
   Dispatch_Thumb_LDRH2(U16 instr, const Memory::Memory &memory) noexcept;
   [[nodiscard]] bool
   Dispatch_Thumb_LDMIA(U16 instr, const Memory::Memory &memory) noexcept;
+  [[nodiscard]] bool Dispatch_Thumb_STRB1(U16 instr,
+                                          Memory::Memory &memory) noexcept;
   [[nodiscard]] bool Dispatch_Thumb_STR2(U16 instr,
                                          Memory::Memory &memory) noexcept;
   [[nodiscard]] bool Dispatch_Thumb_STR3(U16 instr,

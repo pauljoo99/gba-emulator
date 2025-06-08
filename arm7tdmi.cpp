@@ -302,6 +302,8 @@ void CPU::ClearPipeline() noexcept {
     return cpu.Dispatch_Thumb_LDRH2(instr, memory);
   case (Thumb::ThumbOpcode::LDMIA):
     return cpu.Dispatch_Thumb_LDMIA(instr, memory);
+  case (Thumb::ThumbOpcode::STRB1):
+    return cpu.Dispatch_Thumb_STRB1(instr, memory);
   case (Thumb::ThumbOpcode::STR2):
     return cpu.Dispatch_Thumb_STR2(instr, memory);
   case (Thumb::ThumbOpcode::STR3):
@@ -1419,6 +1421,16 @@ bool CPU::Dispatch_Thumb_PUSH(U16 instr, Memory::Memory &memory) noexcept {
 
   registers->r[PC] += 2;
 
+  return true;
+}
+
+bool CPU::Dispatch_Thumb_STRB1(U16 instr, Memory::Memory &memory) noexcept {
+  U32 immed_5 = GetBitsInRange(instr, 6, 11);
+  U32 rn = GetBitsInRange(instr, 3, 6);
+  U32 rd = GetBitsInRange(instr, 0, 3);
+  U32 address = registers->r[rn] + immed_5;
+  WriteByteFromGBAMemory(memory, address, U8(registers->r[rd]));
+  registers->r[PC] += 2;
   return true;
 }
 
