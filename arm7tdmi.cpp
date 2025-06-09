@@ -562,11 +562,6 @@ CPU::LoadAndStoreMultipleAddr(U32 instr_) noexcept {
 }
 
 [[nodiscard]] bool CPU::Dispatch(Memory::Memory &memory) noexcept {
-
-  // if (dispatch_num > 34079) {
-  //   Debug::debug_snapshot(all_registers, memory, pipeline,
-  //                         "tools/visual/data/");
-  // }
   ChangeRegistersOnMode();
 
   CPSR_Register cpsr(registers->CPSR);
@@ -1111,7 +1106,7 @@ bool CPU::Dispatch_Thumb_MVN(U16 instr) noexcept {
 }
 
 bool CPU::Dispatch_Thumb_ORR(U16 instr) noexcept {
-  U32 rd = GetBitsInRange(instr, 3, 0);
+  U32 rd = GetBitsInRange(instr, 0, 3);
   U32 rm = GetBitsInRange(instr, 3, 6);
 
   registers->r[rd] = registers->r[rd] | registers->r[rm];
@@ -1124,7 +1119,7 @@ bool CPU::Dispatch_Thumb_ORR(U16 instr) noexcept {
 }
 
 bool CPU::Dispatch_Thumb_EOR(U16 instr) noexcept {
-  U32 rd = GetBitsInRange(instr, 3, 0);
+  U32 rd = GetBitsInRange(instr, 0, 3);
   U32 rm = GetBitsInRange(instr, 3, 6);
 
   registers->r[rd] = registers->r[rd] ^ registers->r[rm];
