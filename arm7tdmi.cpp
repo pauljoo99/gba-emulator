@@ -266,6 +266,8 @@ void CPU::ClearPipeline() noexcept {
     return cpu.Dispatch_CMN(instr);
   case Instr::Instr::SUB:
     return cpu.Dispatch_SUB(instr);
+  case Instr::Instr::RSB:
+    return cpu.Dispatch_RSB(instr);
   case Instr::Instr::STR:
     return cpu.Dispatch_STR(instr, memory);
   case Instr::Instr::ADD:
@@ -978,6 +980,30 @@ bool CPU::Dispatch_SUB(U32 instr_) noexcept {
                                    shifter.shifter_operand));
       CPSR_SetV(SignedSubOverflow(registers->r[instr.fields.rn],
                                   shifter.shifter_operand));
+    }
+  }
+  registers->r[PC] += kInstrSize;
+  return true;
+}
+
+bool CPU::Dispatch_RSB(U32 instr_) noexcept {
+  DataProcessingInstr instr(instr_);
+  if (EvaluateCondition(ConditionCode(instr.fields.cond), registers->CPSR)) {
+    ShifterOperandResult shifter = ShifterOperand(instr);
+    registers->r[instr.fields.rd] =
+        shifter.shifter_operand - registers->r[instr.fields.rn];
+    if (instr.fields.s == 1 && instr.fields.rd == PC) {
+      registers->CPSR = U32(registers->SPRS);
+      // Return early since pc is being updated.
+      ClearPipeline();
+      return true;
+    } else if (instr.fields.s == 1) {
+      CPSR_SetN(GetBit(registers->r[instr.fields.rd], 31));
+      CPSR_SetZ(registers->r[instr.fields.rd] == 0);
+      CPSR_SetC(!UnsignedSubBorrow(shifter.shifter_operand,
+                                   registers->r[instr.fields.rn]));
+      CPSR_SetV(SignedSubOverflow(shifter.shifter_operand,
+                                  registers->r[instr.fields.rn]));
     }
   }
   registers->r[PC] += kInstrSize;
