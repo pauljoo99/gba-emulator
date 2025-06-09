@@ -325,6 +325,8 @@ void CPU::ClearPipeline() noexcept {
     return cpu.Dispatch_Thumb_STRH2(instr, memory);
   case (Thumb::ThumbOpcode::ORR):
     return cpu.Dispatch_Thumb_ORR(instr);
+  case (Thumb::ThumbOpcode::EOR):
+    return cpu.Dispatch_Thumb_EOR(instr);
   case (Thumb::ThumbOpcode::ADD1):
     return cpu.Dispatch_Thumb_ADD1(instr);
   case (Thumb::ThumbOpcode::ADD2):
@@ -343,6 +345,8 @@ void CPU::ClearPipeline() noexcept {
     return cpu.Dispatch_Thumb_LSL2(instr);
   case (Thumb::ThumbOpcode::LSR1):
     return cpu.Dispatch_Thumb_LSR1(instr);
+  case (Thumb::ThumbOpcode::ROR):
+    return cpu.Dispatch_Thumb_ROR(instr);
   case (Thumb::ThumbOpcode::ASR1):
     return cpu.Dispatch_Thumb_ASR1(instr);
   case (Thumb::ThumbOpcode::B1):
@@ -558,8 +562,11 @@ CPU::LoadAndStoreMultipleAddr(U32 instr_) noexcept {
 }
 
 [[nodiscard]] bool CPU::Dispatch(Memory::Memory &memory) noexcept {
-  // Debug::debug_snapshot(all_registers, memory, pipeline,
-  // "tools/visual/data/");
+
+  // if (dispatch_num > 34079) {
+  //   Debug::debug_snapshot(all_registers, memory, pipeline,
+  //                         "tools/visual/data/");
+  // }
   ChangeRegistersOnMode();
 
   CPSR_Register cpsr(registers->CPSR);
@@ -1105,9 +1112,22 @@ bool CPU::Dispatch_Thumb_MVN(U16 instr) noexcept {
 
 bool CPU::Dispatch_Thumb_ORR(U16 instr) noexcept {
   U32 rd = GetBitsInRange(instr, 3, 0);
-  U32 rm = GetBitsInRange(instr, 3, 5);
+  U32 rm = GetBitsInRange(instr, 3, 6);
 
   registers->r[rd] = registers->r[rd] | registers->r[rm];
+
+  CPSR_SetN(GetBit(registers->r[rd], 31));
+  CPSR_SetZ(registers->r[rd] == 0);
+
+  registers->r[PC] += 2;
+  return true;
+}
+
+bool CPU::Dispatch_Thumb_EOR(U16 instr) noexcept {
+  U32 rd = GetBitsInRange(instr, 3, 0);
+  U32 rm = GetBitsInRange(instr, 3, 6);
+
+  registers->r[rd] = registers->r[rd] ^ registers->r[rm];
 
   CPSR_SetN(GetBit(registers->r[rd], 31));
   CPSR_SetZ(registers->r[rd] == 0);
@@ -1241,6 +1261,26 @@ bool CPU::Dispatch_Thumb_LSR1(U16 instr) noexcept {
   } else {
     CPSR_SetC(GetBit(registers->r[rd], immed_5 - 1));
     registers->r[rd] = LogicalShiftRight(registers->r[rm], immed_5);
+  }
+  CPSR_SetN(GetBit(registers->r[rd], 31));
+  CPSR_SetZ(registers->r[rd] == 0);
+
+  registers->r[PC] += 2;
+  return true;
+}
+
+bool CPU::Dispatch_Thumb_ROR(U16 instr) noexcept {
+  U32 rd = GetBitsInRange(instr, 0, 3);
+  U32 rs = GetBitsInRange(instr, 3, 6);
+
+  if (GetBitsInRange(registers->r[rs], 0, 8) == 0) {
+  } else if (GetBitsInRange(registers->r[rs], 0, 5) == 0) {
+    CPSR_SetC(GetBit(registers->r[rd], 31));
+  } else {
+    CPSR_SetC(
+        GetBit(registers->r[rd], GetBitsInRange(registers->r[rs], 0, 5) - 1));
+    registers->r[rd] =
+        RotateRight(registers->r[rd], GetBitsInRange(registers->r[rs], 0, 5));
   }
   CPSR_SetN(GetBit(registers->r[rd], 31));
   CPSR_SetZ(registers->r[rd] == 0);
@@ -1601,7 +1641,7 @@ bool CPU::Dispatch_Thumb_STRH1(U16 instr, Memory::Memory &memory) noexcept {
   U32 immed_5 = GetBitsInRange(instr, 6, 11);
 
   U32 address = registers->r[rn] + (immed_5 * 4);
-  if (GetBitsInRange(address, 0, 2) == 0) {
+  if ((address & 0b1) == 0) {
     WriteHalfWordFromGBAMemory(memory, address, U16(registers->r[rd]));
   } else {
     LOG_ABORT("Unpredicatable: Bad address 0x%04X", address);
@@ -1616,7 +1656,7 @@ bool CPU::Dispatch_Thumb_STRH2(U16 instr, Memory::Memory &memory) noexcept {
   U32 rm = GetBitsInRange(instr, 6, 9);
 
   U32 address = registers->r[rn] + registers->r[rm];
-  if (GetBitsInRange(address, 0, 2) == 0) {
+  if ((address & 0b1) == 0) {
     WriteHalfWordFromGBAMemory(memory, address, U16(registers->r[rd]));
   } else {
     LOG_ABORT("Unpredicatable: Bad address 0x%04X", address);

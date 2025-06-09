@@ -59,7 +59,7 @@ inline const U8 *GetPhysicalMemoryReadOnly(const Memory &mem,
     return &mem.GamePak_WS2[address - 0x0C000000];
   } else if (address >= 0x0E000000 && address < 0x0E010000) {
     return &mem.GamePak_SRAM[address - 0x0E000000];
-  } else if (address == 0x4000410) {
+  } else if (address == 0x04000410) {
     return &mem.Mystery_Addresses[0];
   } else {
     // Out of bounds or unused memory
