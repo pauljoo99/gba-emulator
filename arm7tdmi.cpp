@@ -373,6 +373,8 @@ void CPU::ClearPipeline() noexcept {
     return cpu.Dispatch_Thumb_SUB4(instr);
   case (Thumb::ThumbOpcode::TST):
     return cpu.Dispatch_Thumb_TST(instr);
+  case (Thumb::ThumbOpcode::MUL):
+    return cpu.Dispatch_Thumb_MUL(instr);
   default:
     break;
   }
@@ -1369,6 +1371,16 @@ bool CPU::Dispatch_Thumb_TST(U16 instr) noexcept {
   U32 alu_out = registers->r[rn] & registers->r[rm];
   CPSR_SetN(GetBit(alu_out, 31));
   CPSR_SetZ(alu_out == 0);
+  registers->r[PC] += 2;
+  return true;
+}
+
+bool CPU::Dispatch_Thumb_MUL(U16 instr) noexcept {
+  U32 rd = GetBitsInRange(instr, 0, 3);
+  U32 rm = GetBitsInRange(instr, 3, 6);
+  registers->r[rd] = registers->r[rd] * registers->r[rm];
+  CPSR_SetN(GetBit(registers->r[rd], 31));
+  CPSR_SetZ(registers->r[rd] == 0);
   registers->r[PC] += 2;
   return true;
 }

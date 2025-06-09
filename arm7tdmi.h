@@ -161,6 +161,7 @@ struct CPU {
   [[nodiscard]] bool Dispatch_Thumb_BL(U16 instr) noexcept;
   [[nodiscard]] bool Dispatch_Thumb_BX(U16 instr) noexcept;
   [[nodiscard]] bool Dispatch_Thumb_TST(U16 instr) noexcept;
+  [[nodiscard]] bool Dispatch_Thumb_MUL(U16 instr) noexcept;
 
   [[nodiscard]] bool
   Dispatch_Thumb_LDRH1(U16 instr, const Memory::Memory &memory) noexcept;
