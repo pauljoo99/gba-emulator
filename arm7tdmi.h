@@ -15,6 +15,7 @@ namespace Emulator::Arm
 constexpr U32 LR = 14;
 constexpr U32 SP = 13;
 constexpr U32 PC = 15;
+constexpr U32 SL = 10;
 
 struct CPSR_Flags {
   U32 M : 5;

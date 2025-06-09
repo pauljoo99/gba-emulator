@@ -17,7 +17,7 @@ ShifterOperandResult CPU::ShifterOperand(DataProcessingInstr instr) noexcept {
   if (instr.fields.i) {
     return ShifterOperandImmediate(instr.fields.operand_2);
   } else {
-    U8 code = (instr.fields.i >> 4) | 0b111;
+    U8 code = (instr >> 4) & 0b111;
     if (code == 0) {
       return ShifterOperandLogicalShiftLeftByImm(instr.fields.operand_2);
     } else if (code == 1) {
@@ -36,10 +36,9 @@ ShifterOperandResult CPU::ShifterOperand(DataProcessingInstr instr) noexcept {
     } else if (code == 7) {
       return ShifterOperandRotateRightByRegister(instr.fields.operand_2);
     } else {
-      perror("CouldNotDecodeShiftOperand");
+      LOG_ABORT("CouldNotDecodeShiftOperand");
     }
   }
-  return {};
 }
 
 ShifterOperandResult
@@ -990,7 +989,7 @@ bool CPU::Dispatch_ADD(U32 instr_) noexcept {
   if (EvaluateCondition(ConditionCode(instr.fields.cond), registers->CPSR)) {
     ShifterOperandResult shifter = ShifterOperand(instr);
     registers->r[instr.fields.rd] =
-        U32((I32)registers->r[instr.fields.rn] + (I32)shifter.shifter_operand);
+        registers->r[instr.fields.rn] + shifter.shifter_operand;
 
     if (instr.fields.s == 1 && instr.fields.rd == PC) {
       registers->CPSR = U32(registers->SPRS);
