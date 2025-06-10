@@ -17,6 +17,7 @@ constexpr U32 SP = 13;
 constexpr U32 PC = 15;
 constexpr U32 SL = 10;
 constexpr U32 FP = 11;
+constexpr U32 IP = 12;
 
 struct CPSR_Flags {
   U32 M : 5;

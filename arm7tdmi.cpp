@@ -667,7 +667,7 @@ CPU::LoadAndStoreMultipleAddr(U32 instr_) noexcept {
       return true;
     } else if (instr.fields.s) {
       CPSR_SetN(GetBit(registers->r[instr.fields.rd], 31));
-      CPSR_SetZ(instr.fields.rd == 0);
+      CPSR_SetZ(registers->r[instr.fields.rd] == 0);
       CPSR_SetC(shifter.shifter_carry_out);
       registers->r[PC] += 4;
       return true;
@@ -698,7 +698,7 @@ CPU::LoadAndStoreMultipleAddr(U32 instr_) noexcept {
       registers->CPSR = U32(registers->SPRS);
     } else if (instr.fields.s) {
       CPSR_SetN(GetBit(registers->r[instr.fields.rd], 31));
-      CPSR_SetZ(instr.fields.rd == 0);
+      CPSR_SetZ(registers->r[instr.fields.rd] == 0);
       CPSR_SetC(shifter.shifter_carry_out);
     }
   }
@@ -784,8 +784,10 @@ CPU::LoadAndStoreMultipleAddr(U32 instr_) noexcept {
     ShifterOperandResult shifter = ShifterOperand(instr);
     registers->r[instr.fields.rd] =
         registers->r[instr.fields.rn] | shifter.shifter_operand;
-    if (instr.fields.s == 1 && instr.fields.rn == PC) {
+    if (instr.fields.s == 1 && instr.fields.rd == PC) {
       registers->CPSR = U32(registers->SPRS);
+      ClearPipeline();
+      return true;
     } else if (instr.fields.s == 1) {
       CPSR_SetN(GetBit(registers->r[instr.fields.rd], 31));
       CPSR_SetZ(registers->r[instr.fields.rd] == 0);
