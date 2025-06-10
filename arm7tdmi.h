@@ -114,6 +114,8 @@ struct CPU {
   [[nodiscard]] bool Dispatch_MSR(U32 instr) noexcept;
   [[nodiscard]] bool Dispatch_LDR(U32 instr,
                                   const Memory::Memory &memory) noexcept;
+  [[nodiscard]] bool Dispatch_LDRB(U32 instr,
+                                   const Memory::Memory &memory) noexcept;
   [[nodiscard]] bool Dispatch_LDM(U32 instr,
                                   const Memory::Memory &memory) noexcept;
   [[nodiscard]] bool Dispatch_TEQ(U32 instr_) noexcept;
@@ -216,6 +218,7 @@ struct CPU {
 
   U32 LoadAndStoreWordOrByteImmAddr(U32 instr_) noexcept;
   U32 LoadAndStoreWordOrByteRegAddr(U32 instr_) noexcept;
+  U32 LoadAndStoreWordOrByteAddr(SingleDataTransferInstr instr) noexcept;
 
   LoadAndStoreMultipleAddrResult LoadAndStoreMultipleAddr(U32 instr_) noexcept;
 

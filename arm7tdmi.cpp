@@ -227,9 +227,10 @@ void CPU::ClearPipeline() noexcept {
   pipeline.fetch_addr = U32(-1);
 }
 
-[[nodiscard]] bool ProcessInstruction(U32 instr, Instr instr_type,
-                                      Memory::Memory &memory, CPU &cpu) {
+[[nodiscard]] bool ProcessInstruction(U32 instr, Memory::Memory &memory,
+                                      CPU &cpu) {
 
+  Instr instr_type = GetArmOpcode(instr);
   LOG("Dispatch %u - Instr: %s, Raw Instr: 0x%08X, PC: 0x%04X",
       cpu.dispatch_num, ToString(instr_type), instr, cpu.pipeline.execute_addr);
 
@@ -248,6 +249,8 @@ void CPU::ClearPipeline() noexcept {
     return cpu.Dispatch_MSR(instr);
   case Instr::LDR:
     return cpu.Dispatch_LDR(instr, memory);
+  case Instr::LDRB:
+    return cpu.Dispatch_LDRB(instr, memory);
   case Instr::CMP:
     return cpu.Dispatch_CMP(instr);
   case Instr::TEQ:
@@ -523,6 +526,14 @@ U32 CPU::LoadAndStoreWordOrByteRegAddr(U32 instr_) noexcept {
   return address;
 }
 
+U32 CPU::LoadAndStoreWordOrByteAddr(SingleDataTransferInstr instr) noexcept {
+  if (instr.fields.i == 0) {
+    return LoadAndStoreWordOrByteImmAddr(instr);
+  } else {
+    return LoadAndStoreWordOrByteRegAddr(instr);
+  }
+}
+
 LoadAndStoreMultipleAddrResult
 CPU::LoadAndStoreMultipleAddr(U32 instr_) noexcept {
   LoadAndStoreMultiple instr(instr_);
@@ -579,8 +590,7 @@ CPU::LoadAndStoreMultipleAddr(U32 instr_) noexcept {
   } else {
     U32 instr = ReadWordFromGBAMemory(memory, registers->r[PC]);
     if (AdvancePipeline(instr, registers->r[PC])) {
-      Instr instr_type = GetArmOpcode(instr);
-      if (!ProcessInstruction(pipeline.execute, instr_type, memory, *this)) {
+      if (!ProcessInstruction(pipeline.execute, memory, *this)) {
         return false;
       }
     } else {
@@ -752,6 +762,17 @@ CPU::LoadAndStoreMultipleAddr(U32 instr_) noexcept {
       CPSR_SetZ(registers->r[instr.fields.rd] == 0);
       CPSR_SetC(shifter.shifter_carry_out);
     }
+  }
+  registers->r[PC] += kInstrSize;
+  return true;
+}
+
+[[nodiscard]] bool CPU::Dispatch_LDRB(U32 instr_,
+                                      const Memory::Memory &memory) noexcept {
+  const SingleDataTransferInstr instr{instr_};
+  if (EvaluateCondition(ConditionCode(instr.fields.cond), registers->CPSR)) {
+    U32 address = LoadAndStoreWordOrByteAddr(instr);
+    registers->r[instr.fields.rd] = ReadByteFromGBAMemory(memory, address);
   }
   registers->r[PC] += kInstrSize;
   return true;
