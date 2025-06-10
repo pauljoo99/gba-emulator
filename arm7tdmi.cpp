@@ -3,6 +3,7 @@
 #include <stdio.h>
 
 #include "arm7tdmi.h"
+#include "arm_extended_instructions.h"
 #include "arm_instructions.h"
 #include "bitutils.h"
 #include "logging.h"
@@ -230,7 +231,20 @@ void CPU::ClearPipeline() noexcept {
 [[nodiscard]] bool ProcessInstruction(U32 instr, Memory::Memory &memory,
                                       CPU &cpu) {
 
-  Instr instr_type = GetArmOpcode(instr);
+  ExtendedInstr extended_instr_type = GetExtendedArmOpcode(instr);
+  Instr instr_type;
+  if (extended_instr_type == ExtendedInstr::UNDEFINED1) {
+    instr_type = GetArmOpcode(instr);
+    LOG("Dispatch %u - Instr: %s, Raw Instr: 0x%08X, PC: 0x%04X",
+        cpu.dispatch_num, ToString(instr_type), instr,
+        cpu.pipeline.execute_addr);
+
+  } else {
+    instr_type = ExtendedInstrToArmInstr[U32(extended_instr_type)];
+    LOG("Dispatch %u - Extended Instr: %s, Raw Instr: 0x%08X, PC: 0x%04X",
+        cpu.dispatch_num, ToString(instr_type), instr,
+        cpu.pipeline.execute_addr);
+  }
   LOG("Dispatch %u - Instr: %s, Raw Instr: 0x%08X, PC: 0x%04X",
       cpu.dispatch_num, ToString(instr_type), instr, cpu.pipeline.execute_addr);
 

@@ -396,7 +396,7 @@ constexpr U32 TEQ = 0b0000'0001'0010'0000'0000'0000'0000'0000;
 constexpr U32 TST = 0b0000'0001'0000'0000'0000'0000'0000'0000;
 } // namespace InstrEncoding
 
-enum Instr {
+enum class Instr {
   ADC,
   ADD,
   AND,
@@ -438,6 +438,7 @@ enum Instr {
   TEQ,
   TST,
   NUM_OPCODES, // Must be last enum
+  BAD_CODE,
 };
 
 inline const char *ToString(Instr instr) {
@@ -524,6 +525,8 @@ inline const char *ToString(Instr instr) {
     return "TST";
   case Instr::NUM_OPCODES:
     return "NUM_OPCODES";
+  case Instr::BAD_CODE:
+    return "BAD_CODE";
   }
   return "UNKNOWN";
 }
@@ -559,8 +562,9 @@ constexpr U32 InstrEncodings[] = {
 };
 
 static_assert(sizeof(InstrEncodings) / sizeof(InstrEncodings[0]) ==
-              Instr::NUM_OPCODES);
-static_assert(sizeof(InstrMasks) / sizeof(InstrMasks[0]) == Instr::NUM_OPCODES);
+              U32(Instr::NUM_OPCODES));
+static_assert(sizeof(InstrMasks) / sizeof(InstrMasks[0]) ==
+              U32(Instr::NUM_OPCODES));
 
 inline Instr GetArmOpcode(U32 instr) {
   for (U32 i = 0; i < U32(Instr::NUM_OPCODES); ++i) {
