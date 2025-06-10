@@ -623,7 +623,7 @@ inline Instr GetArmOpcode(U32 instr) {
       return Instr(i);
     }
   }
-  LOG_ABORT("Could not find arm opcode for 0x%04X", instr);
+  ABORT("Could not find arm opcode for 0x%04X", instr);
 }
 
 } // namespace Emulator::Arm

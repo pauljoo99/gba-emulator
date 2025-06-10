@@ -322,7 +322,7 @@ struct CPU {
     case 0b11111:
       return Mode::SYSTEM;
     default:
-      LOG_ABORT("Undefined Mode %u", cpsr.bits.M);
+      ABORT("Undefined Mode %u", cpsr.bits.M);
     }
   }
 

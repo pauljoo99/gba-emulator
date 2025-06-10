@@ -37,7 +37,7 @@ ShifterOperandResult CPU::ShifterOperand(DataProcessingInstr instr) noexcept {
     } else if (code == 7) {
       return ShifterOperandRotateRightByRegister(instr.fields.operand_2);
     } else {
-      LOG_ABORT("CouldNotDecodeShiftOperand");
+      ABORT("CouldNotDecodeShiftOperand");
     }
   }
 }
@@ -816,7 +816,7 @@ CPU::LoadAndStoreMultipleAddr(U32 instr_) noexcept {
       registers->r[instr.fields.rd] =
           ReadHalfWordFromGBAMemory(memory, address);
     } else {
-      LOG_ABORT("Bad address: 0x%04X", address);
+      ABORT("Bad address: 0x%04X", address);
     }
   }
   registers->r[PC] += 4;
@@ -1542,7 +1542,7 @@ bool CPU::Dispatch_Thumb_LDR1(U16 instr,
   if (GetBitsInRange(address, 0, 2) == 0b00) {
     registers->r[rd] = ReadWordFromGBAMemory(memory, address);
   } else {
-    LOG_ABORT("Bad address: 0x%04X", address);
+    ABORT("Bad address: 0x%04X", address);
   }
   registers->r[PC] += 2;
   return true;
@@ -1557,7 +1557,7 @@ bool CPU::Dispatch_Thumb_LDR2(U16 instr,
   if (GetBitsInRange(address, 0, 2) == 0b00) {
     registers->r[rd] = ReadWordFromGBAMemory(memory, address);
   } else {
-    LOG_ABORT("Bad address: 0x%04X", address);
+    ABORT("Bad address: 0x%04X", address);
   }
   registers->r[PC] += 2;
   return true;
@@ -1581,7 +1581,7 @@ bool CPU::Dispatch_Thumb_LDR4(U16 instr,
   if (GetBitsInRange(address, 0, 2) == 0b00) {
     registers->r[rd] = ReadWordFromGBAMemory(memory, address);
   } else {
-    LOG_ABORT("Bad address: 0x%04X", address);
+    ABORT("Bad address: 0x%04X", address);
   }
   registers->r[PC] += 2;
   return true;
@@ -1608,7 +1608,7 @@ bool CPU::Dispatch_Thumb_LDRH1(U16 instr,
   if ((address & 0b1) == 0) {
     data = ReadHalfWordFromGBAMemory(memory, address);
   } else {
-    LOG_ABORT("Unpredictable");
+    ABORT("Unpredictable");
   }
   registers->r[rd] = data;
   registers->r[PC] += 2;
@@ -1625,7 +1625,7 @@ bool CPU::Dispatch_Thumb_LDRH2(U16 instr,
   if ((address & 0b1) == 0) {
     data = ReadHalfWordFromGBAMemory(memory, address);
   } else {
-    LOG_ABORT("Unpredictable");
+    ABORT("Unpredictable");
   }
   registers->r[rd] = data;
   registers->r[PC] += 2;
@@ -1729,7 +1729,7 @@ bool CPU::Dispatch_Thumb_STR1(U16 instr, Memory::Memory &memory) noexcept {
   if (GetBitsInRange(address, 0, 2) == 0b00) {
     WriteWordToGBAMemory(memory, address, registers->r[rd]);
   } else {
-    LOG_ABORT("Unpredictable");
+    ABORT("Unpredictable");
   }
   registers->r[PC] += 2;
   return true;
@@ -1743,7 +1743,7 @@ bool CPU::Dispatch_Thumb_STR2(U16 instr, Memory::Memory &memory) noexcept {
   if (GetBitsInRange(address, 0, 2) == 0b00) {
     WriteWordToGBAMemory(memory, address, registers->r[rd]);
   } else {
-    LOG_ABORT("Unpredictable");
+    ABORT("Unpredictable");
   }
   registers->r[PC] += 2;
   return true;
@@ -1756,7 +1756,7 @@ bool CPU::Dispatch_Thumb_STR3(U16 instr, Memory::Memory &memory) noexcept {
   if (GetBitsInRange(address, 0, 2) == 0b00) {
     WriteWordToGBAMemory(memory, address, registers->r[rd]);
   } else {
-    LOG_ABORT("Unpredicatable: Bad address");
+    ABORT("Unpredicatable: Bad address");
   }
   registers->r[PC] += 2;
   return true;
@@ -1789,7 +1789,7 @@ bool CPU::Dispatch_Thumb_STRH1(U16 instr, Memory::Memory &memory) noexcept {
   if ((address & 0b1) == 0) {
     WriteHalfWordToGBAMemory(memory, address, U16(registers->r[rd]));
   } else {
-    LOG_ABORT("Unpredicatable: Bad address 0x%04X", address);
+    ABORT("Unpredicatable: Bad address 0x%04X", address);
   }
   registers->r[PC] += 2;
   return true;
@@ -1804,7 +1804,7 @@ bool CPU::Dispatch_Thumb_STRH2(U16 instr, Memory::Memory &memory) noexcept {
   if ((address & 0b1) == 0) {
     WriteHalfWordToGBAMemory(memory, address, U16(registers->r[rd]));
   } else {
-    LOG_ABORT("Unpredicatable: Bad address 0x%04X", address);
+    ABORT("Unpredicatable: Bad address 0x%04X", address);
   }
   registers->r[PC] += 2;
   return true;

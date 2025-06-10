@@ -15,6 +15,6 @@
 #define LOG(fmt, ...) ((void)0)
 #endif
 
-#define LOG_ABORT(fmt, ...)                                                    \
+#define ABORT(fmt, ...)                                                        \
   LOG(fmt, ##__VA_ARGS__);                                                     \
   std::abort();

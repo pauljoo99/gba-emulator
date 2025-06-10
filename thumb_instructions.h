@@ -386,7 +386,7 @@ inline ThumbOpcode GetThumbOpcode(U16 instr) {
       return ThumbOpcode(i);
     }
   }
-  LOG_ABORT("Could not find thumbcode for 0x%04X", instr);
+  ABORT("Could not find thumbcode for 0x%04X", instr);
 }
 
 } // namespace Emulator::Thumb

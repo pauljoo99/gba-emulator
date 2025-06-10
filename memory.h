@@ -63,7 +63,7 @@ inline const U8 *GetPhysicalMemoryReadOnly(const Memory &mem,
     return &mem.Mystery_Addresses[0];
   } else {
     // Out of bounds or unused memory
-    LOG_ABORT("Invalid memory address: 0x%04X", address);
+    ABORT("Invalid memory address: 0x%04X", address);
   }
 }
 
@@ -94,7 +94,7 @@ inline U8 *GetPhysicalMemoryReadWrite(Memory &mem, U32 address) noexcept {
     return &mem.Mystery_Addresses[0];
   } else {
     // Out of bounds or unused memory
-    LOG_ABORT("Invalid memory address: 0x%04X", address);
+    ABORT("Invalid memory address: 0x%04X", address);
   }
 }
 
