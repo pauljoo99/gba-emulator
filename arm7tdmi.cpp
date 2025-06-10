@@ -227,52 +227,52 @@ void CPU::ClearPipeline() noexcept {
   pipeline.fetch_addr = U32(-1);
 }
 
-[[nodiscard]] bool ProcessInstruction(U32 instr, Instr::Instr instr_type,
+[[nodiscard]] bool ProcessInstruction(U32 instr, Instr instr_type,
                                       Memory::Memory &memory, CPU &cpu) {
 
   LOG("Dispatch %u - Instr: %s, Raw Instr: 0x%08X, PC: 0x%04X",
-      cpu.dispatch_num, toString(instr_type), instr, cpu.pipeline.execute_addr);
+      cpu.dispatch_num, ToString(instr_type), instr, cpu.pipeline.execute_addr);
 
   switch (instr_type) {
-  case Instr::Instr::B:
+  case Instr::B:
     return cpu.Dispatch_B(instr);
-  case Instr::Instr::BL:
+  case Instr::BL:
     return cpu.Dispatch_BL(instr);
-  case Instr::Instr::BIC:
+  case Instr::BIC:
     return cpu.Dispatch_BIC(instr);
-  case Instr::Instr::BX:
+  case Instr::BX:
     return cpu.Dispatch_BX(instr);
-  case Instr::Instr::MOV:
+  case Instr::MOV:
     return cpu.Dispatch_MOV(instr);
-  case Instr::Instr::MSR:
+  case Instr::MSR:
     return cpu.Dispatch_MSR(instr);
-  case Instr::Instr::LDR:
+  case Instr::LDR:
     return cpu.Dispatch_LDR(instr, memory);
-  case Instr::Instr::CMP:
+  case Instr::CMP:
     return cpu.Dispatch_CMP(instr);
-  case Instr::Instr::TEQ:
+  case Instr::TEQ:
     return cpu.Dispatch_TEQ(instr);
-  case Instr::Instr::TST:
+  case Instr::TST:
     return cpu.Dispatch_TST(instr);
-  case Instr::Instr::MRS:
+  case Instr::MRS:
     return cpu.Dispatch_MRS(instr);
-  case Instr::Instr::ORR:
+  case Instr::ORR:
     return cpu.Dispatch_ORR(instr);
-  case Instr::Instr::STM:
+  case Instr::STM:
     return cpu.Dispatch_STM(instr, memory);
-  case Instr::Instr::LDM:
+  case Instr::LDM:
     return cpu.Dispatch_LDM(instr, memory);
-  case Instr::Instr::CMN:
+  case Instr::CMN:
     return cpu.Dispatch_CMN(instr);
-  case Instr::Instr::SUB:
+  case Instr::SUB:
     return cpu.Dispatch_SUB(instr);
-  case Instr::Instr::RSB:
+  case Instr::RSB:
     return cpu.Dispatch_RSB(instr);
-  case Instr::Instr::STR:
+  case Instr::STR:
     return cpu.Dispatch_STR(instr, memory);
-  case Instr::Instr::ADD:
+  case Instr::ADD:
     return cpu.Dispatch_ADD(instr);
-  case Instr::Instr::AND:
+  case Instr::AND:
     return cpu.Dispatch_AND(instr);
   default:
     return false;
@@ -566,7 +566,6 @@ CPU::LoadAndStoreMultipleAddr(U32 instr_) noexcept {
 
 [[nodiscard]] bool CPU::Dispatch(Memory::Memory &memory) noexcept {
   ChangeRegistersOnMode();
-
   CPSR_Register cpsr(registers->CPSR);
   if (cpsr.bits.T) {
     U16 instr = ReadHalfWordFromGBAMemory(memory, registers->r[PC]);
@@ -580,10 +579,7 @@ CPU::LoadAndStoreMultipleAddr(U32 instr_) noexcept {
   } else {
     U32 instr = ReadWordFromGBAMemory(memory, registers->r[PC]);
     if (AdvancePipeline(instr, registers->r[PC])) {
-      Instr::Instr instr_type;
-      if (!get_instr_type(pipeline.execute, instr_type)) {
-        return false;
-      }
+      Instr instr_type = GetArmOpcode(instr);
       if (!ProcessInstruction(pipeline.execute, instr_type, memory, *this)) {
         return false;
       }
@@ -791,6 +787,8 @@ CPU::LoadAndStoreMultipleAddr(U32 instr_) noexcept {
 
     if (instr.fields.rd == PC) {
       registers->r[instr.fields.rd] = value & 0xFFFFFFFC;
+      ClearPipeline();
+      return true;
     } else {
       registers->r[instr.fields.rd] = value;
     }

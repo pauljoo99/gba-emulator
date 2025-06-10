@@ -311,209 +311,264 @@ inline const char *toString(ConditionCode cc) {
 }
 
 namespace InstrMask {
-// clang-format off
-enum InstrMask : U32 {
-  ADC = 0b0000'1101'1110'0000'0000'0000'0000'0000,
-  ADD = 0b0000'1101'1110'0000'0000'0000'0000'0000,
-  AND = 0b0000'1101'1110'0000'0000'0000'0000'0000,
-  B   = 0b0000'1111'0000'0000'0000'0000'0000'0000,
-  BIC = 0b0000'1101'1110'0000'0000'0000'0000'0000,
-  BL  = 0b0000'1111'0000'0000'0000'0000'0000'0000,
-  BX  = 0b0000'1111'1111'1111'1111'1111'1111'0000,
-  CDP = 0b0000'1111'0000'0000'0000'0000'0001'0000,
-  CMN = 0b0000'1101'1110'0000'0000'0000'0000'0000,
-  CMP = 0b0000'1101'1110'0000'0000'0000'0000'0000,
-  EOR = 0b0000'1101'1110'0000'0000'0000'0000'0000,
-  LDC = 0b0000'1110'0001'0000'0000'0000'0000'0000,
-  LDM = 0b0000'1110'0001'0000'0000'0000'0000'0000,
-  LDR = 0b0000'1100'0001'0000'0000'0000'0000'0000,
-  MCR = 0b0000'1111'0001'0000'0000'0000'0001'0000,
-  MLA = 0b0000'1111'0110'0000'0000'0000'1111'0000,
-  MOV = 0b0000'1101'1110'0000'0000'0000'0000'0000,
-  MRC = 0b0000'1111'0001'0000'0000'0000'0001'0000,
-  MRS = 0b0000'1111'1011'1111'0000'1111'1111'1111,
-  MSR = 0b0000'1101'1011'1111'1111'0000'0000'0000,
-  MUL = 0b0000'1111'0110'0000'0000'0000'1111'0000,
-  MVN = 0b0000'1101'1110'0000'0000'0000'0000'0000,
-  ORR = 0b0000'1101'1110'0000'0000'0000'0000'0000,
-  RSB = 0b0000'1101'1110'0000'0000'0000'0000'0000,
-  RSC = 0b0000'1101'1110'0000'0000'0000'0000'0000,
-  SBC = 0b0000'1101'1110'0000'0000'0000'0000'0000,
-  STC = 0b0000'1110'0001'0000'0000'0000'0000'0000,
-  STM = 0b0000'1110'0001'0000'0000'0000'0000'0000,
-  STR = 0b0000'1100'0001'0000'0000'0000'0000'0000,
-  SUB = 0b0000'1101'1110'0000'0000'0000'0000'0000,
-  SWI = 0b0000'1111'0000'0000'0000'0000'0000'0000,
-  SWP = 0b0000'1111'1011'0000'0000'1111'1111'0000,
-  TEQ = 0b0000'1101'1110'0000'0000'0000'0000'0000,
-  TST = 0b0000'1101'1110'0000'0000'0000'0000'0000,
+constexpr U32 ADC = 0b0000'1101'1110'0000'0000'0000'0000'0000;
+constexpr U32 ADD = 0b0000'1101'1110'0000'0000'0000'0000'0000;
+constexpr U32 AND = 0b0000'1101'1110'0000'0000'0000'0000'0000;
+constexpr U32 B = 0b0000'1111'0000'0000'0000'0000'0000'0000;
+constexpr U32 BIC = 0b0000'1101'1110'0000'0000'0000'0000'0000;
+constexpr U32 BL = 0b0000'1111'0000'0000'0000'0000'0000'0000;
+constexpr U32 BX = 0b0000'1111'1111'1111'1111'1111'1111'0000;
+constexpr U32 CDP = 0b0000'1111'0000'0000'0000'0000'0001'0000;
+constexpr U32 CMN = 0b0000'1101'1110'0000'0000'0000'0000'0000;
+constexpr U32 CMP = 0b0000'1101'1110'0000'0000'0000'0000'0000;
+constexpr U32 EOR = 0b0000'1101'1110'0000'0000'0000'0000'0000;
+constexpr U32 LDC = 0b0000'1110'0001'0000'0000'0000'0000'0000;
+constexpr U32 LDM = 0b0000'1110'0001'0000'0000'0000'0000'0000;
+constexpr U32 LDR = 0b0000'1100'0101'0000'0000'0000'0000'0000;
+constexpr U32 LDRB = 0b0000'1100'0101'0000'0000'0000'0000'0000;
+constexpr U32 LDRBT = 0b0000'1100'0111'0000'0000'0000'0000'0000;
+constexpr U32 LDRH = 0b0000'1110'0001'0000'0000'0000'1111'0000;
+constexpr U32 LDRSB = 0b0000'1110'0001'0000'0000'0000'1111'0000;
+constexpr U32 LDRSH = 0b0000'1110'0001'0000'0000'0000'1111'0000;
+constexpr U32 LDRT = 0b0000'1101'0111'1000'0000'0000'0000'0000;
+constexpr U32 MCR = 0b0000'1111'0001'0000'0000'0000'0001'0000;
+constexpr U32 MLA = 0b0000'1111'0110'0000'0000'0000'1111'0000;
+constexpr U32 MOV = 0b0000'1101'1110'0000'0000'0000'0000'0000;
+constexpr U32 MRC = 0b0000'1111'0001'0000'0000'0000'0001'0000;
+constexpr U32 MRS = 0b0000'1111'1011'1111'0000'1111'1111'1111;
+constexpr U32 MSR = 0b0000'1101'1011'1111'1111'0000'0000'0000;
+constexpr U32 MUL = 0b0000'1111'0110'0000'0000'0000'1111'0000;
+constexpr U32 MVN = 0b0000'1101'1110'0000'0000'0000'0000'0000;
+constexpr U32 ORR = 0b0000'1101'1110'0000'0000'0000'0000'0000;
+constexpr U32 RSB = 0b0000'1101'1110'0000'0000'0000'0000'0000;
+constexpr U32 RSC = 0b0000'1101'1110'0000'0000'0000'0000'0000;
+constexpr U32 SBC = 0b0000'1101'1110'0000'0000'0000'0000'0000;
+constexpr U32 STC = 0b0000'1110'0001'0000'0000'0000'0000'0000;
+constexpr U32 STM = 0b0000'1110'0001'0000'0000'0000'0000'0000;
+constexpr U32 STR = 0b0000'1100'0001'0000'0000'0000'0000'0000;
+constexpr U32 SUB = 0b0000'1101'1110'0000'0000'0000'0000'0000;
+constexpr U32 SWI = 0b0000'1111'0000'0000'0000'0000'0000'0000;
+constexpr U32 SWP = 0b0000'1111'1011'0000'0000'1111'1111'0000;
+constexpr U32 TEQ = 0b0000'1101'1110'0000'0000'0000'0000'0000;
+constexpr U32 TST = 0b0000'1101'1110'0000'0000'0000'0000'0000;
+} // namespace InstrMask
+
+namespace InstrEncoding {
+constexpr U32 ADC = 0b0000'0000'1010'0000'0000'0000'0000'0000;
+constexpr U32 ADD = 0b0000'0000'1000'0000'0000'0000'0000'0000;
+constexpr U32 AND = 0b0000'0000'0000'0000'0000'0000'0000'0000;
+constexpr U32 B = 0b0000'1010'0000'0000'0000'0000'0000'0000;
+constexpr U32 BIC = 0b0000'0001'1100'0000'0000'0000'0000'0000;
+constexpr U32 BL = 0b0000'1011'0000'0000'0000'0000'0000'0000;
+constexpr U32 BX = 0b0000'0001'0010'1111'1111'1111'0001'0000;
+constexpr U32 CDP = 0b0000'1110'0000'0000'0000'0000'0000'0000;
+constexpr U32 CMN = 0b0000'0001'0111'0000'0000'0000'0000'0000;
+constexpr U32 CMP = 0b0000'0001'0100'0000'0000'0000'0000'0000;
+constexpr U32 EOR = 0b0000'0000'0010'0000'0000'0000'0000'0000;
+constexpr U32 LDC = 0b0000'1100'0001'0000'0000'0000'0000'0000;
+constexpr U32 LDM = 0b0000'1000'0001'0000'0000'0000'0000'0000;
+constexpr U32 LDR = 0b0000'0100'0001'0000'0000'0000'0000'0000;
+constexpr U32 LDRB = 0b0000'0100'0101'0000'0000'0000'0000'0000;
+constexpr U32 LDRBT = 0b0000'0100'0111'0000'0000'0000'0000'0000;
+constexpr U32 LDRH = 0b0000'0000'0001'0000'0000'0000'1011'0000;
+constexpr U32 LDRSB = 0b0000'0000'0001'0000'0000'0000'1101'0000;
+constexpr U32 LDRSH = 0b0000'0000'0001'0000'0000'0000'1111'0000;
+constexpr U32 LDRT = 0b0000'0100'0011'0000'0000'0000'0000'0000;
+constexpr U32 MCR = 0b0000'1110'0000'0000'0000'0000'0001'0000;
+constexpr U32 MLA = 0b0000'0000'0010'0000'0000'0000'1001'0000;
+constexpr U32 MOV = 0b0000'0001'1010'0000'0000'0000'0000'0000;
+constexpr U32 MRC = 0b0000'1110'0001'0000'0000'0000'0001'0000;
+constexpr U32 MRS = 0b0000'0001'0000'1111'0000'0000'0000'0000;
+constexpr U32 MSR = 0b0000'0001'0010'1001'1111'0000'0000'0000;
+constexpr U32 MUL = 0b0000'0000'0000'0000'0000'0000'1001'0000;
+constexpr U32 MVN = 0b0000'0001'1110'0000'0000'0000'0000'0000;
+constexpr U32 ORR = 0b0000'0001'1000'0000'0000'0000'0000'0000;
+constexpr U32 RSB = 0b0000'0000'0110'0000'0000'0000'0000'0000;
+constexpr U32 RSC = 0b0000'0000'1110'0000'0000'0000'0000'0000;
+constexpr U32 SBC = 0b0000'0000'1100'0000'0000'0000'0000'0000;
+constexpr U32 STC = 0b0000'1100'0000'0000'0000'0000'0000'0000;
+constexpr U32 STM = 0b0000'1000'0000'0000'0000'0000'0000'0000;
+constexpr U32 STR = 0b0000'0100'0000'0000'0000'0000'0000'0000;
+constexpr U32 SUB = 0b0000'0000'0100'0000'0000'0000'0000'0000;
+constexpr U32 SWI = 0b0000'1111'0000'0000'0000'0000'0000'0000;
+constexpr U32 SWP = 0b0000'0001'0000'0000'0000'0000'1001'0000;
+constexpr U32 TEQ = 0b0000'0001'0010'0000'0000'0000'0000'0000;
+constexpr U32 TST = 0b0000'0001'0000'0000'0000'0000'0000'0000;
+} // namespace InstrEncoding
+
+enum Instr {
+  ADC,
+  ADD,
+  AND,
+  B,
+  BIC,
+  BL,
+  BX,
+  CDP,
+  CMN,
+  CMP,
+  EOR,
+  LDC,
+  LDM,
+  LDR,
+  LDRB,
+  LDRBT,
+  LDRH,
+  LDRSB,
+  LDRSH,
+  LDRT,
+  MCR,
+  MLA,
+  MOV,
+  MRC,
+  MRS,
+  MSR,
+  MUL,
+  MVN,
+  ORR,
+  RSB,
+  RSC,
+  SBC,
+  STC,
+  STM,
+  STR,
+  SUB,
+  SWI,
+  SWP,
+  TEQ,
+  TST,
+  NUM_OPCODES, // Must be last enum
 };
 
-}
-// clang-format on
-
-namespace Instr {
-// clang-format off
-enum Instr : U32 {
-  ADC = 0b0000'0000'1010'0000'0000'0000'0000'0000,
-  ADD = 0b0000'0000'1000'0000'0000'0000'0000'0000,
-  AND = 0b0000'0000'0000'0000'0000'0000'0000'0000,
-  B   = 0b0000'1010'0000'0000'0000'0000'0000'0000,
-  BIC = 0b0000'0001'1100'0000'0000'0000'0000'0000,
-  BL  = 0b0000'1011'0000'0000'0000'0000'0000'0000,
-  BX  = 0b0000'0001'0010'1111'1111'1111'0001'0000,
-  CDP = 0b0000'1110'0000'0000'0000'0000'0000'0000,
-  CMN = 0b0000'0001'0111'0000'0000'0000'0000'0000,
-  CMP = 0b0000'0001'0100'0000'0000'0000'0000'0000,
-  EOR = 0b0000'0000'0010'0000'0000'0000'0000'0000,
-  LDC = 0b0000'1100'0001'0000'0000'0000'0000'0000,
-  LDM = 0b0000'1000'0001'0000'0000'0000'0000'0000,
-  LDR = 0b0000'0100'0001'0000'0000'0000'0000'0000, // revisit
-  MCR = 0b0000'1110'0000'0000'0000'0000'0001'0000,
-  MLA = 0b0000'0000'0010'0000'0000'0000'1001'0000,
-  MOV = 0b0000'0001'1010'0000'0000'0000'0000'0000,
-  MRC = 0b0000'1110'0001'0000'0000'0000'0001'0000,
-  MRS = 0b0000'0001'0000'1111'0000'0000'0000'0000,
-  MSR = 0b0000'0001'0010'1001'1111'0000'0000'0000,
-  MUL = 0b0000'0000'0000'0000'0000'0000'1001'0000,
-  MVN = 0b0000'0001'1110'0000'0000'0000'0000'0000,
-  ORR = 0b0000'0001'1000'0000'0000'0000'0000'0000,
-  RSB = 0b0000'0000'0110'0000'0000'0000'0000'0000,
-  RSC = 0b0000'0000'1110'0000'0000'0000'0000'0000,
-  SBC = 0b0000'0000'1100'0000'0000'0000'0000'0000,
-  STC = 0b0000'1100'0000'0000'0000'0000'0000'0000,
-  STM = 0b0000'1000'0000'0000'0000'0000'0000'0000,
-  STR = 0b0000'0100'0000'0000'0000'0000'0000'0000,
-  SUB = 0b0000'0000'0100'0000'0000'0000'0000'0000,
-  SWI = 0b0000'1111'0000'0000'0000'0000'0000'0000,
-  SWP = 0b0000'0001'0000'0000'0000'0000'1001'0000,
-  TEQ = 0b0000'0001'0010'0000'0000'0000'0000'0000,
-  TST = 0b0000'0001'0000'0000'0000'0000'0000'0000,
-};
-}
-// clang-format on
-
-inline const char *toString(Instr::Instr instr) {
+inline const char *ToString(Instr instr) {
   switch (instr) {
-  case Instr::Instr::ADC:
+  case Instr::ADC:
     return "ADC";
-  case Instr::Instr::ADD:
+  case Instr::ADD:
     return "ADD";
-  case Instr::Instr::AND:
+  case Instr::AND:
     return "AND";
-  case Instr::Instr::B:
+  case Instr::B:
     return "B";
-  case Instr::Instr::BIC:
+  case Instr::BIC:
     return "BIC";
-  case Instr::Instr::BL:
+  case Instr::BL:
     return "BL";
-  case Instr::Instr::BX:
+  case Instr::BX:
     return "BX";
-  case Instr::Instr::CDP:
+  case Instr::CDP:
     return "CDP";
-  case Instr::Instr::CMN:
+  case Instr::CMN:
     return "CMN";
-  case Instr::Instr::CMP:
+  case Instr::CMP:
     return "CMP";
-  case Instr::Instr::EOR:
+  case Instr::EOR:
     return "EOR";
-  case Instr::Instr::LDC:
+  case Instr::LDC:
     return "LDC";
-  case Instr::Instr::LDM:
+  case Instr::LDM:
     return "LDM";
-  case Instr::Instr::LDR:
+  case Instr::LDR:
     return "LDR";
-  case Instr::Instr::MCR:
+  case Instr::LDRB:
+    return "LDRB";
+  case Instr::LDRBT:
+    return "LDRBT";
+  case Instr::LDRH:
+    return "LDRH";
+  case Instr::LDRSB:
+    return "LDRSB";
+  case Instr::LDRSH:
+    return "LDRSH";
+  case Instr::LDRT:
+    return "LDRT";
+  case Instr::MCR:
     return "MCR";
-  case Instr::Instr::MLA:
+  case Instr::MLA:
     return "MLA";
-  case Instr::Instr::MOV:
+  case Instr::MOV:
     return "MOV";
-  case Instr::Instr::MRC:
+  case Instr::MRC:
     return "MRC";
-  case Instr::Instr::MRS:
+  case Instr::MRS:
     return "MRS";
-  case Instr::Instr::MSR:
+  case Instr::MSR:
     return "MSR";
-  case Instr::Instr::MUL:
+  case Instr::MUL:
     return "MUL";
-  case Instr::Instr::MVN:
+  case Instr::MVN:
     return "MVN";
-  case Instr::Instr::ORR:
+  case Instr::ORR:
     return "ORR";
-  case Instr::Instr::RSB:
+  case Instr::RSB:
     return "RSB";
-  case Instr::Instr::RSC:
+  case Instr::RSC:
     return "RSC";
-  case Instr::Instr::SBC:
+  case Instr::SBC:
     return "SBC";
-  case Instr::Instr::STC:
+  case Instr::STC:
     return "STC";
-  case Instr::Instr::STM:
+  case Instr::STM:
     return "STM";
-  case Instr::Instr::STR:
+  case Instr::STR:
     return "STR";
-  case Instr::Instr::SUB:
+  case Instr::SUB:
     return "SUB";
-  case Instr::Instr::SWI:
+  case Instr::SWI:
     return "SWI";
-  case Instr::Instr::SWP:
+  case Instr::SWP:
     return "SWP";
-  case Instr::Instr::TEQ:
+  case Instr::TEQ:
     return "TEQ";
-  case Instr::Instr::TST:
+  case Instr::TST:
     return "TST";
+  case Instr::NUM_OPCODES:
+    return "NUM_OPCODES";
   }
+  return "UNKNOWN";
 }
 
-[[nodiscard]] __inline bool get_instr_type(U32 instr,
-                                           Instr::Instr &instry_type) {
+constexpr U32 InstrMasks[] = {
+    InstrMask::ADC,  InstrMask::ADD,   InstrMask::AND,   InstrMask::B,
+    InstrMask::BIC,  InstrMask::BL,    InstrMask::BX,    InstrMask::CDP,
+    InstrMask::CMN,  InstrMask::CMP,   InstrMask::EOR,   InstrMask::LDC,
+    InstrMask::LDM,  InstrMask::LDR,   InstrMask::LDRB,  InstrMask::LDRBT,
+    InstrMask::LDRH, InstrMask::LDRSB, InstrMask::LDRSH, InstrMask::LDRT,
+    InstrMask::MCR,  InstrMask::MLA,   InstrMask::MOV,   InstrMask::MRC,
+    InstrMask::MRS,  InstrMask::MSR,   InstrMask::MUL,   InstrMask::MVN,
+    InstrMask::ORR,  InstrMask::RSB,   InstrMask::RSC,   InstrMask::SBC,
+    InstrMask::STC,  InstrMask::STM,   InstrMask::STR,   InstrMask::SUB,
+    InstrMask::SWI,  InstrMask::SWP,   InstrMask::TEQ,   InstrMask::TST,
+};
 
-#define checkInstr(instr_type_)                                                \
-  if ((instr & U32(InstrMask::InstrMask::instr_type_)) ==                      \
-      U32(Instr::Instr::instr_type_)) {                                        \
-    instry_type = Instr::Instr::instr_type_;                                   \
-    return true;                                                               \
+constexpr U32 InstrEncodings[] = {
+    InstrEncoding::ADC,   InstrEncoding::ADD,  InstrEncoding::AND,
+    InstrEncoding::B,     InstrEncoding::BIC,  InstrEncoding::BL,
+    InstrEncoding::BX,    InstrEncoding::CDP,  InstrEncoding::CMN,
+    InstrEncoding::CMP,   InstrEncoding::EOR,  InstrEncoding::LDC,
+    InstrEncoding::LDM,   InstrEncoding::LDR,  InstrEncoding::LDRB,
+    InstrEncoding::LDRBT, InstrEncoding::LDRH, InstrEncoding::LDRSB,
+    InstrEncoding::LDRSH, InstrEncoding::LDRT, InstrEncoding::MCR,
+    InstrEncoding::MLA,   InstrEncoding::MOV,  InstrEncoding::MRC,
+    InstrEncoding::MRS,   InstrEncoding::MSR,  InstrEncoding::MUL,
+    InstrEncoding::MVN,   InstrEncoding::ORR,  InstrEncoding::RSB,
+    InstrEncoding::RSC,   InstrEncoding::SBC,  InstrEncoding::STC,
+    InstrEncoding::STM,   InstrEncoding::STR,  InstrEncoding::SUB,
+    InstrEncoding::SWI,   InstrEncoding::SWP,  InstrEncoding::TEQ,
+    InstrEncoding::TST,
+};
+
+static_assert(sizeof(InstrEncodings) / sizeof(InstrEncodings[0]) ==
+              Instr::NUM_OPCODES);
+static_assert(sizeof(InstrMasks) / sizeof(InstrMasks[0]) == Instr::NUM_OPCODES);
+
+inline Instr GetArmOpcode(U32 instr) {
+  for (U32 i = 0; i < U32(Instr::NUM_OPCODES); ++i) {
+    if ((instr & InstrMasks[i]) == InstrEncodings[i]) {
+      return Instr(i);
+    }
   }
-
-  checkInstr(ADC);
-  checkInstr(ADD);
-  checkInstr(AND);
-  checkInstr(B);
-  checkInstr(BIC);
-  checkInstr(BL);
-  checkInstr(BX);
-  checkInstr(CDP);
-  checkInstr(CMN);
-  checkInstr(CMP);
-  checkInstr(EOR);
-  checkInstr(LDC);
-  checkInstr(LDM);
-  checkInstr(LDR);
-  checkInstr(MCR);
-  checkInstr(MLA);
-  checkInstr(MOV);
-  checkInstr(MRC);
-  checkInstr(MRS);
-  checkInstr(MSR);
-  checkInstr(MUL);
-  checkInstr(MVN);
-  checkInstr(ORR);
-  checkInstr(RSB);
-  checkInstr(RSC);
-  checkInstr(SBC);
-  checkInstr(STC);
-  checkInstr(STM);
-  checkInstr(STR);
-  checkInstr(SUB);
-  checkInstr(SWI);
-  checkInstr(SWP);
-  checkInstr(TEQ);
-  checkInstr(TST);
-
-  return false;
-
-#undef checkInstr
+  LOG_ABORT("Could not find arm opcode for 0x%04X", instr);
 }
 
 } // namespace Emulator::Arm
