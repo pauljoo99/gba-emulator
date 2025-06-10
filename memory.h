@@ -116,24 +116,22 @@ inline U16 ReadHalfWordFromGBAMemory(const Memory &mem, U32 address) noexcept {
   return value;
 }
 
-inline void WriteByteFromGBAMemory(Memory &mem, U32 address,
-                                   U8 value) noexcept {
+inline void WriteByteToGBAMemory(Memory &mem, U32 address, U8 value) noexcept {
   memcpy(GetPhysicalMemoryReadWrite(mem, address), &value, sizeof(value));
 }
 
-inline void WriteWordFromGBAMemory(Memory &mem, U32 address,
-                                   U32 value) noexcept {
+inline void WriteWordToGBAMemory(Memory &mem, U32 address, U32 value) noexcept {
   memcpy(GetPhysicalMemoryReadWrite(mem, address), &value, sizeof(value));
 }
 
-inline void WriteHalfWordFromGBAMemory(Memory &mem, U32 address,
-                                       U16 value) noexcept {
+inline void WriteHalfWordToGBAMemory(Memory &mem, U32 address,
+                                     U16 value) noexcept {
   memcpy(GetPhysicalMemoryReadWrite(mem, address), &value, sizeof(value));
 }
 
 inline void Reset(Memory &mem) {
   // POSTFLG is set to 0 on reset and 1 after bootup.
-  WriteWordFromGBAMemory(mem, 0x4000300, 0x00);
+  WriteWordToGBAMemory(mem, 0x4000300, 0x00);
 }
 
 } // namespace Emulator::Memory
