@@ -231,24 +231,26 @@ void CPU::ClearPipeline() noexcept {
 [[nodiscard]] bool ProcessInstruction(U32 instr, Memory::Memory &memory,
                                       CPU &cpu) {
 
-  ExtendedInstr extended_instr_type = GetExtendedArmOpcode(instr);
-  Instr instr_type;
-  if (extended_instr_type == ExtendedInstr::UNDEFINED1) {
-    instr_type = GetArmOpcode(instr);
+  ExtendedInstr extended_instr_opcode = GetExtendedArmOpcode(instr);
+  assert(extended_instr_opcode != ExtendedInstr::UNDEFINED1 ||
+         extended_instr_opcode != ExtendedInstr::UNDEFINED2 ||
+         extended_instr_opcode != ExtendedInstr::NUM_OPCODES);
+
+  Instr instr_opcode;
+  if (extended_instr_opcode == ExtendedInstr::NONE) {
+    instr_opcode = GetArmOpcode(instr);
     LOG("Dispatch %u - Instr: %s, Raw Instr: 0x%08X, PC: 0x%04X",
-        cpu.dispatch_num, ToString(instr_type), instr,
+        cpu.dispatch_num, ToString(instr_opcode), instr,
         cpu.pipeline.execute_addr);
 
   } else {
-    instr_type = ExtendedInstrToArmInstr[U32(extended_instr_type)];
+    instr_opcode = ExtendedInstrToArmInstr[U32(extended_instr_opcode)];
     LOG("Dispatch %u - Extended Instr: %s, Raw Instr: 0x%08X, PC: 0x%04X",
-        cpu.dispatch_num, ToString(instr_type), instr,
+        cpu.dispatch_num, ToString(instr_opcode), instr,
         cpu.pipeline.execute_addr);
   }
-  LOG("Dispatch %u - Instr: %s, Raw Instr: 0x%08X, PC: 0x%04X",
-      cpu.dispatch_num, ToString(instr_type), instr, cpu.pipeline.execute_addr);
 
-  switch (instr_type) {
+  switch (instr_opcode) {
   case Instr::B:
     return cpu.Dispatch_B(instr);
   case Instr::BL:
@@ -903,6 +905,7 @@ bool CPU::Dispatch_STM(U32 instr_, Memory::Memory &memory) noexcept {
   LoadAndStoreMultipleAddrResult addr = LoadAndStoreMultipleAddr(instr_);
   U32 address = addr.start_addr;
   for (U32 i = 0; i < 15; ++i) {
+    // If s == 0, then STM1, else STM2.
     U32 val = instr.fields.s == 1 ? user_registers.r[i] : registers->r[i];
     if (GetBit(instr.fields.register_list, i) == 1) {
       WriteWordFromGBAMemory(memory, address, val);
@@ -937,6 +940,7 @@ bool CPU::Dispatch_LDM(U32 instr_, const Memory::Memory &memory) noexcept {
       assert(addr.end_addr == address - 4);
       return true;
     } else {
+      // LDM2
       if (GetBit(instr.fields.register_list, 15) == 0) {
         LoadAndStoreMultipleAddrResult addr = LoadAndStoreMultipleAddr(instr_);
         U32 address = addr.start_addr;
@@ -950,6 +954,7 @@ bool CPU::Dispatch_LDM(U32 instr_, const Memory::Memory &memory) noexcept {
         registers->r[PC] += 4;
         return true;
       } else {
+        // LDM3
         LoadAndStoreMultipleAddrResult addr = LoadAndStoreMultipleAddr(instr_);
         U32 address = addr.start_addr;
         for (U32 i = 0; i < 15; ++i) {

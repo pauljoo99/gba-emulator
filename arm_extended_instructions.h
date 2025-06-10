@@ -85,7 +85,8 @@ enum class ExtendedInstr {
   LDRH,
   LDRSB,
   LDRSH,
-  NUM_OPCODES
+  NUM_OPCODES,
+  NONE,
 };
 
 inline const char *ToString(ExtendedInstr instr) {
@@ -140,6 +141,8 @@ inline const char *ToString(ExtendedInstr instr) {
     return "LDRSH";
   case ExtendedInstr::NUM_OPCODES:
     return "NUM_OPCODES";
+  case ExtendedInstr::NONE:
+    return "NONE";
   default:
     return "UNKNOWN";
   }
@@ -174,11 +177,11 @@ constexpr U32 ExtendedInstrEncodings[] = {
     ExtendedInstrEncoding::LDRSB,      ExtendedInstrEncoding::LDRSH};
 
 constexpr Instr ExtendedInstrToArmInstr[] = {
-    Instr::BAD_CODE, Instr::BAD_CODE, Instr::MUL,   Instr::MUL,  Instr::MLA,
-    Instr::MLA,      Instr::MUL,      Instr::MUL,   Instr::MUL,  Instr::MUL,
-    Instr::MUL,      Instr::MUL,      Instr::MUL,   Instr::MUL,  Instr::MRS,
-    Instr::MSR,      Instr::BX,       Instr::MSR,   Instr::SWP,  Instr::SWP,
-    Instr::STR,      Instr::LDRH,     Instr::LDRSB, Instr::LDRSH};
+    Instr::BAD_CODE, Instr::BAD_CODE, Instr::MUL,   Instr::MUL,   Instr::MLA,
+    Instr::MLA,      Instr::UMULL,    Instr::UMULL, Instr::UMLAL, Instr::UMLAL,
+    Instr::SMULL,    Instr::SMULL,    Instr::SMLAL, Instr::SMLAL, Instr::MRS,
+    Instr::MSR,      Instr::BX,       Instr::MSR,   Instr::SWP,   Instr::SWPB,
+    Instr::STRH,     Instr::LDRH,     Instr::LDRSB, Instr::LDRSH};
 
 static_assert(sizeof(ExtendedInstrEncodings) /
                   sizeof(ExtendedInstrEncodings[0]) ==
@@ -192,7 +195,7 @@ inline ExtendedInstr GetExtendedArmOpcode(U32 instr) {
       return ExtendedInstr(i);
     }
   }
-  return ExtendedInstr::UNDEFINED1;
+  return ExtendedInstr::NONE;
 }
 
 } // namespace Emulator::Arm

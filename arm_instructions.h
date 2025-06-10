@@ -343,14 +343,23 @@ constexpr U32 ORR = 0b0000'1101'1110'0000'0000'0000'0000'0000;
 constexpr U32 RSB = 0b0000'1101'1110'0000'0000'0000'0000'0000;
 constexpr U32 RSC = 0b0000'1101'1110'0000'0000'0000'0000'0000;
 constexpr U32 SBC = 0b0000'1101'1110'0000'0000'0000'0000'0000;
+constexpr U32 SMLAL = 0b0000'1111'1110'0000'0000'0000'1111'0000;
+constexpr U32 SMULL = 0b0000'1111'1110'0000'0000'0000'1111'0000;
 constexpr U32 STC = 0b0000'1110'0001'0000'0000'0000'0000'0000;
 constexpr U32 STM = 0b0000'1110'0001'0000'0000'0000'0000'0000;
 constexpr U32 STR = 0b0000'1100'0001'0000'0000'0000'0000'0000;
+constexpr U32 STRB = 0b0000'1100'0101'0000'0000'0000'0000'0000;
+constexpr U32 STRBT = 0b0000'1101'0111'0000'0000'0000'0000'0000;
+constexpr U32 STRH = 0b0000'1110'0001'0000'0000'0000'1111'0000;
+constexpr U32 STRT = 0b0000'1101'0111'0000'0000'0000'0000'0000;
 constexpr U32 SUB = 0b0000'1101'1110'0000'0000'0000'0000'0000;
 constexpr U32 SWI = 0b0000'1111'0000'0000'0000'0000'0000'0000;
 constexpr U32 SWP = 0b0000'1111'1011'0000'0000'1111'1111'0000;
+constexpr U32 SWPB = 0b0000'1111'1111'0000'0000'0000'1111'0000;
 constexpr U32 TEQ = 0b0000'1101'1110'0000'0000'0000'0000'0000;
 constexpr U32 TST = 0b0000'1101'1110'0000'0000'0000'0000'0000;
+constexpr U32 UMLAL = 0b0000'1111'1110'0000'0000'0000'1111'0000;
+constexpr U32 UMULL = 0b0000'1111'1110'0000'0000'0000'1111'0000;
 } // namespace InstrMask
 
 namespace InstrEncoding {
@@ -386,14 +395,23 @@ constexpr U32 ORR = 0b0000'0001'1000'0000'0000'0000'0000'0000;
 constexpr U32 RSB = 0b0000'0000'0110'0000'0000'0000'0000'0000;
 constexpr U32 RSC = 0b0000'0000'1110'0000'0000'0000'0000'0000;
 constexpr U32 SBC = 0b0000'0000'1100'0000'0000'0000'0000'0000;
+constexpr U32 SMLAL = 0b0000'0000'1110'0000'0000'0000'1001'0000;
+constexpr U32 SMULL = 0b0000'0000'1100'0000'0000'0000'1001'0000;
 constexpr U32 STC = 0b0000'1100'0000'0000'0000'0000'0000'0000;
 constexpr U32 STM = 0b0000'1000'0000'0000'0000'0000'0000'0000;
 constexpr U32 STR = 0b0000'0100'0000'0000'0000'0000'0000'0000;
+constexpr U32 STRB = 0b0000'0100'0100'0000'0000'0000'0000'0000;
+constexpr U32 STRBT = 0b0000'0100'0110'0000'0000'0000'0000'0000;
+constexpr U32 STRH = 0b0000'0000'0000'0000'0000'0000'1011'0000;
+constexpr U32 STRT = 0b0000'0100'0010'0000'0000'0000'0000'0000;
 constexpr U32 SUB = 0b0000'0000'0100'0000'0000'0000'0000'0000;
 constexpr U32 SWI = 0b0000'1111'0000'0000'0000'0000'0000'0000;
 constexpr U32 SWP = 0b0000'0001'0000'0000'0000'0000'1001'0000;
+constexpr U32 SWPB = 0b0000'0001'0100'0000'0000'0000'1001'0000;
 constexpr U32 TEQ = 0b0000'0001'0010'0000'0000'0000'0000'0000;
 constexpr U32 TST = 0b0000'0001'0000'0000'0000'0000'0000'0000;
+constexpr U32 UMLAL = 0b0000'0000'1010'0000'0000'0000'1001'0000;
+constexpr U32 UMULL = 0b0000'0000'1000'0000'0000'0000'1001'0000;
 } // namespace InstrEncoding
 
 enum class Instr {
@@ -429,14 +447,23 @@ enum class Instr {
   RSB,
   RSC,
   SBC,
+  SMLAL,
+  SMULL,
   STC,
   STM,
   STR,
+  STRB,
+  STRBT,
+  STRH,
+  STRT,
   SUB,
   SWI,
   SWP,
+  SWPB,
   TEQ,
   TST,
+  UMLAL,
+  UMULL,
   NUM_OPCODES, // Must be last enum
   BAD_CODE,
 };
@@ -507,22 +534,40 @@ inline const char *ToString(Instr instr) {
     return "RSC";
   case Instr::SBC:
     return "SBC";
+  case Instr::SMLAL:
+    return "SMLAL";
+  case Instr::SMULL:
+    return "SMULL";
   case Instr::STC:
     return "STC";
   case Instr::STM:
     return "STM";
   case Instr::STR:
     return "STR";
+  case Instr::STRB:
+    return "STRB";
+  case Instr::STRBT:
+    return "STRBT";
+  case Instr::STRH:
+    return "STRH";
+  case Instr::STRT:
+    return "STRT";
   case Instr::SUB:
     return "SUB";
   case Instr::SWI:
     return "SWI";
   case Instr::SWP:
     return "SWP";
+  case Instr::SWPB:
+    return "SWPB";
   case Instr::TEQ:
     return "TEQ";
   case Instr::TST:
     return "TST";
+  case Instr::UMLAL:
+    return "UMLAL";
+  case Instr::UMULL:
+    return "UMULL";
   case Instr::NUM_OPCODES:
     return "NUM_OPCODES";
   case Instr::BAD_CODE:
@@ -532,16 +577,19 @@ inline const char *ToString(Instr instr) {
 }
 
 constexpr U32 InstrMasks[] = {
-    InstrMask::ADC,  InstrMask::ADD,   InstrMask::AND,   InstrMask::B,
-    InstrMask::BIC,  InstrMask::BL,    InstrMask::BX,    InstrMask::CDP,
-    InstrMask::CMN,  InstrMask::CMP,   InstrMask::EOR,   InstrMask::LDC,
-    InstrMask::LDM,  InstrMask::LDR,   InstrMask::LDRB,  InstrMask::LDRBT,
-    InstrMask::LDRH, InstrMask::LDRSB, InstrMask::LDRSH, InstrMask::LDRT,
-    InstrMask::MCR,  InstrMask::MLA,   InstrMask::MOV,   InstrMask::MRC,
-    InstrMask::MRS,  InstrMask::MSR,   InstrMask::MUL,   InstrMask::MVN,
-    InstrMask::ORR,  InstrMask::RSB,   InstrMask::RSC,   InstrMask::SBC,
-    InstrMask::STC,  InstrMask::STM,   InstrMask::STR,   InstrMask::SUB,
-    InstrMask::SWI,  InstrMask::SWP,   InstrMask::TEQ,   InstrMask::TST,
+    InstrMask::ADC,   InstrMask::ADD,   InstrMask::AND,   InstrMask::B,
+    InstrMask::BIC,   InstrMask::BL,    InstrMask::BX,    InstrMask::CDP,
+    InstrMask::CMN,   InstrMask::CMP,   InstrMask::EOR,   InstrMask::LDC,
+    InstrMask::LDM,   InstrMask::LDR,   InstrMask::LDRB,  InstrMask::LDRBT,
+    InstrMask::LDRH,  InstrMask::LDRSB, InstrMask::LDRSH, InstrMask::LDRT,
+    InstrMask::MCR,   InstrMask::MLA,   InstrMask::MOV,   InstrMask::MRC,
+    InstrMask::MRS,   InstrMask::MSR,   InstrMask::MUL,   InstrMask::MVN,
+    InstrMask::ORR,   InstrMask::RSB,   InstrMask::RSC,   InstrMask::SBC,
+    InstrMask::SMLAL, InstrMask::SMULL, InstrMask::STC,   InstrMask::STM,
+    InstrMask::STR,   InstrMask::STRB,  InstrMask::STRBT, InstrMask::STRH,
+    InstrMask::STRT,  InstrMask::SUB,   InstrMask::SWI,   InstrMask::SWP,
+    InstrMask::SWPB,  InstrMask::TEQ,   InstrMask::TST,   InstrMask::UMLAL,
+    InstrMask::UMULL,
 };
 
 constexpr U32 InstrEncodings[] = {
@@ -555,10 +603,13 @@ constexpr U32 InstrEncodings[] = {
     InstrEncoding::MLA,   InstrEncoding::MOV,  InstrEncoding::MRC,
     InstrEncoding::MRS,   InstrEncoding::MSR,  InstrEncoding::MUL,
     InstrEncoding::MVN,   InstrEncoding::ORR,  InstrEncoding::RSB,
-    InstrEncoding::RSC,   InstrEncoding::SBC,  InstrEncoding::STC,
-    InstrEncoding::STM,   InstrEncoding::STR,  InstrEncoding::SUB,
-    InstrEncoding::SWI,   InstrEncoding::SWP,  InstrEncoding::TEQ,
-    InstrEncoding::TST,
+    InstrEncoding::RSC,   InstrEncoding::SBC,  InstrEncoding::SMLAL,
+    InstrEncoding::SMULL, InstrEncoding::STC,  InstrEncoding::STM,
+    InstrEncoding::STR,   InstrEncoding::STRB, InstrEncoding::STRBT,
+    InstrEncoding::STRH,  InstrEncoding::STRT, InstrEncoding::SUB,
+    InstrEncoding::SWI,   InstrEncoding::SWP,  InstrEncoding::SWPB,
+    InstrEncoding::TEQ,   InstrEncoding::TST,  InstrEncoding::UMLAL,
+    InstrEncoding::UMULL,
 };
 
 static_assert(sizeof(InstrEncodings) / sizeof(InstrEncodings[0]) ==
