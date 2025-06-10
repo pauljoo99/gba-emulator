@@ -267,6 +267,8 @@ void CPU::ClearPipeline() noexcept {
     return cpu.Dispatch_LDR(instr, memory);
   case Instr::LDRB:
     return cpu.Dispatch_LDRB(instr, memory);
+  case Instr::LDRH:
+    return cpu.Dispatch_LDRH(instr, memory);
   case Instr::CMP:
     return cpu.Dispatch_CMP(instr);
   case Instr::TEQ:
@@ -620,7 +622,7 @@ CPU::LoadAndStoreMultipleAddr(U32 instr_) noexcept {
 [[nodiscard]] bool CPU::Dispatch_B(U32 instr_) noexcept {
   const BranchInstr instr(instr_);
   if (!EvaluateCondition(ConditionCode(instr.fields.cond), registers->CPSR)) {
-    registers->r[PC] += kInstrSize;
+    registers->r[PC] += 4;
     return true;
   }
   registers->r[PC] = static_cast<I32>(registers->r[PC]) +
@@ -632,7 +634,7 @@ CPU::LoadAndStoreMultipleAddr(U32 instr_) noexcept {
 [[nodiscard]] bool CPU::Dispatch_BL(U32 instr_) noexcept {
   const BranchInstr instr(instr_);
   if (!EvaluateCondition(ConditionCode(instr.fields.cond), registers->CPSR)) {
-    registers->r[PC] += kInstrSize;
+    registers->r[PC] += 4;
     return true;
   }
   registers->r[PC] = (I32)registers->r[PC] +
@@ -656,11 +658,11 @@ CPU::LoadAndStoreMultipleAddr(U32 instr_) noexcept {
       CPSR_SetN(GetBit(registers->r[instr.fields.rd], 31));
       CPSR_SetZ(instr.fields.rd == 0);
       CPSR_SetC(shifter.shifter_carry_out);
-      registers->r[PC] += kInstrSize;
+      registers->r[PC] += 4;
       return true;
     }
   }
-  registers->r[PC] += kInstrSize;
+  registers->r[PC] += 4;
   return true;
 }
 
@@ -671,7 +673,7 @@ CPU::LoadAndStoreMultipleAddr(U32 instr_) noexcept {
     registers->r[PC] = registers->r[instr.fields.rm] & 0xFFFFFFFE;
     ClearPipeline();
   } else {
-    registers->r[PC] += kInstrSize;
+    registers->r[PC] += 4;
   }
   return true;
 }
@@ -689,7 +691,7 @@ CPU::LoadAndStoreMultipleAddr(U32 instr_) noexcept {
       CPSR_SetC(shifter.shifter_carry_out);
     }
   }
-  registers->r[PC] += kInstrSize;
+  registers->r[PC] += 4;
   return true;
 }
 
@@ -748,7 +750,7 @@ CPU::LoadAndStoreMultipleAddr(U32 instr_) noexcept {
       }
     }
   }
-  registers->r[PC] += kInstrSize;
+  registers->r[PC] += 4;
   return true;
 }
 
@@ -761,7 +763,7 @@ CPU::LoadAndStoreMultipleAddr(U32 instr_) noexcept {
       registers->r[instr.fields.rd] = U32(registers->CPSR);
     }
   }
-  registers->r[PC] += kInstrSize;
+  registers->r[PC] += 4;
   return true;
 }
 
@@ -779,7 +781,7 @@ CPU::LoadAndStoreMultipleAddr(U32 instr_) noexcept {
       CPSR_SetC(shifter.shifter_carry_out);
     }
   }
-  registers->r[PC] += kInstrSize;
+  registers->r[PC] += 4;
   return true;
 }
 
@@ -790,7 +792,23 @@ CPU::LoadAndStoreMultipleAddr(U32 instr_) noexcept {
     U32 address = LoadAndStoreWordOrByteAddr(instr);
     registers->r[instr.fields.rd] = ReadByteFromGBAMemory(memory, address);
   }
-  registers->r[PC] += kInstrSize;
+  registers->r[PC] += 4;
+  return true;
+}
+
+[[nodiscard]] bool CPU::Dispatch_LDRH(U32 instr_,
+                                      const Memory::Memory &memory) noexcept {
+  const SingleDataTransferInstr instr{instr_};
+  if (EvaluateCondition(ConditionCode(instr.fields.cond), registers->CPSR)) {
+    U32 address = LoadAndStoreWordOrByteAddr(instr);
+    if ((address & 0b1) == 0) {
+      registers->r[instr.fields.rd] =
+          ReadHalfWordFromGBAMemory(memory, address);
+    } else {
+      LOG_ABORT("Bad address: 0x%04X", address);
+    }
+  }
+  registers->r[PC] += 4;
   return true;
 }
 
@@ -831,7 +849,7 @@ CPU::LoadAndStoreMultipleAddr(U32 instr_) noexcept {
     }
   }
 
-  registers->r[PC] += kInstrSize;
+  registers->r[PC] += 4;
   return true;
 }
 
@@ -863,7 +881,7 @@ CPU::LoadAndStoreMultipleAddr(U32 instr_) noexcept {
     CPSR_SetV(SignedSubOverflow(registers->r[instr.fields.rn],
                                 shifter.shifter_operand));
   }
-  registers->r[PC] += kInstrSize;
+  registers->r[PC] += 4;
   return true;
 }
 
@@ -877,7 +895,7 @@ bool CPU::Dispatch_TEQ(U32 instr_) noexcept {
     CPSR_SetZ(alu_out == 0);
     CPSR_SetC(shifter.shifter_carry_out);
   }
-  registers->r[PC] += kInstrSize;
+  registers->r[PC] += 4;
   return true;
 }
 
@@ -891,14 +909,14 @@ bool CPU::Dispatch_TST(U32 instr_) noexcept {
     CPSR_SetZ(alu_out == 0);
     CPSR_SetC(shifter.shifter_carry_out);
   }
-  registers->r[PC] += kInstrSize;
+  registers->r[PC] += 4;
   return true;
 }
 
 bool CPU::Dispatch_STM(U32 instr_, Memory::Memory &memory) noexcept {
   LoadAndStoreMultiple instr(instr_);
   if (!EvaluateCondition(ConditionCode(instr.fields.cond), registers->CPSR)) {
-    registers->r[PC] += kInstrSize;
+    registers->r[PC] += 4;
     return true;
   }
 
@@ -913,7 +931,7 @@ bool CPU::Dispatch_STM(U32 instr_, Memory::Memory &memory) noexcept {
     }
   }
   assert(addr.end_addr == address - 4);
-  registers->r[PC] += kInstrSize;
+  registers->r[PC] += 4;
   return true;
 }
 
@@ -935,7 +953,7 @@ bool CPU::Dispatch_LDM(U32 instr_, const Memory::Memory &memory) noexcept {
         registers->r[PC] = value & 0xFFFFFFFC;
         ClearPipeline();
       } else {
-        registers->r[PC] += kInstrSize;
+        registers->r[PC] += 4;
       }
       assert(addr.end_addr == address - 4);
       return true;
@@ -996,7 +1014,7 @@ bool CPU::Dispatch_CMN(U32 instr_) noexcept {
     CPSR_SetV(SignedAddOverflow(registers->r[instr.fields.rn],
                                 shifter.shifter_operand));
   }
-  registers->r[PC] += kInstrSize;
+  registers->r[PC] += 4;
   return true;
 }
 
@@ -1020,7 +1038,7 @@ bool CPU::Dispatch_SUB(U32 instr_) noexcept {
                                   shifter.shifter_operand));
     }
   }
-  registers->r[PC] += kInstrSize;
+  registers->r[PC] += 4;
   return true;
 }
 
@@ -1044,7 +1062,7 @@ bool CPU::Dispatch_RSB(U32 instr_) noexcept {
                                   registers->r[instr.fields.rn]));
     }
   }
-  registers->r[PC] += kInstrSize;
+  registers->r[PC] += 4;
   return true;
 }
 
@@ -1070,7 +1088,7 @@ bool CPU::Dispatch_ADD(U32 instr_) noexcept {
                                   shifter.shifter_operand));
     }
   }
-  registers->r[PC] += kInstrSize;
+  registers->r[PC] += 4;
   return true;
 }
 
@@ -1090,7 +1108,7 @@ bool CPU::Dispatch_AND(U32 instr_) noexcept {
       CPSR_SetC(shifter.shifter_carry_out);
     }
   }
-  registers->r[PC] += kInstrSize;
+  registers->r[PC] += 4;
   return true;
 }
 

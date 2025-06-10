@@ -116,6 +116,8 @@ struct CPU {
                                   const Memory::Memory &memory) noexcept;
   [[nodiscard]] bool Dispatch_LDRB(U32 instr,
                                    const Memory::Memory &memory) noexcept;
+  [[nodiscard]] bool Dispatch_LDRH(U32 instr,
+                                   const Memory::Memory &memory) noexcept;
   [[nodiscard]] bool Dispatch_LDM(U32 instr,
                                   const Memory::Memory &memory) noexcept;
   [[nodiscard]] bool Dispatch_TEQ(U32 instr_) noexcept;
