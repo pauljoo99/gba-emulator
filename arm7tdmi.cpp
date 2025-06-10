@@ -236,18 +236,12 @@ void CPU::ClearPipeline() noexcept {
          extended_instr_opcode != ExtendedInstr::UNDEFINED2 ||
          extended_instr_opcode != ExtendedInstr::NUM_OPCODES);
 
-  if (cpu.dispatch_num == 4073525) {
-    Debug::debug_snapshot(cpu.all_registers, memory, cpu.pipeline,
-                          "tools/visual/data/");
-  }
-
   Instr instr_opcode;
   if (extended_instr_opcode == ExtendedInstr::NONE) {
     instr_opcode = GetArmOpcode(instr);
     LOG("Dispatch %u - Instr: %s, Raw Instr: 0x%08X, PC: 0x%04X",
         cpu.dispatch_num, ToString(instr_opcode), instr,
         cpu.pipeline.execute_addr);
-
   } else {
     instr_opcode = ExtendedInstrToArmInstr[U32(extended_instr_opcode)];
     LOG("Dispatch %u - Extended Instr: %s, Raw Instr: 0x%08X, PC: 0x%04X",
@@ -696,10 +690,14 @@ CPU::LoadAndStoreMultipleAddr(U32 instr_) noexcept {
     registers->r[instr.fields.rd] = shifter.shifter_operand;
     if (instr.fields.s && instr.fields.rd == PC) {
       registers->CPSR = U32(registers->SPRS);
+      ClearPipeline();
+      return true;
     } else if (instr.fields.s) {
       CPSR_SetN(GetBit(registers->r[instr.fields.rd], 31));
       CPSR_SetZ(registers->r[instr.fields.rd] == 0);
       CPSR_SetC(shifter.shifter_carry_out);
+      registers->r[PC] += 4;
+      return true;
     }
   }
   registers->r[PC] += 4;
@@ -719,7 +717,7 @@ CPU::LoadAndStoreMultipleAddr(U32 instr_) noexcept {
     }
     if (instr.fields.r == 0) {
       CPSR_Register cpsr(registers->CPSR);
-      if (cpsr.bits.M != 0b10000) {
+      if (GetMode() != Mode::USER) {
         if (GetBit(instr.fields.field_mask, 0)) {
           registers->CPSR =
               (registers->CPSR & 0xFFFFFF00) | (operand & 0x000000FF);
@@ -859,6 +857,8 @@ CPU::LoadAndStoreMultipleAddr(U32 instr_) noexcept {
       return true;
     } else {
       registers->r[instr.fields.rd] = value;
+      registers->r[PC] += 4;
+      return true;
     }
   }
 
