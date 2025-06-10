@@ -321,8 +321,14 @@ void CPU::ClearPipeline() noexcept {
     return cpu.Dispatch_Thumb_MOV3(instr);
   case (Thumb::ThumbOpcode::MVN):
     return cpu.Dispatch_Thumb_MVN(instr);
+  case (Thumb::ThumbOpcode::LDR1):
+    return cpu.Dispatch_Thumb_LDR1(instr, memory);
+  case (Thumb::ThumbOpcode::LDR2):
+    return cpu.Dispatch_Thumb_LDR2(instr, memory);
   case (Thumb::ThumbOpcode::LDR3):
     return cpu.Dispatch_Thumb_LDR3(instr, memory);
+  case (Thumb::ThumbOpcode::LDR4):
+    return cpu.Dispatch_Thumb_LDR4(instr, memory);
   case (Thumb::ThumbOpcode::LDRB1):
     return cpu.Dispatch_Thumb_LDRB1(instr, memory);
   case (Thumb::ThumbOpcode::LDRH1):
@@ -1520,12 +1526,56 @@ bool CPU::Dispatch_Thumb_BX(U16 instr) noexcept {
   return true;
 }
 
+bool CPU::Dispatch_Thumb_LDR1(U16 instr,
+                              const Memory::Memory &memory) noexcept {
+  U32 rd = GetBitsInRange(instr, 0, 3);
+  U32 rn = GetBitsInRange(instr, 3, 6);
+  U32 immed_5 = GetBitsInRange(instr, 6, 11);
+  U32 address = registers->r[rn] + (immed_5 * 4);
+  if (GetBitsInRange(address, 0, 2) == 0b00) {
+    registers->r[rd] = ReadWordFromGBAMemory(memory, address);
+  } else {
+    LOG_ABORT("Bad address: 0x%04X", address);
+  }
+  registers->r[PC] += 2;
+  return true;
+}
+
+bool CPU::Dispatch_Thumb_LDR2(U16 instr,
+                              const Memory::Memory &memory) noexcept {
+  U32 rd = GetBitsInRange(instr, 0, 3);
+  U32 rn = GetBitsInRange(instr, 3, 6);
+  U32 rm = GetBitsInRange(instr, 6, 9);
+  U32 address = registers->r[rn] + registers->r[rm];
+  if (GetBitsInRange(address, 0, 2) == 0b00) {
+    registers->r[rd] = ReadWordFromGBAMemory(memory, address);
+  } else {
+    LOG_ABORT("Bad address: 0x%04X", address);
+  }
+  registers->r[PC] += 2;
+  return true;
+}
+
 bool CPU::Dispatch_Thumb_LDR3(U16 instr,
                               const Memory::Memory &memory) noexcept {
   U32 immed_8 = GetBitsInRange(instr, 0, 8);
   U32 rd = GetBitsInRange(instr, 8, 11);
   U32 address = (GetBitsInRange(registers->r[PC], 2, 32) << 2) + immed_8 * 4;
   registers->r[rd] = ReadWordFromGBAMemory(memory, address);
+  registers->r[PC] += 2;
+  return true;
+}
+
+bool CPU::Dispatch_Thumb_LDR4(U16 instr,
+                              const Memory::Memory &memory) noexcept {
+  U32 rd = GetBitsInRange(instr, 8, 11);
+  U32 immed_8 = GetBitsInRange(instr, 0, 8);
+  U32 address = registers->r[SP] + (immed_8 * 4);
+  if (GetBitsInRange(address, 0, 2) == 0b00) {
+    registers->r[rd] = ReadWordFromGBAMemory(memory, address);
+  } else {
+    LOG_ABORT("Bad address: 0x%04X", address);
+  }
   registers->r[PC] += 2;
   return true;
 }
