@@ -437,7 +437,7 @@ bool EvaluateCondition(ConditionCode cond, U32 cpsr_) {
   case ConditionCode::HI:
     return cpsr.bits.C && !cpsr.bits.Z;
   case ConditionCode::LS:
-    return !cpsr.bits.C && cpsr.bits.Z;
+    return !cpsr.bits.C || cpsr.bits.Z;
   case ConditionCode::GE:
     return cpsr.bits.N == cpsr.bits.V;
   case ConditionCode::LT:
