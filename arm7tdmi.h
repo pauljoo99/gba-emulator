@@ -125,6 +125,7 @@ struct CPU {
   [[nodiscard]] bool Dispatch_TST(U32 instr_) noexcept;
   [[nodiscard]] bool Dispatch_MRS(U32 instr) noexcept;
   [[nodiscard]] bool Dispatch_ORR(U32 instr) noexcept;
+  [[nodiscard]] bool Dispatch_EOR(U32 instr) noexcept;
   [[nodiscard]] bool Dispatch_CMN(U32 instr) noexcept;
   [[nodiscard]] bool Dispatch_SUB(U32 instr) noexcept;
   [[nodiscard]] bool Dispatch_RSB(U32 instr) noexcept;
@@ -142,12 +143,14 @@ struct CPU {
   [[nodiscard]] bool Dispatch_Thumb_MOV1(U16 instr) noexcept;
   [[nodiscard]] bool Dispatch_Thumb_MOV3(U16 instr) noexcept;
   [[nodiscard]] bool Dispatch_Thumb_MVN(U16 instr) noexcept;
+  [[nodiscard]] bool Dispatch_Thumb_AND(U16 instr) noexcept;
   [[nodiscard]] bool Dispatch_Thumb_ADD1(U16 instr) noexcept;
   [[nodiscard]] bool Dispatch_Thumb_ADD2(U16 instr) noexcept;
   [[nodiscard]] bool Dispatch_Thumb_ADD3(U16 instr) noexcept;
   [[nodiscard]] bool Dispatch_Thumb_ADD5(U16 instr) noexcept;
   [[nodiscard]] bool Dispatch_Thumb_ADD6(U16 instr) noexcept;
   [[nodiscard]] bool Dispatch_Thumb_ADD7(U16 instr) noexcept;
+  [[nodiscard]] bool Dispatch_Thumb_NEG(U16 instr) noexcept;
   [[nodiscard]] bool Dispatch_Thumb_ORR(U16 instr) noexcept;
   [[nodiscard]] bool Dispatch_Thumb_EOR(U16 instr) noexcept;
   [[nodiscard]] bool Dispatch_Thumb_SUB1(U16 instr) noexcept;
