@@ -61,6 +61,16 @@ inline bool UnsignedAddCarry(U32 a, U32 b) {
   return result < a; // carry out occurred
 }
 
+inline bool UnsignedAddCarry3(U32 a, U32 b, U32 c) {
+  U32 ab = a + b;
+  bool carry1 = ab < a;
+
+  U32 abc = ab + c;
+  bool carry2 = abc < ab;
+
+  return carry1 || carry2;
+}
+
 inline bool UnsignedSubBorrow(U32 a, U32 b) {
   return a < b; // borrow occurred
 }
@@ -70,6 +80,20 @@ inline bool SignedAddOverflow(I32 a, I32 b) {
     return true;
   if (b < 0 && a < INT32_MIN - b)
     return true;
+  return false;
+}
+
+inline bool SignedAddOverflow3(I32 a, I32 b, I32 c) {
+  // First step: a + b
+  if ((b > 0 && a > INT32_MAX - b) || (b < 0 && a < INT32_MIN - b))
+    return true;
+
+  I32 ab = a + b;
+
+  // Second step: ab + c
+  if ((c > 0 && ab > INT32_MAX - c) || (c < 0 && ab < INT32_MIN - c))
+    return true;
+
   return false;
 }
 

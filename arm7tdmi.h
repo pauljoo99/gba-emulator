@@ -130,6 +130,7 @@ struct CPU {
   [[nodiscard]] bool Dispatch_SUB(U32 instr) noexcept;
   [[nodiscard]] bool Dispatch_RSB(U32 instr) noexcept;
   [[nodiscard]] bool Dispatch_ADD(U32 instr) noexcept;
+  [[nodiscard]] bool Dispatch_ADC(U32 instr) noexcept;
   [[nodiscard]] bool Dispatch_AND(U32 instr) noexcept;
 
   [[nodiscard]] bool AdvancePipeline(U32 instr, U32 addr) noexcept;
