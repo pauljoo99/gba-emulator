@@ -92,6 +92,42 @@ struct ShifterOperandResult {
   U32 shifter_carry_out;
 };
 
+struct LoadAndStoreHalfWordImmFields {
+  U32 immedl : 4;
+  U32 : 1;
+  U32 h : 1;
+  U32 s : 1;
+  U32 : 1;
+  U32 immedh : 4;
+};
+
+union LoadAndStoreHalfWordImm {
+  U32 value;
+  LoadAndStoreHalfWordImmFields fields;
+
+  LoadAndStoreHalfWordImm(U32 val = 0) : value(val) {}
+
+  operator U32() const { return value; } // Implicit conversion
+};
+
+struct LoadAndStoreHalfWordRegFields {
+  U32 rm : 4;
+  U32 : 1;
+  U32 h : 1;
+  U32 s : 1;
+  U32 : 1;
+  U32 : 4;
+};
+
+union LoadAndStoreHalfWordReg {
+  U32 value;
+  LoadAndStoreHalfWordRegFields fields;
+
+  LoadAndStoreHalfWordReg(U32 val = 0) : value(val) {}
+
+  operator U32() const { return value; } // Implicit conversion
+};
+
 struct LoadAndStoreWordOrByteImmFields {
   U32 offset : 12;
 };

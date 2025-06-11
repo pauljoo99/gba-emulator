@@ -445,6 +445,75 @@ bool EvaluateCondition(ConditionCode cond, U32 cpsr_) {
   }
 }
 
+U32 CPU::LoadAndStoreHalfWordImmAddr(U32 instr_) noexcept {
+  const SingleDataTransferInstr instr{instr_};
+  const LoadAndStoreHalfWordImm encoding{instr.fields.offset};
+
+  U32 address;
+  U32 offset_8 = (encoding.fields.immedh << 4) | encoding.fields.immedl;
+  if (instr.fields.p == 1 && instr.fields.w == 0) {
+    if (instr.fields.u == 1) {
+      address = registers->r[instr.fields.rn] + offset_8;
+    } else {
+      address = registers->r[instr.fields.rn] - offset_8;
+    }
+  } else if (instr.fields.p == 1 && instr.fields.w == 1) {
+    if (instr.fields.u == 1) {
+      address = registers->r[instr.fields.rn] + offset_8;
+    } else {
+      address = registers->r[instr.fields.rn] - offset_8;
+    }
+    registers->r[instr.fields.rn] = address;
+  } else if (instr.fields.p == 0 && instr.fields.w == 0) {
+    address = registers->r[instr.fields.rn];
+    if (instr.fields.u == 1) {
+      registers->r[instr.fields.rn] = registers->r[instr.fields.rn] + offset_8;
+    } else {
+      registers->r[instr.fields.rn] = registers->r[instr.fields.rn] - offset_8;
+    }
+  } else {
+    ABORT("Bad Load And Store Halfword Address");
+  }
+  return address;
+}
+
+U32 CPU::LoadAndStoreHalfWordRegAddr(U32 instr_) noexcept {
+  const SingleDataTransferInstr instr{instr_};
+  const LoadAndStoreHalfWordReg encoding{instr.fields.offset};
+
+  U32 address;
+  if (instr.fields.p == 1 && instr.fields.w == 0) {
+    if (instr.fields.u == 1) {
+      address =
+          registers->r[instr.fields.rn] + registers->r[encoding.fields.rm];
+    } else {
+      address = U32(registers->r[instr.fields.rn]) -
+                U32(registers->r[encoding.fields.rm]);
+    }
+  } else if (instr.fields.p == 1 && instr.fields.w == 1) {
+    if (instr.fields.u == 1) {
+      address =
+          registers->r[instr.fields.rn] + registers->r[encoding.fields.rm];
+    } else {
+      address = U32(registers->r[instr.fields.rn]) -
+                U32(registers->r[encoding.fields.rm]);
+    }
+    registers->r[instr.fields.rn] = address;
+  } else if (instr.fields.p == 0 && instr.fields.w == 0) {
+    address = registers->r[instr.fields.rn];
+    if (instr.fields.u == 1) {
+      registers->r[instr.fields.rn] =
+          registers->r[instr.fields.rn] + registers->r[encoding.fields.rm];
+    } else {
+      registers->r[instr.fields.rn] = U32(registers->r[instr.fields.rn]) -
+                                      U32(registers->r[encoding.fields.rm]);
+    }
+  } else {
+    ABORT("Bad Load And Store Halfword Address");
+  }
+  return address;
+}
+
 U32 CPU::LoadAndStoreWordOrByteImmAddr(U32 instr_) noexcept {
   const SingleDataTransferInstr instr{instr_};
   const LoadAndStoreWordOrByteImm encoding{instr.fields.offset};
@@ -547,6 +616,14 @@ U32 CPU::LoadAndStoreWordOrByteRegAddr(U32 instr_) noexcept {
     }
   }
   return address;
+}
+
+U32 CPU::LoadAndStoreHalfWordAddr(SingleDataTransferInstr instr) noexcept {
+  if (instr.fields.b == 1) {
+    return LoadAndStoreHalfWordImmAddr(instr);
+  } else {
+    return LoadAndStoreHalfWordRegAddr(instr);
+  }
 }
 
 U32 CPU::LoadAndStoreWordOrByteAddr(SingleDataTransferInstr instr) noexcept {
@@ -811,7 +888,7 @@ CPU::LoadAndStoreMultipleAddr(U32 instr_) noexcept {
                                       const Memory::Memory &memory) noexcept {
   const SingleDataTransferInstr instr{instr_};
   if (EvaluateCondition(ConditionCode(instr.fields.cond), registers->CPSR)) {
-    U32 address = LoadAndStoreWordOrByteAddr(instr);
+    U32 address = LoadAndStoreHalfWordAddr(instr);
     if ((address & 0b1) == 0) {
       registers->r[instr.fields.rd] =
           ReadHalfWordFromGBAMemory(memory, address);
@@ -935,7 +1012,7 @@ bool CPU::Dispatch_STM(U32 instr_, Memory::Memory &memory) noexcept {
 
   LoadAndStoreMultipleAddrResult addr = LoadAndStoreMultipleAddr(instr_);
   U32 address = addr.start_addr;
-  for (U32 i = 0; i < 15; ++i) {
+  for (U32 i = 0; i < 16; ++i) {
     // If s == 0, then STM1, else STM2.
     U32 val = instr.fields.s == 1 ? user_registers.r[i] : registers->r[i];
     if (GetBit(instr.fields.register_list, i) == 1) {

@@ -1,7 +1,7 @@
 # Compiler and flags
 CXX = g++
 CXXFLAGS =-g -std=c++20 -Wall
-DEBUG_CXXFLAGS = -g -std=c++20 -Wall
+DEBUG_CXXFLAGS = -g -std=c++20 -Wall -DENABLE_LOGGING
 
 # Source and object files
 BUILD_DIR = build
@@ -27,7 +27,7 @@ snapshot.o:
 	$(CXX) $(CXXFLAGS) -c snapshot.cpp -I. -o $(BUILD_DIR)/snapshot.o
 
 # debug target
-debug: CXXFLAGS += -g
+debug: CXXFLAGS := $(DEBUG_CXXFLAGS)
 debug: $(EXEC)
 
 # make all tests

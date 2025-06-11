@@ -229,6 +229,10 @@ struct CPU {
   U32 LoadAndStoreWordOrByteRegAddr(U32 instr_) noexcept;
   U32 LoadAndStoreWordOrByteAddr(SingleDataTransferInstr instr) noexcept;
 
+  U32 LoadAndStoreHalfWordImmAddr(U32 instr_) noexcept;
+  U32 LoadAndStoreHalfWordRegAddr(U32 instr_) noexcept;
+  U32 LoadAndStoreHalfWordAddr(SingleDataTransferInstr instr) noexcept;
+
   LoadAndStoreMultipleAddrResult LoadAndStoreMultipleAddr(U32 instr_) noexcept;
 
   void ClearPipeline() noexcept;
