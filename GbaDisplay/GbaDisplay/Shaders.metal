@@ -15,19 +15,23 @@ struct VertexOut {
 };
 
 vertex VertexOut vertex_main(uint vertexID [[vertex_id]],
-                             const device float* vertexArray [[buffer(0)]]) {
+                             uint instanceID [[instance_id]],
+                             const device float* vertexArray [[buffer(0)]],
+                             const device float* indexOffsetArray [[buffer(1)]]) {
     VertexOut out;
 
     // Each vertex has 6 floats: 3 for position, 3 for color
     const uint stride = 6;
-    float3 position = float3(vertexArray[vertexID * stride + 0],
-                             vertexArray[vertexID * stride + 1],
-                             vertexArray[vertexID * stride + 2]);
+    const uint offset_stride = 3;
+    float3 position = float3(
+                             vertexArray[vertexID * stride + 0] + indexOffsetArray[instanceID * offset_stride + 0],
+                             vertexArray[vertexID * stride + 1] + indexOffsetArray[instanceID * offset_stride + 1],
+                             vertexArray[vertexID * stride + 2] + indexOffsetArray[instanceID * offset_stride + 2]);
 
     float3 color = float3(vertexArray[vertexID * stride + 3],
                           vertexArray[vertexID * stride + 4],
                           vertexArray[vertexID * stride + 5]);
-
+    
     out.position = float4(position, 1.0);
     out.color = color;
     return out;

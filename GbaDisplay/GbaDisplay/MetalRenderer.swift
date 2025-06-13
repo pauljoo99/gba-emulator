@@ -13,6 +13,7 @@ class MetalRenderer: NSObject, MTKViewDelegate {
     private var pipelineState: MTLRenderPipelineState!
     private var vertexBuffer: MTLBuffer!
     private var indexBuffer: MTLBuffer!
+    private var indexOffsetBuffer: MTLBuffer!
 
     init(mtkView: MTKView) {
         super.init()
@@ -34,8 +35,17 @@ class MetalRenderer: NSObject, MTKViewDelegate {
                                          length: vertexData.count * MemoryLayout<Float>.size,
                                          options: [])
 
+        let indexOffsetData: [Float] = [
+            0.0, -0.5, 0.0,  // First triangle
+            0.0, 0.5, 0.0,  // Second triangle
+        ]
+        indexOffsetBuffer = device.makeBuffer(bytes: indexOffsetData,
+                                        length: indexOffsetData.count * MemoryLayout<Float>.size,
+                                        options: [])
+        
         let indexData: [UInt16] = [
             0, 1, 2,  // First triangle
+            0, 1, 2,  // Second triangle
         ]
         indexBuffer = device.makeBuffer(bytes: indexData,
                                         length: indexData.count * MemoryLayout<UInt16>.size,
@@ -63,12 +73,13 @@ class MetalRenderer: NSObject, MTKViewDelegate {
 
         encoder?.setRenderPipelineState(pipelineState)
         encoder?.setVertexBuffer(vertexBuffer, offset: 0, index: 0)
-        // encoder?.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: 3)
+        encoder?.setVertexBuffer(indexOffsetBuffer, offset: 0, index: 1)
         encoder?.drawIndexedPrimitives(type: .triangle,
                                        indexCount: 3,
                                        indexType: .uint16,
                                        indexBuffer: indexBuffer,
-                                       indexBufferOffset: 0)
+                                       indexBufferOffset: 0,
+                                       instanceCount: 2)
         
         encoder?.endEncoding()
 
