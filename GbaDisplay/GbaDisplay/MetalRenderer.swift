@@ -17,16 +17,18 @@ class MetalRenderer: NSObject, MTKViewDelegate {
     
     private var game_loop: GameLoop = GameLoop()
     
-    init(mtkView: MTKView) {
-        super.init()
+    func setupDevice(mtkView: MTKView)
+    {
         self.device = MTLCreateSystemDefaultDevice()
         mtkView.device = device
         mtkView.colorPixelFormat = .bgra8Unorm
         mtkView.clearColor = MTLClearColorMake(0.1, 0.1, 0.1, 1.0)
         mtkView.delegate = self
-
         commandQueue = device.makeCommandQueue()
-
+    }
+    
+    func loadResources()
+    {
         let vertexData: [Float] = [
             // Position        // Color
             -0.5, -0.5, 0.0,   1.0, 0.0, 0.0, // Vertex 0: Red
@@ -52,8 +54,10 @@ class MetalRenderer: NSObject, MTKViewDelegate {
         indexBuffer = device.makeBuffer(bytes: indexData,
                                         length: indexData.count * MemoryLayout<UInt16>.size,
                                         options: [])
-
-        
+    }
+    
+    func setupPipeline(mtkView: MTKView)
+    {
         let library = device.makeDefaultLibrary()
         let vertexFunc = library?.makeFunction(name: "vertex_main")
         let fragFunc = library?.makeFunction(name: "fragment_main")
@@ -64,20 +68,24 @@ class MetalRenderer: NSObject, MTKViewDelegate {
         pipelineDescriptor.colorAttachments[0].pixelFormat = mtkView.colorPixelFormat
 
         pipelineState = try? device.makeRenderPipelineState(descriptor: pipelineDescriptor)
-        
+    }
+    
+    init(mtkView: MTKView) {
+        super.init()
+        setupDevice(mtkView : mtkView)
+        loadResources()
+        setupPipeline(mtkView : mtkView)
         game_loop.run()
     }
 
-    func updateGameLogic()
+    func updateBuffers()
     {
         let pointer = indexOffsetBuffer.contents().bindMemory(to: Float.self, capacity: 6)
-
-        // Modify the buffer data as needed
         pointer[4] = Float(game_loop.triangle_pos) / 100.0
     }
     
-    func draw(in view: MTKView) {
-        updateGameLogic()
+    func sendCommand(in view: MTKView)
+    {
         guard let drawable = view.currentDrawable,
               let descriptor = view.currentRenderPassDescriptor else { return }
 
@@ -99,9 +107,12 @@ class MetalRenderer: NSObject, MTKViewDelegate {
         commandBuffer?.present(drawable)
         commandBuffer?.commit()
     }
+    
+    func draw(in view: MTKView) {
+        updateBuffers()
+        sendCommand(in : view)
+    }
 
     func mtkView(_ view: MTKView, drawableSizeWillChange size: CGSize) {
-        print("Drawable size changed to: \(size.width) x \(size.height)")
-
     }
 }
