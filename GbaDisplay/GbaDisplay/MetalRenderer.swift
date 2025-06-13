@@ -14,7 +14,9 @@ class MetalRenderer: NSObject, MTKViewDelegate {
     private var vertexBuffer: MTLBuffer!
     private var indexBuffer: MTLBuffer!
     private var indexOffsetBuffer: MTLBuffer!
-
+    
+    private var game_loop: GameLoop = GameLoop()
+    
     init(mtkView: MTKView) {
         super.init()
         self.device = MTLCreateSystemDefaultDevice()
@@ -37,7 +39,7 @@ class MetalRenderer: NSObject, MTKViewDelegate {
 
         let indexOffsetData: [Float] = [
             0.0, -0.5, 0.0,  // First triangle
-            0.0, 0.5, 0.0,  // Second triangle
+            0.0, 0.0, 0.0,  // Second triangle
         ]
         indexOffsetBuffer = device.makeBuffer(bytes: indexOffsetData,
                                         length: indexOffsetData.count * MemoryLayout<Float>.size,
@@ -62,9 +64,20 @@ class MetalRenderer: NSObject, MTKViewDelegate {
         pipelineDescriptor.colorAttachments[0].pixelFormat = mtkView.colorPixelFormat
 
         pipelineState = try? device.makeRenderPipelineState(descriptor: pipelineDescriptor)
+        
+        game_loop.run()
     }
 
+    func updateGameLogic()
+    {
+        let pointer = indexOffsetBuffer.contents().bindMemory(to: Float.self, capacity: 6)
+
+        // Modify the buffer data as needed
+        pointer[4] = Float(game_loop.triangle_pos) / 100.0
+    }
+    
     func draw(in view: MTKView) {
+        updateGameLogic()
         guard let drawable = view.currentDrawable,
               let descriptor = view.currentRenderPassDescriptor else { return }
 

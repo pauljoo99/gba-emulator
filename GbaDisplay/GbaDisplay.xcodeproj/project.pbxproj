@@ -14,6 +14,7 @@
 		D56106F62DFB7290009E86D7 /* MetalView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D56106F52DFB7290009E86D7 /* MetalView.swift */; };
 		D56106F82DFB72EB009E86D7 /* MetalRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = D56106F72DFB72EB009E86D7 /* MetalRenderer.swift */; };
 		D56106FC2DFB731E009E86D7 /* Shaders.metal in Sources */ = {isa = PBXBuildFile; fileRef = D56106FB2DFB731E009E86D7 /* Shaders.metal */; };
+		D56106FE2DFBF58D009E86D7 /* GameLoop.swift in Sources */ = {isa = PBXBuildFile; fileRef = D56106FD2DFBF58D009E86D7 /* GameLoop.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -26,6 +27,7 @@
 		D56106F52DFB7290009E86D7 /* MetalView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MetalView.swift; sourceTree = "<group>"; };
 		D56106F72DFB72EB009E86D7 /* MetalRenderer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MetalRenderer.swift; sourceTree = "<group>"; };
 		D56106FB2DFB731E009E86D7 /* Shaders.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = Shaders.metal; sourceTree = "<group>"; };
+		D56106FD2DFBF58D009E86D7 /* GameLoop.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GameLoop.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -62,6 +64,7 @@
 				D56106E82DFB709A009E86D7 /* ContentView.swift */,
 				D56106F52DFB7290009E86D7 /* MetalView.swift */,
 				D56106F72DFB72EB009E86D7 /* MetalRenderer.swift */,
+				D56106FD2DFBF58D009E86D7 /* GameLoop.swift */,
 				D56106FB2DFB731E009E86D7 /* Shaders.metal */,
 				D56106EA2DFB709F009E86D7 /* Assets.xcassets */,
 				D56106EF2DFB709F009E86D7 /* GbaDisplay.entitlements */,
@@ -153,6 +156,7 @@
 				D56106E92DFB709A009E86D7 /* ContentView.swift in Sources */,
 				D56106E72DFB709A009E86D7 /* GbaDisplayApp.swift in Sources */,
 				D56106FC2DFB731E009E86D7 /* Shaders.metal in Sources */,
+				D56106FE2DFBF58D009E86D7 /* GameLoop.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
