@@ -12,6 +12,7 @@ class MetalRenderer: NSObject, MTKViewDelegate {
     private var commandQueue: MTLCommandQueue!
     private var pipelineState: MTLRenderPipelineState!
     private var vertexBuffer: MTLBuffer!
+    private var indexBuffer: MTLBuffer!
 
     init(mtkView: MTKView) {
         super.init()
@@ -24,14 +25,23 @@ class MetalRenderer: NSObject, MTKViewDelegate {
         commandQueue = device.makeCommandQueue()
 
         let vertexData: [Float] = [
-             0.0,  0.5, 0.0,
-            -0.5, -0.5, 0.0,
-             0.5, -0.5, 0.0
+            // Position        // Color
+            -0.5, -0.5, 0.0,   1.0, 0.0, 0.0, // Vertex 0: Red
+             0.5, -0.5, 0.0,   0.0, 1.0, 0.0, // Vertex 1: Green
+             0.0,  0.5, 0.0,   0.0, 0.0, 1.0  // Vertex 2: Blue
         ]
         vertexBuffer = device.makeBuffer(bytes: vertexData,
                                          length: vertexData.count * MemoryLayout<Float>.size,
                                          options: [])
 
+        let indexData: [UInt16] = [
+            0, 1, 2,  // First triangle
+        ]
+        indexBuffer = device.makeBuffer(bytes: indexData,
+                                        length: indexData.count * MemoryLayout<UInt16>.size,
+                                        options: [])
+
+        
         let library = device.makeDefaultLibrary()
         let vertexFunc = library?.makeFunction(name: "vertex_main")
         let fragFunc = library?.makeFunction(name: "fragment_main")
@@ -53,12 +63,21 @@ class MetalRenderer: NSObject, MTKViewDelegate {
 
         encoder?.setRenderPipelineState(pipelineState)
         encoder?.setVertexBuffer(vertexBuffer, offset: 0, index: 0)
-        encoder?.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: 3)
+        // encoder?.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: 3)
+        encoder?.drawIndexedPrimitives(type: .triangle,
+                                       indexCount: 3,
+                                       indexType: .uint16,
+                                       indexBuffer: indexBuffer,
+                                       indexBufferOffset: 0)
+        
         encoder?.endEncoding()
 
         commandBuffer?.present(drawable)
         commandBuffer?.commit()
     }
 
-    func mtkView(_ view: MTKView, drawableSizeWillChange size: CGSize) {}
+    func mtkView(_ view: MTKView, drawableSizeWillChange size: CGSize) {
+        print("Drawable size changed to: \(size.width) x \(size.height)")
+
+    }
 }

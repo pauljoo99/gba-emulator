@@ -8,17 +8,31 @@
 #include <metal_stdlib>
 using namespace metal;
 
+
 struct VertexOut {
     float4 position [[position]];
+    float3 color;
 };
 
 vertex VertexOut vertex_main(uint vertexID [[vertex_id]],
-                             const device float3* vertices [[buffer(0)]]) {
+                             const device float* vertexArray [[buffer(0)]]) {
     VertexOut out;
-    out.position = float4(vertices[vertexID], 1.0);
+
+    // Each vertex has 6 floats: 3 for position, 3 for color
+    const uint stride = 6;
+    float3 position = float3(vertexArray[vertexID * stride + 0],
+                             vertexArray[vertexID * stride + 1],
+                             vertexArray[vertexID * stride + 2]);
+
+    float3 color = float3(vertexArray[vertexID * stride + 3],
+                          vertexArray[vertexID * stride + 4],
+                          vertexArray[vertexID * stride + 5]);
+
+    out.position = float4(position, 1.0);
+    out.color = color;
     return out;
 }
 
-fragment float4 fragment_main() {
-    return float4(0.0, 0.7, 1.0, 1.0); // Cyan triangle
+fragment float4 fragment_main(VertexOut in [[stage_in]]) {
+    return float4(in.color, 1.0);
 }
