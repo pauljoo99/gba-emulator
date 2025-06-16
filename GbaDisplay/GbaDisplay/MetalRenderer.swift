@@ -49,13 +49,7 @@ class MetalRenderer: NSObject, MTKViewDelegate {
                                          options: [])
         indexBuffer = device.makeBuffer(length: kMaxSizeBuffer, options: [])
         pixelAttributeBuffer = device.makeBuffer(length: kMaxSizeBuffer, options: [])
-
-        let spriteAttributeData : [SpriteAttributes] = [
-            SpriteAttributes(offset_x: 130, offset_y: 80, tiles_width: 3, tiles_height: 2),
-            SpriteAttributes(offset_x: 130, offset_y: 80, tiles_width: 3, tiles_height: 2),
-        ]
-        
-        spriteAttributeBuffer = device.makeBuffer(bytes: spriteAttributeData,
+        spriteAttributeBuffer = device.makeBuffer(
                                         length: kMaxSizeBuffer,
                                         options: [])
 
@@ -87,40 +81,6 @@ class MetalRenderer: NSObject, MTKViewDelegate {
         )
         game_loop.run()
     }
-
-    func updateBuffers()
-    {
-        num_sprites = 1;
-        m_index_buffer_offset = [0]
-        m_num_pixels = [64 * 4]
-
-        // Place Pixels
-        let pixelIndices : [UInt16] = [
-            // First Pixel
-            0, 1, 2,
-            0, 2, 3,
-            // Second Pixel
-            0, 1, 2,
-            0, 2, 3,
-        ]
-        let indexBufferPtr = indexBuffer.contents().bindMemory(to: UInt16.self, capacity: kMaxSizeBuffer)
-        let pixelAttributeBufferPtr = pixelAttributeBuffer.contents().bindMemory(to: PixelAttributes.self, capacity: kMaxSizeBuffer)
-        var index_buffer_size = 0;
-        var pixel_attr_buffer_size = 0;
-        for sprite in stride(from: 0, to: num_sprites, by: 1)
-        {
-            for _ in stride(from: 0, to: m_num_pixels[sprite], by: 1)
-            {
-                pixelAttributeBufferPtr[pixel_attr_buffer_size] = PixelAttributes(color : 0xFF0000FF, sprite_attribute: 0);
-                pixel_attr_buffer_size += 1;
-                for v in pixelIndices
-                {
-                    indexBufferPtr[index_buffer_size] = v
-                    index_buffer_size += 1
-                }
-            }
-        }
-    }
     
     func sendCommand(in view: MTKView)
     {
@@ -136,13 +96,17 @@ class MetalRenderer: NSObject, MTKViewDelegate {
         encoder?.setVertexBuffer(pixelAttributeBuffer, offset: 0, index: 1)
         encoder?.setVertexBuffer(spriteAttributeBuffer, offset: 0, index: 2)
         
+        var pixel_base = 0
         for i in stride(from: 0, to: game_loop.sprite_metadata.m_num_sprites, by: 1) {
             encoder?.drawIndexedPrimitives(type: .triangle,
                                            indexCount: 6,
                                            indexType: .uint16,
                                            indexBuffer: indexBuffer,
                                            indexBufferOffset: game_loop.sprite_metadata.m_index_buffer_offset[i],
-                                           instanceCount: game_loop.sprite_metadata.m_num_pixels[i])
+                                           instanceCount: game_loop.sprite_metadata.m_num_pixels[i],
+                                           baseVertex: 0,
+                                           baseInstance: pixel_base)
+            pixel_base += game_loop.sprite_metadata.m_num_pixels[i]
         }
 
         encoder?.endEncoding()

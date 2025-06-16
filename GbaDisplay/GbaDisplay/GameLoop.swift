@@ -250,11 +250,11 @@ class GameLoop {
         var raw_in_object_attr_buffer: [UInt16] = []
         
         raw_in_object_attr_buffer.append(0x2000)
-        raw_in_object_attr_buffer.append((0b01 << 14) | 0x0020)
+        raw_in_object_attr_buffer.append((0b01 << 14) | 0x0000)
         raw_in_object_attr_buffer.append(0x0000)
         raw_in_object_attr_buffer.append(0x0000)
         
-        raw_in_object_attr_buffer.append(0x2000)
+        raw_in_object_attr_buffer.append(0x2020)
         raw_in_object_attr_buffer.append((0b01 << 14) | 0x0000)
         raw_in_object_attr_buffer.append(0x0000)
         raw_in_object_attr_buffer.append(0x0000)
