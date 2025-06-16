@@ -221,35 +221,19 @@ class GameLoop {
     {
         in_DISPCNT = 0x40
         
-        var raw_in_video_buffer: [UInt8] = []
-        for _ in 0..<64
-        {
-            // Red tile
-            raw_in_video_buffer.append(0x00)
-        }
-        for _ in 0..<64
-        {
-            // Green tile
-            raw_in_video_buffer.append(0x01)
-        }
-        for _ in 0..<64
-        {
-            // Green tile
-            raw_in_video_buffer.append(0x01)
-        }
-        for _ in 0..<32
-        {
-            // Red tile
-            raw_in_video_buffer.append(0x00)
-        }
-        for _ in 0..<32
-        {
-            // Green tile
-            raw_in_video_buffer.append(0x01)
-        }
+        let raw_in_video_buffer: [UInt8] = [
+            0, 0, 1, 1, 1, 1, 0, 0,
+            0, 1, 1, 1, 1, 1, 1, 0,
+            1, 1, 2, 1, 1, 2, 1, 1,
+            1, 1, 1, 1, 1, 1, 1, 1,
+            0, 1, 0, 1, 0, 1, 0, 1,  // Tentacles
+            0, 1, 0, 1, 0, 1, 0, 1,
+            0, 1, 0, 1, 0, 1, 0, 1,
+            0, 0, 0, 0, 0, 0, 0, 0
+        ]
         var raw_in_object_attr_buffer: [UInt16] = []
         
-        raw_in_object_attr_buffer.append(0x2000)
+        raw_in_object_attr_buffer.append(0x2001)
         raw_in_object_attr_buffer.append((0b01 << 14) | 0x0000)
         raw_in_object_attr_buffer.append(0x0000)
         raw_in_object_attr_buffer.append(0x0000)
