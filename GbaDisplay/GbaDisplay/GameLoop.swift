@@ -71,11 +71,17 @@ class GameLoop {
     var scanLine : uint = 0
     var triangle_pos : uint = 0
     
+    var in_video_buffer : UnsafeMutablePointer<UInt8>!
+    var in_object_attr_buffer : UnsafeMutablePointer<UInt16>!
+    var in_palette_buffer : UnsafeMutablePointer<UInt32>!
+    
     var out_index_buffer : UnsafeMutablePointer<UInt16>!
     var out_pixel_attr_buffer : UnsafeMutablePointer<PixelAttributes>!
     var out_sprite_attr_buffer : UnsafeMutablePointer<SpriteAttributes>!
     
-    var sprite_metadata : SpriteMetadata!
+    var in_DISPCNT : UInt32 = 0
+    
+    var sprite_metadata : SpriteMetadata = SpriteMetadata(m_num_sprites: 0, m_index_buffer_offset: [], m_num_pixels: [])
 
     func load_buffers(
         index_buffer : UnsafeMutablePointer<UInt16>,
@@ -86,6 +92,10 @@ class GameLoop {
         out_index_buffer = index_buffer
         out_pixel_attr_buffer = pixel_attr_buffer
         out_sprite_attr_buffer = sprite_attr_buffer
+        
+        in_video_buffer = UnsafeMutablePointer<UInt8>.allocate(capacity : kMaxRawBytes)
+        in_object_attr_buffer = UnsafeMutablePointer<UInt16>.allocate(capacity : kMaxRawBytes)
+        in_palette_buffer = UnsafeMutablePointer<UInt32>.allocate(capacity : kMaxRawBytes)
     }
     
     func run()
@@ -95,11 +105,7 @@ class GameLoop {
         }
     }
     
-    func GbatToMetal_Mode0(
-        in_video_buffer : UnsafeMutablePointer<UInt8>,
-        in_object_attr_buffer : UnsafeMutablePointer<UInt16>,
-        in_palette_buffer : UnsafeMutablePointer<UInt32>
-    ) -> SpriteMetadata
+    func GbatToMetal_Mode0() -> SpriteMetadata
     {
         var sprite_metadata : SpriteMetadata = SpriteMetadata(
             m_num_sprites: 0, m_index_buffer_offset: [], m_num_pixels: []
@@ -143,12 +149,13 @@ class GameLoop {
             sprite_metadata.m_index_buffer_offset.append(out_index_buffer_size)
 
             // Add entry for sprite attribute buffer
-            out_sprite_attr_buffer[sprite_id] = SpriteAttributes(
-                offset_x: oam_attr.attr1 & 0x1F,
-                offset_y: oam_attr.attr0 & 0x0F,
+            let sprite_attributes : SpriteAttributes = SpriteAttributes(
+                offset_x: oam_attr.attr1 & 0x1FF,
+                offset_y: oam_attr.attr0 & 0x0FF,
                 tiles_width: tile_width,
                 tiles_height: tile_height
             )
+            out_sprite_attr_buffer[sprite_id] = sprite_attributes
             
             // Get base index in in_video_buffer
             let in_video_buffer_base_idx : Int = Int(oam_attr.attr2 & 0x3FF)
@@ -165,9 +172,9 @@ class GameLoop {
                 if (bits_per_pixel == 8)
                 {
                     let palette_idx : UInt8 = in_video_buffer[in_video_buffer_idx]
-                    let color : UInt32 = in_palette_buffer[0x200 + Int(palette_idx)]
-                    out_pixel_attr_buffer[out_pixel_attr_buffer_size].color = color
-                    out_pixel_attr_buffer[out_pixel_attr_buffer_size].sprite_attribute = UInt32(sprite_id)
+                    let color : UInt32 = in_palette_buffer[128 + Int(palette_idx)]
+                    let pixel_attribute = PixelAttributes(color: color, sprite_attribute: UInt32(sprite_id))
+                    out_pixel_attr_buffer[out_pixel_attr_buffer_size] = pixel_attribute
                     out_pixel_attr_buffer_size += 1
                 }
                 
@@ -187,10 +194,7 @@ class GameLoop {
     /// The output format is 1d memory mapped tiles.
     /// Each instance in the index buffer is 1 pixel. A tile consists of 64 pixels. A sprite will consist of tile width \* tile length tiles.
     func GbaToMetal(
-        in_DISPCNT : UInt32,
-        in_video_buffer : UnsafeMutablePointer<UInt8>,
-        in_object_attr_buffer : UnsafeMutablePointer<UInt16>,
-        in_palette_buffer : UnsafeMutablePointer<UInt32>
+        in_DISPCNT : UInt32
     ) -> SpriteMetadata
     {
         // Mode
@@ -204,16 +208,73 @@ class GameLoop {
             else
             {
                 // 1-dimensional
-                return GbatToMetal_Mode0(
-                    in_video_buffer : in_video_buffer,
-                    in_object_attr_buffer : in_object_attr_buffer,
-                    in_palette_buffer : in_palette_buffer)
+                return GbatToMetal_Mode0()
             }
         }
         else
         {
             fatalError("Unimplemented")
         }
+    }
+    
+    func createFakeData()
+    {
+        in_DISPCNT = 0x40
+        
+        var raw_in_video_buffer: [UInt8] = []
+        for _ in 0..<64
+        {
+            // Red tile
+            raw_in_video_buffer.append(0x00)
+        }
+        for _ in 0..<64
+        {
+            // Green tile
+            raw_in_video_buffer.append(0x01)
+        }
+        for _ in 0..<64
+        {
+            // Green tile
+            raw_in_video_buffer.append(0x01)
+        }
+        for _ in 0..<32
+        {
+            // Red tile
+            raw_in_video_buffer.append(0x00)
+        }
+        for _ in 0..<32
+        {
+            // Green tile
+            raw_in_video_buffer.append(0x01)
+        }
+        var raw_in_object_attr_buffer: [UInt16] = []
+        
+        raw_in_object_attr_buffer.append(0x2000)
+        raw_in_object_attr_buffer.append((0b01 << 14) | 0x0020)
+        raw_in_object_attr_buffer.append(0x0000)
+        raw_in_object_attr_buffer.append(0x0000)
+        
+        raw_in_object_attr_buffer.append(0x2000)
+        raw_in_object_attr_buffer.append((0b01 << 14) | 0x0000)
+        raw_in_object_attr_buffer.append(0x0000)
+        raw_in_object_attr_buffer.append(0x0000)
+        for _ in 4...1024
+        {
+            // Disable all others.
+            raw_in_object_attr_buffer.append(0b10 << 8)
+        }
+        var raw_palette_buffer: [UInt32] = []
+        for _ in 0..<128
+        {
+            raw_palette_buffer.append(0)
+        }
+        raw_palette_buffer.append(0xFF0000FF)
+        raw_palette_buffer.append(0x00FF00FF)
+        
+        in_video_buffer.update(from: raw_in_video_buffer, count: raw_in_video_buffer.count)
+        in_object_attr_buffer.update(from: raw_in_object_attr_buffer, count: raw_in_object_attr_buffer.count)
+        in_palette_buffer.update(from: raw_palette_buffer, count: raw_palette_buffer.count)
+
     }
     
     func dispatch()
@@ -228,33 +289,10 @@ class GameLoop {
         scanLine = 0;
         
         // Do action
-        let in_DISPCNT : UInt32 = 0x40
-        let in_video_buffer : UnsafeMutablePointer<UInt8> = UnsafeMutablePointer<UInt8>.allocate(capacity : kMaxRawBytes)
-        let in_object_attr_buffer : UnsafeMutablePointer<UInt16> = UnsafeMutablePointer<UInt16>.allocate(capacity : kMaxRawBytes)
-        let in_palette_buffer : UnsafeMutablePointer<UInt32> = UnsafeMutablePointer<UInt32>.allocate(capacity : kMaxRawBytes)
-
-        var raw_in_video_buffer: [UInt8] = []
-        for _ in 0...64
-        {
-            raw_in_video_buffer.append(0x00)
-        }
-        var raw_in_object_attr_buffer: [UInt16] = [0x2000, 0x0000, 0x0000, 0x0000]
-        for _ in 4...1024
-        {
-            // Disable all others. TODO: Fix this so that it is shifted to the left by 13.
-            raw_in_object_attr_buffer.append(0b10)
-        }
-        let raw_palette_buffer: [UInt32] = [0xFF0000FF]
-        
-        in_video_buffer.initialize(from: raw_in_video_buffer, count: raw_in_video_buffer.count)
-        in_object_attr_buffer.initialize(from: raw_in_object_attr_buffer, count: raw_in_object_attr_buffer.count)
-        in_palette_buffer.initialize(from: raw_palette_buffer, count: raw_palette_buffer.count)
+        createFakeData()
         
         sprite_metadata = GbaToMetal(
-            in_DISPCNT : in_DISPCNT,
-            in_video_buffer : in_video_buffer,
-            in_object_attr_buffer : in_object_attr_buffer,
-            in_palette_buffer : in_palette_buffer
+            in_DISPCNT : in_DISPCNT
         )
     }
     

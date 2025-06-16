@@ -136,13 +136,13 @@ class MetalRenderer: NSObject, MTKViewDelegate {
         encoder?.setVertexBuffer(pixelAttributeBuffer, offset: 0, index: 1)
         encoder?.setVertexBuffer(spriteAttributeBuffer, offset: 0, index: 2)
         
-        for i in stride(from: 0, to: num_sprites, by: 1) {
+        for i in stride(from: 0, to: game_loop.sprite_metadata.m_num_sprites, by: 1) {
             encoder?.drawIndexedPrimitives(type: .triangle,
                                            indexCount: 6,
                                            indexType: .uint16,
                                            indexBuffer: indexBuffer,
-                                           indexBufferOffset: m_index_buffer_offset[i],
-                                           instanceCount: m_num_pixels[i])
+                                           indexBufferOffset: game_loop.sprite_metadata.m_index_buffer_offset[i],
+                                           instanceCount: game_loop.sprite_metadata.m_num_pixels[i])
         }
 
         encoder?.endEncoding()
@@ -152,7 +152,6 @@ class MetalRenderer: NSObject, MTKViewDelegate {
     }
     
     func draw(in view: MTKView) {
-        updateBuffers()
         sendCommand(in : view)
     }
 
