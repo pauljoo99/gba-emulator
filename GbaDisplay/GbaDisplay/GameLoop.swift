@@ -25,6 +25,14 @@ struct ObjectAttributes
     var padding : UInt16
 }
 
+func GbaToMetalColor(gba_color : UInt16) -> UInt32
+{
+    let r : UInt32 = UInt32((gba_color >> 10) & 0b11111) * 256 / 32
+    let g : UInt32 = UInt32((gba_color >> 5) & 0b11111) * 256 / 32
+    let b : UInt32 = UInt32((gba_color >> 0) & 0b11111) * 256 / 32
+    return (r << 24) | (g << 16) | (b << 8)
+}
+
 func GetSpriteShape(attr0 : UInt16, attr1 : UInt16) -> (UInt16, UInt16)
 {
     let shape : UInt16 = attr0 >> 14;
@@ -73,7 +81,7 @@ class GameLoop {
     
     var in_video_buffer : UnsafeMutablePointer<UInt8>!
     var in_object_attr_buffer : UnsafeMutablePointer<UInt16>!
-    var in_palette_buffer : UnsafeMutablePointer<UInt32>!
+    var in_palette_buffer : UnsafeMutablePointer<UInt16>!
     
     var out_index_buffer : UnsafeMutablePointer<UInt16>!
     var out_pixel_attr_buffer : UnsafeMutablePointer<PixelAttributes>!
@@ -95,7 +103,7 @@ class GameLoop {
         
         in_video_buffer = UnsafeMutablePointer<UInt8>.allocate(capacity : kMaxRawBytes)
         in_object_attr_buffer = UnsafeMutablePointer<UInt16>.allocate(capacity : kMaxRawBytes)
-        in_palette_buffer = UnsafeMutablePointer<UInt32>.allocate(capacity : kMaxRawBytes)
+        in_palette_buffer = UnsafeMutablePointer<UInt16>.allocate(capacity : kMaxRawBytes)
     }
     
     func run()
@@ -172,8 +180,8 @@ class GameLoop {
                 if (bits_per_pixel == 8)
                 {
                     let palette_idx : UInt8 = in_video_buffer[in_video_buffer_idx]
-                    let color : UInt32 = in_palette_buffer[128 + Int(palette_idx)]
-                    let pixel_attribute = PixelAttributes(color: color, sprite_attribute: UInt32(sprite_id))
+                    let color : UInt16 = in_palette_buffer[256 + Int(palette_idx)]
+                    let pixel_attribute = PixelAttributes(color: GbaToMetalColor(gba_color : color), sprite_attribute: UInt32(sprite_id))
                     out_pixel_attr_buffer[out_pixel_attr_buffer_size] = pixel_attribute
                     out_pixel_attr_buffer_size += 1
                 }
@@ -247,13 +255,13 @@ class GameLoop {
             // Disable all others.
             raw_in_object_attr_buffer.append(0b10 << 8)
         }
-        var raw_palette_buffer: [UInt32] = []
-        for _ in 0..<128
+        var raw_palette_buffer: [UInt16] = []
+        for _ in 0..<256
         {
             raw_palette_buffer.append(0)
         }
-        raw_palette_buffer.append(0xFF0000FF)
-        raw_palette_buffer.append(0x00FF00FF)
+        raw_palette_buffer.append(0xFF00)
+        raw_palette_buffer.append(0x00FF)
         
         in_video_buffer.update(from: raw_in_video_buffer, count: raw_in_video_buffer.count)
         in_object_attr_buffer.update(from: raw_in_object_attr_buffer, count: raw_in_object_attr_buffer.count)
