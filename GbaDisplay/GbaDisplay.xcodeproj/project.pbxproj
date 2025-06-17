@@ -15,6 +15,7 @@
 		D56106F82DFB72EB009E86D7 /* MetalRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = D56106F72DFB72EB009E86D7 /* MetalRenderer.swift */; };
 		D56106FC2DFB731E009E86D7 /* Shaders.metal in Sources */ = {isa = PBXBuildFile; fileRef = D56106FB2DFB731E009E86D7 /* Shaders.metal */; };
 		D56106FE2DFBF58D009E86D7 /* GameLoop.swift in Sources */ = {isa = PBXBuildFile; fileRef = D56106FD2DFBF58D009E86D7 /* GameLoop.swift */; };
+		D5CF437B2E00C2BF00CDFFBA /* RegisterDecoders.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5CF437A2E00C2BF00CDFFBA /* RegisterDecoders.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -30,6 +31,7 @@
 		D56106FD2DFBF58D009E86D7 /* GameLoop.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GameLoop.swift; sourceTree = "<group>"; };
 		D561070C2DFCF77B009E86D7 /* Structs.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Structs.h; sourceTree = "<group>"; };
 		D561070D2DFCF7BF009E86D7 /* Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "Bridging-Header.h"; sourceTree = "<group>"; };
+		D5CF437A2E00C2BF00CDFFBA /* RegisterDecoders.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RegisterDecoders.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -67,6 +69,7 @@
 				D56106F52DFB7290009E86D7 /* MetalView.swift */,
 				D56106F72DFB72EB009E86D7 /* MetalRenderer.swift */,
 				D56106FD2DFBF58D009E86D7 /* GameLoop.swift */,
+				D5CF437A2E00C2BF00CDFFBA /* RegisterDecoders.swift */,
 				D561070C2DFCF77B009E86D7 /* Structs.h */,
 				D561070D2DFCF7BF009E86D7 /* Bridging-Header.h */,
 				D56106FB2DFB731E009E86D7 /* Shaders.metal */,
@@ -158,6 +161,7 @@
 				D56106F82DFB72EB009E86D7 /* MetalRenderer.swift in Sources */,
 				D56106F62DFB7290009E86D7 /* MetalView.swift in Sources */,
 				D56106E92DFB709A009E86D7 /* ContentView.swift in Sources */,
+				D5CF437B2E00C2BF00CDFFBA /* RegisterDecoders.swift in Sources */,
 				D56106E72DFB709A009E86D7 /* GbaDisplayApp.swift in Sources */,
 				D56106FC2DFB731E009E86D7 /* Shaders.metal in Sources */,
 				D56106FE2DFBF58D009E86D7 /* GameLoop.swift in Sources */,

@@ -33,6 +33,23 @@ func GbaToMetalColor(gba_color : UInt16) -> UInt32
     return (r << 24) | (g << 16) | (b << 8)
 }
 
+func GetBackgroundShape(control : BGControl) -> (UInt16, UInt16)
+{
+    switch (control.size)
+    {
+    case 0b00:
+        return (32,32)
+    case 0b01:
+        return (64,32)
+    case 0b10:
+        return (32,64)
+    case 0b11:
+        return (64,64)
+    default:
+        fatalError("Bad")
+    }
+}
+
 func GetSpriteShape(attr0 : UInt16, attr1 : UInt16) -> (UInt16, UInt16)
 {
     let shape : UInt16 = attr0 >> 14;
@@ -87,7 +104,11 @@ class GameLoop {
     var out_pixel_attr_buffer : UnsafeMutablePointer<PixelAttributes>!
     var out_sprite_attr_buffer : UnsafeMutablePointer<SpriteAttributes>!
     
-    var in_DISPCNT : UInt32 = 0
+    var in_DISPCNT : UInt32 = 0x40 | (0b1 << 8)
+    var in_background_registers_0 : Background = Background()
+    var in_background_registers_1 : Background = Background()
+    var in_background_registers_2 : Background = Background()
+    var in_background_registers_3 : Background = Background()
     
     var sprite_metadata : SpriteMetadata = SpriteMetadata(m_num_sprites: 0, m_index_buffer_offset: [], m_num_pixels: [])
 
@@ -113,7 +134,7 @@ class GameLoop {
         }
     }
     
-    func GbatToMetal_Mode0() -> SpriteMetadata
+    func GbaToMetal_Mode0() -> SpriteMetadata
     {
         var sprite_metadata : SpriteMetadata = SpriteMetadata(
             m_num_sprites: 0, m_index_buffer_offset: [], m_num_pixels: []
@@ -121,7 +142,85 @@ class GameLoop {
         
         var out_index_buffer_size : Int = 0
         var out_pixel_attr_buffer_size : Int = 0
+
+        // For each background
+        let backgrounds = [in_background_registers_0, in_background_registers_1, in_background_registers_2, in_background_registers_3]
+        for (background_idx, background) in backgrounds.enumerated()
+        {
+            if ((in_DISPCNT >> (8 + background_idx)) & 0b1) == 0
+            {
+                continue
+            }
+            
+            let sprite_id : Int = sprite_metadata.m_num_sprites;
+            sprite_metadata.m_num_sprites += 1
+                        
+            let (tile_width, tile_height) : (UInt16, UInt16) = GetBackgroundShape(control : background.in_REG_BGxCNT)
+
+            // Get number of tiles to processes
+            let num_tiles : UInt16 = tile_width * tile_height
+            
+            // Get tile type
+            let bits_per_pixel : Int = !background.in_REG_BGxCNT.is8bpp ? 4 : 8
+                        
+            // Set up sprite metadata
+            sprite_metadata.m_num_pixels.append(Int(num_tiles) * 64)
+            sprite_metadata.m_index_buffer_offset.append(out_index_buffer_size)
+
+            // Add entry for sprite attribute buffer
+            let sprite_attributes : SpriteAttributes = SpriteAttributes(
+                offset_x: -1 * Int16(background.in_REG_BGxHOFS.offset),
+                offset_y: -1 * Int16(background.in_REG_BGxVOFS.offset),
+                depth: 1,
+                tiles_width: tile_width,
+                tiles_height: tile_height
+            )
+            out_sprite_attr_buffer[sprite_id] = sprite_attributes
+            
+            // Get base index in in_video_buffer
+            let in_video_buffer_char_block_base_idx : Int = Int(background.in_REG_BGxCNT.charBlock) * 0x4000
+            let in_video_buffer_screen_block_base_idx : Int = Int(background.in_REG_BGxCNT.screenBlock) * 0x800
+            
+            // For each 4 bits (8 bits if d-tile type) in in_video_buffer, add a pixel to pixel_attr_buffer and a pixel to the index buffer
+            let begin_out_pixel_attr_buffer_size : UInt32 = UInt32(out_pixel_attr_buffer_size)
+            for screen_block_idx in stride(from: in_video_buffer_screen_block_base_idx, to: in_video_buffer_screen_block_base_idx + Int(num_tiles) * 2, by : 2)
+            {
+                let screen_entry : UInt16 = (UInt16(in_video_buffer[screen_block_idx + 1]) >> 8) | UInt16(in_video_buffer[screen_block_idx])
+                let tile_idx : Int = in_video_buffer_char_block_base_idx + Int(screen_entry & 0x1FF)
                 
+                for i in 0..<64
+                {
+                    // Add pixel attributes
+                    if (bits_per_pixel == 4)
+                    {
+                        fatalError("Not Implemented")
+                    }
+                    
+                    if (bits_per_pixel == 8)
+                    {
+                        let palette_idx : UInt8 = in_video_buffer[tile_idx + i]
+                        let color : UInt16 = in_palette_buffer[Int(palette_idx)]
+                        let pixel_attribute = PixelAttributes(
+                            color: GbaToMetalColor(gba_color : color),
+                            sprite_attribute: UInt32(sprite_id),
+                            pixel_buffer_start_offset: begin_out_pixel_attr_buffer_size
+                        )
+                        out_pixel_attr_buffer[out_pixel_attr_buffer_size] = pixel_attribute
+                        out_pixel_attr_buffer_size += 1
+                    }
+                    
+                    // Add pixel to index buffer
+                    out_index_buffer[out_index_buffer_size + 0] = 0
+                    out_index_buffer[out_index_buffer_size + 1] = 1
+                    out_index_buffer[out_index_buffer_size + 2] = 2
+                    out_index_buffer[out_index_buffer_size + 3] = 0
+                    out_index_buffer[out_index_buffer_size + 4] = 2
+                    out_index_buffer[out_index_buffer_size + 5] = 3
+                    out_index_buffer_size += 6
+                }
+            }
+        }
+
         // For each oam
         for oam_index in stride(from: 0, to: 1024, by : 4)
         {
@@ -158,8 +257,9 @@ class GameLoop {
 
             // Add entry for sprite attribute buffer
             let sprite_attributes : SpriteAttributes = SpriteAttributes(
-                offset_x: oam_attr.attr1 & 0x1FF,
-                offset_y: oam_attr.attr0 & 0x0FF,
+                offset_x: Int16(oam_attr.attr1) & 0x1FF,
+                offset_y: Int16(oam_attr.attr0) & 0x0FF,
+                depth: 0,
                 tiles_width: tile_width,
                 tiles_height: tile_height
             )
@@ -169,6 +269,7 @@ class GameLoop {
             let in_video_buffer_base_idx : Int = Int(oam_attr.attr2 & 0x3FF)
             
             // For each 4 bits (8 bits if d-tile type) in in_video_buffer, add a pixel to pixel_attr_buffer and a pixel to the index buffer
+            let begin_out_pixel_attr_buffer_size : UInt32 = UInt32(out_pixel_attr_buffer_size)
             for in_video_buffer_idx in stride(from: in_video_buffer_base_idx, to: in_video_buffer_base_idx + bytes_to_process, by : 1)
             {
                 // Add pixel attributes
@@ -179,9 +280,13 @@ class GameLoop {
                 
                 if (bits_per_pixel == 8)
                 {
-                    let palette_idx : UInt8 = in_video_buffer[in_video_buffer_idx]
+                    let palette_idx : UInt8 = in_video_buffer[0xC000 + in_video_buffer_idx]
                     let color : UInt16 = in_palette_buffer[256 + Int(palette_idx)]
-                    let pixel_attribute = PixelAttributes(color: GbaToMetalColor(gba_color : color), sprite_attribute: UInt32(sprite_id))
+                    let pixel_attribute = PixelAttributes(
+                        color: GbaToMetalColor(gba_color : color),
+                        sprite_attribute: UInt32(sprite_id),
+                        pixel_buffer_start_offset: begin_out_pixel_attr_buffer_size
+                    )
                     out_pixel_attr_buffer[out_pixel_attr_buffer_size] = pixel_attribute
                     out_pixel_attr_buffer_size += 1
                 }
@@ -196,14 +301,26 @@ class GameLoop {
                 out_index_buffer_size += 6
             }
         }
+        
+        if out_index_buffer_size >= kMaxRawBytes
+        {
+            fatalError("out_index_buffer_size exceeded size")
+        }
+        if out_pixel_attr_buffer_size >= kMaxRawBytes
+        {
+            fatalError("out_pixel_attr_buffer_size exceeded size")
+        }
+        if sprite_metadata.m_num_sprites >= kMaxRawBytes
+        {
+            fatalError("out_sprite_attr_buffer_size exceeded size")
+        }
+                
         return sprite_metadata
     }
     
     /// The output format is 1d memory mapped tiles.
     /// Each instance in the index buffer is 1 pixel. A tile consists of 64 pixels. A sprite will consist of tile width \* tile length tiles.
-    func GbaToMetal(
-        in_DISPCNT : UInt32
-    ) -> SpriteMetadata
+    func GbaToMetal() -> SpriteMetadata
     {
         // Mode
         if (in_DISPCNT & 0b111 == 0)
@@ -216,7 +333,7 @@ class GameLoop {
             else
             {
                 // 1-dimensional
-                return GbatToMetal_Mode0()
+                return GbaToMetal_Mode0()
             }
         }
         else
@@ -228,8 +345,19 @@ class GameLoop {
     func createFakeData()
     {
         in_DISPCNT = 0x40
+        in_DISPCNT |= (0b1 << 8)
         
-        let raw_in_video_buffer: [UInt8] = [
+        in_background_registers_0.in_REG_BGxCNT.is8bpp = true
+        
+        var raw_in_video_buffer: [UInt8] = []
+        // Load background data
+        for _ in 0..<0xC000
+        {
+            raw_in_video_buffer.append(0)
+        }
+        
+        // Sprite data
+        raw_in_video_buffer.append(contentsOf: [
             0, 0, 1, 1, 1, 1, 0, 0,
             0, 1, 1, 1, 1, 1, 1, 0,
             1, 1, 2, 1, 1, 2, 1, 1,
@@ -238,7 +366,8 @@ class GameLoop {
             0, 1, 0, 1, 0, 1, 0, 1,
             0, 1, 0, 1, 0, 1, 0, 1,
             0, 0, 0, 0, 0, 0, 0, 0
-        ]
+        ])
+        
         var raw_in_object_attr_buffer: [UInt16] = []
         
         raw_in_object_attr_buffer.append(0x2001)
@@ -256,7 +385,8 @@ class GameLoop {
             raw_in_object_attr_buffer.append(0b10 << 8)
         }
         var raw_palette_buffer: [UInt16] = []
-        for _ in 0..<256
+        raw_palette_buffer.append(0x1F)
+        for _ in 1..<256
         {
             raw_palette_buffer.append(0)
         }
@@ -283,9 +413,7 @@ class GameLoop {
         // Do action
         createFakeData()
         
-        sprite_metadata = GbaToMetal(
-            in_DISPCNT : in_DISPCNT
-        )
+        sprite_metadata = GbaToMetal()
     }
     
 }

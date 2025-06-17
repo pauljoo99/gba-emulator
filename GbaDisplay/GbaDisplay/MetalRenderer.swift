@@ -23,7 +23,7 @@ class MetalRenderer: NSObject, MTKViewDelegate {
     private var m_num_pixels : [Int]!
     
     private var game_loop: GameLoop = GameLoop()
-    
+        
     func setupDevice(mtkView: MTKView)
     {
         self.device = MTLCreateSystemDefaultDevice()
