@@ -7,6 +7,7 @@
 
 import Foundation
 
+
 let VBLANK_TIME_MS : UInt32 = 5
 let kMaxRawBytes : Int = 1024 * 1024;
 
@@ -109,6 +110,8 @@ class GameLoop {
     var in_background_registers_1 : Background = Background()
     var in_background_registers_2 : Background = Background()
     var in_background_registers_3 : Background = Background()
+    
+    let CpuRunnerHandle : CpuRunnerHandle = CpuRunner_create();
     
     var sprite_metadata : SpriteMetadata = SpriteMetadata(m_num_sprites: 0, m_index_buffer_offset: [], m_num_pixels: [])
 
@@ -411,6 +414,7 @@ class GameLoop {
         scanLine = 0;
         
         // Do action
+        CpuRunner_run(CpuRunnerHandle);
         createFakeData()
         
         sprite_metadata = GbaToMetal()

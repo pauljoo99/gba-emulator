@@ -15,6 +15,8 @@
 		D56106F82DFB72EB009E86D7 /* MetalRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = D56106F72DFB72EB009E86D7 /* MetalRenderer.swift */; };
 		D56106FC2DFB731E009E86D7 /* Shaders.metal in Sources */ = {isa = PBXBuildFile; fileRef = D56106FB2DFB731E009E86D7 /* Shaders.metal */; };
 		D56106FE2DFBF58D009E86D7 /* GameLoop.swift in Sources */ = {isa = PBXBuildFile; fileRef = D56106FD2DFBF58D009E86D7 /* GameLoop.swift */; };
+		D56C94562E01F198000E6A1E /* Bridging-Header-cpp.mm in Sources */ = {isa = PBXBuildFile; fileRef = D56C94552E01F198000E6A1E /* Bridging-Header-cpp.mm */; };
+		D56C94592E01F3AE000E6A1E /* cpu_runner.a in Frameworks */ = {isa = PBXBuildFile; fileRef = D56C94582E01F3AE000E6A1E /* cpu_runner.a */; };
 		D5CF437B2E00C2BF00CDFFBA /* RegisterDecoders.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5CF437A2E00C2BF00CDFFBA /* RegisterDecoders.swift */; };
 /* End PBXBuildFile section */
 
@@ -31,6 +33,9 @@
 		D56106FD2DFBF58D009E86D7 /* GameLoop.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GameLoop.swift; sourceTree = "<group>"; };
 		D561070C2DFCF77B009E86D7 /* Structs.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Structs.h; sourceTree = "<group>"; };
 		D561070D2DFCF7BF009E86D7 /* Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "Bridging-Header.h"; sourceTree = "<group>"; };
+		D56C94552E01F198000E6A1E /* Bridging-Header-cpp.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = "Bridging-Header-cpp.mm"; sourceTree = "<group>"; };
+		D56C94582E01F3AE000E6A1E /* cpu_runner.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = cpu_runner.a; path = ../build/cpu_runner.a; sourceTree = "<group>"; };
+		D56C945A2E01F58A000E6A1E /* Bridging-Header-cpp.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "Bridging-Header-cpp.h"; sourceTree = "<group>"; };
 		D5CF437A2E00C2BF00CDFFBA /* RegisterDecoders.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RegisterDecoders.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -39,6 +44,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				D56C94592E01F3AE000E6A1E /* cpu_runner.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -50,6 +56,7 @@
 			children = (
 				D56106E52DFB709A009E86D7 /* GbaDisplay */,
 				D56106E42DFB709A009E86D7 /* Products */,
+				D56C94572E01F3AE000E6A1E /* Frameworks */,
 			);
 			sourceTree = "<group>";
 		};
@@ -72,6 +79,8 @@
 				D5CF437A2E00C2BF00CDFFBA /* RegisterDecoders.swift */,
 				D561070C2DFCF77B009E86D7 /* Structs.h */,
 				D561070D2DFCF7BF009E86D7 /* Bridging-Header.h */,
+				D56C94552E01F198000E6A1E /* Bridging-Header-cpp.mm */,
+				D56C945A2E01F58A000E6A1E /* Bridging-Header-cpp.h */,
 				D56106FB2DFB731E009E86D7 /* Shaders.metal */,
 				D56106EA2DFB709F009E86D7 /* Assets.xcassets */,
 				D56106EF2DFB709F009E86D7 /* GbaDisplay.entitlements */,
@@ -86,6 +95,14 @@
 				D56106ED2DFB709F009E86D7 /* Preview Assets.xcassets */,
 			);
 			path = "Preview Content";
+			sourceTree = "<group>";
+		};
+		D56C94572E01F3AE000E6A1E /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				D56C94582E01F3AE000E6A1E /* cpu_runner.a */,
+			);
+			name = Frameworks;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -162,6 +179,7 @@
 				D56106F62DFB7290009E86D7 /* MetalView.swift in Sources */,
 				D56106E92DFB709A009E86D7 /* ContentView.swift in Sources */,
 				D5CF437B2E00C2BF00CDFFBA /* RegisterDecoders.swift in Sources */,
+				D56C94562E01F198000E6A1E /* Bridging-Header-cpp.mm in Sources */,
 				D56106E72DFB709A009E86D7 /* GbaDisplayApp.swift in Sources */,
 				D56106FC2DFB731E009E86D7 /* Shaders.metal in Sources */,
 				D56106FE2DFBF58D009E86D7 /* GameLoop.swift in Sources */,
@@ -296,6 +314,7 @@
 				DEVELOPMENT_ASSET_PATHS = "\"GbaDisplay/Preview Content\"";
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				HEADER_SEARCH_PATHS = /Users/pauljoo/Documents/ds_emulator/include;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -322,6 +341,7 @@
 				DEVELOPMENT_ASSET_PATHS = "\"GbaDisplay/Preview Content\"";
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				HEADER_SEARCH_PATHS = /Users/pauljoo/Documents/ds_emulator/include;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",

@@ -6,13 +6,22 @@ DEBUG_CXXFLAGS = -g -std=c++20 -Wall -DENABLE_LOGGING
 # Source and object files
 BUILD_DIR = build
 EXEC = $(BUILD_DIR)/emulator
+EXEC_CPU_RUNNER = $(BUILD_DIR)/cpu_runner.a
 
 # Default target
-all: $(EXEC)
+all: $(EXEC) $(EXEC_CPU_RUNNER)
+
+# Create CPU Runner library
+$(EXEC_CPU_RUNNER): cpu_runner.o
+	ar rcs $(EXEC_CPU_RUNNER) $(BUILD_DIR)/cpu_runner.o
 
 # Link object file to create the executable
 $(EXEC): main.o snapshot.o arm7tdmi.o
 	$(CXX) $(BUILD_DIR)/main.o $(BUILD_DIR)/arm7tdmi.o $(BUILD_DIR)/snapshot.o  -o $(EXEC)
+
+# Compile cpu_runner
+cpu_runner.o:
+	$(CXX) $(CXXFLAGS) -c cpu_runner.cpp -I. -Iinclude -o $(BUILD_DIR)/cpu_runner.o
 
 # Compile main
 main.o:
