@@ -108,9 +108,9 @@ class GameLoop {
     public func start()
     {
         // This has to go before initCpuRunner or else the image comes out weird. Haven't figured out why.
-        in_video_buffer = UnsafeMutablePointer<UInt8>.allocate(capacity : kMaxRawBytes)
-        in_object_attr_buffer = UnsafeMutablePointer<UInt16>.allocate(capacity : kMaxRawBytes)
-        in_palette_buffer = UnsafeMutablePointer<UInt16>.allocate(capacity : kMaxRawBytes)
+        // in_video_buffer = UnsafeMutablePointer<UInt8>.allocate(capacity : kMaxRawBytes)
+        // in_object_attr_buffer = UnsafeMutablePointer<UInt16>.allocate(capacity : kMaxRawBytes)
+        // in_palette_buffer = UnsafeMutablePointer<UInt16>.allocate(capacity : kMaxRawBytes)
         
         initCpuRunner()
         
@@ -127,21 +127,22 @@ class GameLoop {
     
     private var scanLine : uint = 0
     private var triangle_pos : uint = 0
-    
-    private var in_video_buffer : UnsafeMutablePointer<UInt8>!
-    private var in_object_attr_buffer : UnsafeMutablePointer<UInt16>!
-    private var in_palette_buffer : UnsafeMutablePointer<UInt16>!
-    
+        
     private var out_index_buffer : UnsafeMutablePointer<UInt16>!
     private var out_pixel_attr_buffer : UnsafeMutablePointer<PixelAttributes>!
     private var out_sprite_attr_buffer : UnsafeMutablePointer<SpriteAttributes>!
     
-    private var in_DISPCNT : UInt32 = 0x40 | (0b1 << 8)
-    private var in_background_registers_0 : Background = Background()
-    private var in_background_registers_1 : Background = Background()
-    private var in_background_registers_2 : Background = Background()
-    private var in_background_registers_3 : Background = Background()
+    // From CPU
+    private var in_DISPCNT : UInt16 = 0b1 << 6
+    private var in_background_registers_0 : Background = Background(ctr: 0, x: 0, y: 0)
+    private var in_background_registers_1 : Background = Background(ctr: 0, x: 0, y: 0)
+    private var in_background_registers_2 : Background = Background(ctr: 0, x: 0, y: 0)
+    private var in_background_registers_3 : Background = Background(ctr: 0, x: 0, y: 0)
     
+    private var in_video_buffer : UnsafeMutablePointer<UInt8>!
+    private var in_object_attr_buffer : UnsafeMutablePointer<UInt16>!
+    private var in_palette_buffer : UnsafeMutablePointer<UInt16>!
+
     private let CpuRunnerHandle : CpuRunnerHandle = CpuRunner_Create()
 
     private func initCpuRunner()
@@ -171,6 +172,10 @@ class GameLoop {
         DispatchQueue.global(qos: .userInitiated).async {
             CpuRunner_Run(self.CpuRunnerHandle)
         }
+
+        in_video_buffer = GetByteMemoryPtr(handle: CpuRunnerHandle, address: 0x06000000)
+        in_object_attr_buffer = GetHalfWordMemoryPtr(handle: CpuRunnerHandle, address: 0x07000000)
+        in_palette_buffer = GetHalfWordMemoryPtr(handle: CpuRunnerHandle, address: 0x05000000)
     }
 
     private func GbaToMetal_Mode0() -> SpriteMetadata
@@ -361,10 +366,16 @@ class GameLoop {
     /// Each instance in the index buffer is 1 pixel. A tile consists of 64 pixels. A sprite will consist of tile width \* tile length tiles.
     private func GbaToMetal() -> SpriteMetadata
     {
+        if (in_DISPCNT == 0)
+        {
+            return sprite_metadata;
+        }
+        
         // Mode
         if (in_DISPCNT & 0b111 == 0)
         {
             // 2-dimensional
+            print("in_DISPCNT", in_DISPCNT)
             if ((in_DISPCNT >> 6) & 0b1 == 0)
             {
                 fatalError("Unimplemented")
@@ -439,12 +450,19 @@ class GameLoop {
 
     private func PullGbaData()
     {
-        let IO_MEMORY = GetWordMemoryPtr(handle: CpuRunnerHandle, address: 0x04000000)
+        let IO_MEMORY = GetHalfWordMemoryPtr(handle: CpuRunnerHandle, address: 0x04000000)
+
+        // Some debug statements to make sure we are doing stuff.
         let DISPCNT = IO_MEMORY[0]
         let VCOUNT = IO_MEMORY.advanced(by: 6)
         print(String(format: "DISPCNT: 0x%04X", DISPCNT))
         print(String(format: "VCOUNT: 0x%04X", VCOUNT.pointee))
-        VCOUNT.pointee = 160
+
+        in_DISPCNT = IO_MEMORY[0x0]
+        in_background_registers_0 = Background(ctr: IO_MEMORY[0x8], x: IO_MEMORY[0x10], y: IO_MEMORY[0x12])
+        in_background_registers_1  = Background(ctr: IO_MEMORY[0xa], x: IO_MEMORY[0x14], y: IO_MEMORY[0x16])
+        in_background_registers_2 = Background(ctr: IO_MEMORY[0xc], x: IO_MEMORY[0x18], y: IO_MEMORY[0x1a])
+        in_background_registers_3 = Background(ctr: IO_MEMORY[0xe], x: IO_MEMORY[0x1c], y: IO_MEMORY[0x1e])
     }
     
     private func dispatch()
@@ -459,7 +477,7 @@ class GameLoop {
         scanLine = 0;
         
         // Do action
-        createFakeData()
+        // createFakeData()
         PullGbaData()
         sprite_metadata = GbaToMetal()
     }

@@ -131,6 +131,14 @@ struct BGOffsetY {
 }
 
 struct Background {
+    
+    init(ctr : UInt16, x : UInt16, y : UInt16)
+    {
+        in_REG_BGxCNT = BGControl(raw: ctr)
+        in_REG_BGxHOFS = BGOffsetX(raw: x)
+        in_REG_BGxVOFS = BGOffsetY(raw: y)
+    }
+    
     var in_REG_BGxCNT : BGControl = BGControl(raw: 0)
     var in_REG_BGxHOFS  : BGOffsetX = BGOffsetX(raw: 0)
     var in_REG_BGxVOFS  : BGOffsetY = BGOffsetY(raw: 0)
