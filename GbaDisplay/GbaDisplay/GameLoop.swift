@@ -6,6 +6,8 @@
 //
 
 import Foundation
+import AppKit
+import UniformTypeIdentifiers
 
 
 let VBLANK_TIME_MS : UInt32 = 5
@@ -115,6 +117,35 @@ class GameLoop {
     
     var sprite_metadata : SpriteMetadata = SpriteMetadata(m_num_sprites: 0, m_index_buffer_offset: [], m_num_pixels: [])
 
+    func initCpuRunner()
+    {
+        let openPanel = NSOpenPanel()
+        openPanel.allowedContentTypes = [UTType(filenameExtension: "gba")!]
+        openPanel.allowsMultipleSelection = false
+        openPanel.canChooseDirectories = false
+        openPanel.canChooseFiles = true
+
+        if openPanel.runModal() == .OK, let url = openPanel.url {
+            // Prepare argv with the selected file path
+            let args: [String] = [
+                "GbaDisplay", // argv[0]
+                url.path     // user-selected file path
+            ]
+
+            var cArgs = args.map { strdup($0) }
+            defer { cArgs.forEach { free($0) } }
+
+            // Pass pointer to first c string pointer
+            CpuRunner_Init(CpuRunnerHandle, Int32(cArgs.count), &cArgs)
+        } else {
+            print("User cancelled or no file selected")
+        }
+        
+        DispatchQueue.global(qos: .userInitiated).async {
+            CpuRunner_Run(self.CpuRunnerHandle)
+        }
+    }
+    
     func load_buffers(
         index_buffer : UnsafeMutablePointer<UInt16>,
         pixel_attr_buffer : UnsafeMutablePointer<PixelAttributes>,
@@ -132,6 +163,7 @@ class GameLoop {
     
     func run()
     {
+        initCpuRunner()
         timer = Timer.scheduledTimer(withTimeInterval: 1.0 / 60.0, repeats: true) { [weak self] _ in
             self?.dispatch()
         }
@@ -414,7 +446,6 @@ class GameLoop {
         scanLine = 0;
         
         // Do action
-        CpuRunner_Run(CpuRunnerHandle);
         createFakeData()
         
         sprite_metadata = GbaToMetal()

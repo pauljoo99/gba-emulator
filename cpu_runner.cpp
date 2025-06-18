@@ -4,6 +4,7 @@
 #include <memory>
 #include <stdio.h>
 #include <stdlib.h>
+#include <thread>
 
 #include "arm7tdmi.h"
 #include "logging.h"
@@ -77,6 +78,9 @@ void CpuRunner::Run() {
   Arm::CPU *cpu = (Arm::CPU *)Cpu_;
   Memory::Memory *memory = (Memory::Memory *)Memory_;
   while (cpu->Dispatch(*memory)) {
+    // Later we can mimic halts properly. For now sleep 200 microseconds to save
+    // on compute.
+    std::this_thread::sleep_for(std::chrono::microseconds(500));
   }
   LOG_DEBUG("CpuRunner stopped running!");
   return;
