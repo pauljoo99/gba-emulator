@@ -11,6 +11,10 @@ EXEC_CPU_RUNNER = $(BUILD_DIR)/cpu_runner.a
 # Default target
 all: $(EXEC) $(EXEC_CPU_RUNNER)
 
+# Debug target
+debug: CXXFLAGS := $(DEBUG_CXXFLAGS)
+debug: $(EXEC) $(EXEC_CPU_RUNNER)
+
 # Create CPU Runner library
 $(EXEC_CPU_RUNNER): cpu_runner.o
 	ar rcs $(EXEC_CPU_RUNNER) $(BUILD_DIR)/cpu_runner.o $(BUILD_DIR)/main.o $(BUILD_DIR)/arm7tdmi.o $(BUILD_DIR)/snapshot.o
@@ -34,10 +38,6 @@ arm7tdmi.o:
 # Compile snapshot
 snapshot.o:
 	$(CXX) $(CXXFLAGS) -c snapshot.cpp -I. -o $(BUILD_DIR)/snapshot.o
-
-# debug target
-debug: CXXFLAGS := $(DEBUG_CXXFLAGS)
-debug: $(EXEC)
 
 # make all tests
 tests: bitutils_test

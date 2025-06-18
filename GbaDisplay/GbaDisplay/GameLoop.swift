@@ -94,30 +94,57 @@ func GetSpriteShape(attr0 : UInt16, attr1 : UInt16) -> (UInt16, UInt16)
 
 class GameLoop {
     
+    public func load_buffers(
+        index_buffer : UnsafeMutablePointer<UInt16>,
+        pixel_attr_buffer : UnsafeMutablePointer<PixelAttributes>,
+        sprite_attr_buffer : UnsafeMutablePointer<SpriteAttributes>
+    )
+    {
+        out_index_buffer = index_buffer
+        out_pixel_attr_buffer = pixel_attr_buffer
+        out_sprite_attr_buffer = sprite_attr_buffer
+    }
+    
+    public func start()
+    {
+        // This has to go before initCpuRunner or else the image comes out weird. Haven't figured out why.
+        in_video_buffer = UnsafeMutablePointer<UInt8>.allocate(capacity : kMaxRawBytes)
+        in_object_attr_buffer = UnsafeMutablePointer<UInt16>.allocate(capacity : kMaxRawBytes)
+        in_palette_buffer = UnsafeMutablePointer<UInt16>.allocate(capacity : kMaxRawBytes)
+        
+        initCpuRunner()
+        
+        createFakeData()
+        
+        timer = Timer.scheduledTimer(withTimeInterval: 1.0 / 60.0, repeats: true) { [weak self] _ in
+            self?.dispatch()
+        }
+    }
+    
+    public var sprite_metadata : SpriteMetadata = SpriteMetadata(m_num_sprites: 0, m_index_buffer_offset: [], m_num_pixels: [])
+    
     private var timer: Timer?
     
-    var scanLine : uint = 0
-    var triangle_pos : uint = 0
+    private var scanLine : uint = 0
+    private var triangle_pos : uint = 0
     
-    var in_video_buffer : UnsafeMutablePointer<UInt8>!
-    var in_object_attr_buffer : UnsafeMutablePointer<UInt16>!
-    var in_palette_buffer : UnsafeMutablePointer<UInt16>!
+    private var in_video_buffer : UnsafeMutablePointer<UInt8>!
+    private var in_object_attr_buffer : UnsafeMutablePointer<UInt16>!
+    private var in_palette_buffer : UnsafeMutablePointer<UInt16>!
     
-    var out_index_buffer : UnsafeMutablePointer<UInt16>!
-    var out_pixel_attr_buffer : UnsafeMutablePointer<PixelAttributes>!
-    var out_sprite_attr_buffer : UnsafeMutablePointer<SpriteAttributes>!
+    private var out_index_buffer : UnsafeMutablePointer<UInt16>!
+    private var out_pixel_attr_buffer : UnsafeMutablePointer<PixelAttributes>!
+    private var out_sprite_attr_buffer : UnsafeMutablePointer<SpriteAttributes>!
     
-    var in_DISPCNT : UInt32 = 0x40 | (0b1 << 8)
-    var in_background_registers_0 : Background = Background()
-    var in_background_registers_1 : Background = Background()
-    var in_background_registers_2 : Background = Background()
-    var in_background_registers_3 : Background = Background()
+    private var in_DISPCNT : UInt32 = 0x40 | (0b1 << 8)
+    private var in_background_registers_0 : Background = Background()
+    private var in_background_registers_1 : Background = Background()
+    private var in_background_registers_2 : Background = Background()
+    private var in_background_registers_3 : Background = Background()
     
-    let CpuRunnerHandle : CpuRunnerHandle = CpuRunner_Create()
-    
-    var sprite_metadata : SpriteMetadata = SpriteMetadata(m_num_sprites: 0, m_index_buffer_offset: [], m_num_pixels: [])
+    private let CpuRunnerHandle : CpuRunnerHandle = CpuRunner_Create()
 
-    func initCpuRunner()
+    private func initCpuRunner()
     {
         let openPanel = NSOpenPanel()
         openPanel.allowedContentTypes = [UTType(filenameExtension: "gba")!]
@@ -145,31 +172,8 @@ class GameLoop {
             CpuRunner_Run(self.CpuRunnerHandle)
         }
     }
-    
-    func load_buffers(
-        index_buffer : UnsafeMutablePointer<UInt16>,
-        pixel_attr_buffer : UnsafeMutablePointer<PixelAttributes>,
-        sprite_attr_buffer : UnsafeMutablePointer<SpriteAttributes>
-    )
-    {
-        out_index_buffer = index_buffer
-        out_pixel_attr_buffer = pixel_attr_buffer
-        out_sprite_attr_buffer = sprite_attr_buffer
-        
-        in_video_buffer = UnsafeMutablePointer<UInt8>.allocate(capacity : kMaxRawBytes)
-        in_object_attr_buffer = UnsafeMutablePointer<UInt16>.allocate(capacity : kMaxRawBytes)
-        in_palette_buffer = UnsafeMutablePointer<UInt16>.allocate(capacity : kMaxRawBytes)
-    }
-    
-    func run()
-    {
-        initCpuRunner()
-        timer = Timer.scheduledTimer(withTimeInterval: 1.0 / 60.0, repeats: true) { [weak self] _ in
-            self?.dispatch()
-        }
-    }
-    
-    func GbaToMetal_Mode0() -> SpriteMetadata
+
+    private func GbaToMetal_Mode0() -> SpriteMetadata
     {
         var sprite_metadata : SpriteMetadata = SpriteMetadata(
             m_num_sprites: 0, m_index_buffer_offset: [], m_num_pixels: []
@@ -355,7 +359,7 @@ class GameLoop {
     
     /// The output format is 1d memory mapped tiles.
     /// Each instance in the index buffer is 1 pixel. A tile consists of 64 pixels. A sprite will consist of tile width \* tile length tiles.
-    func GbaToMetal() -> SpriteMetadata
+    private func GbaToMetal() -> SpriteMetadata
     {
         // Mode
         if (in_DISPCNT & 0b111 == 0)
@@ -377,7 +381,7 @@ class GameLoop {
         }
     }
     
-    func createFakeData()
+    private func createFakeData()
     {
         in_DISPCNT = 0x40
         in_DISPCNT |= (0b1 << 8)
@@ -431,10 +435,9 @@ class GameLoop {
         in_video_buffer.update(from: raw_in_video_buffer, count: raw_in_video_buffer.count)
         in_object_attr_buffer.update(from: raw_in_object_attr_buffer, count: raw_in_object_attr_buffer.count)
         in_palette_buffer.update(from: raw_palette_buffer, count: raw_palette_buffer.count)
-
     }
     
-    func dispatch()
+    private func dispatch()
     {
         // Set scanline to indicate to CPU that VRAM can be updated.
         scanLine = 160;
@@ -447,7 +450,6 @@ class GameLoop {
         
         // Do action
         createFakeData()
-        
         sprite_metadata = GbaToMetal()
     }
     

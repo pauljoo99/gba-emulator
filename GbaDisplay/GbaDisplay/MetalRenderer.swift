@@ -10,18 +10,19 @@ import MetalKit
 let kMaxSizeBuffer = 1024 * 1024;
 
 class MetalRenderer: NSObject, MTKViewDelegate {
+    
+    // Device Setup
     private var device: MTLDevice!
     private var commandQueue: MTLCommandQueue!
     private var pipelineState: MTLRenderPipelineState!
+    
+    // Buffers to be used by the GPU
     private var vertexBuffer: MTLBuffer!
     private var indexBuffer: MTLBuffer!
     private var pixelAttributeBuffer: MTLBuffer!
     private var spriteAttributeBuffer: MTLBuffer!
-    
-    private var num_sprites : Int!
-    private var m_index_buffer_offset : [Int]!
-    private var m_num_pixels : [Int]!
-    
+        
+    // Game Loop
     private var game_loop: GameLoop = GameLoop()
         
     func setupDevice(mtkView: MTKView)
@@ -34,7 +35,7 @@ class MetalRenderer: NSObject, MTKViewDelegate {
         commandQueue = device.makeCommandQueue()
     }
     
-    func loadResources()
+    func setupBuffers()
     {
         let pixelVertices : [SIMD3<Float>] = [
             // Position
@@ -70,20 +71,23 @@ class MetalRenderer: NSObject, MTKViewDelegate {
     }
     
     init(mtkView: MTKView) {
+        
+        // Setup devices
         super.init()
         setupDevice(mtkView : mtkView)
-        loadResources()
         setupPipeline(mtkView : mtkView)
+        setupBuffers()
+        
+        // Start the game loop
         game_loop.load_buffers(
             index_buffer: indexBuffer.contents().bindMemory(to: UInt16.self, capacity: kMaxSizeBuffer),
             pixel_attr_buffer: pixelAttributeBuffer.contents().bindMemory(to: PixelAttributes.self, capacity: kMaxSizeBuffer),
             sprite_attr_buffer: spriteAttributeBuffer.contents().bindMemory(to: SpriteAttributes.self, capacity: kMaxSizeBuffer)
         )
-        game_loop.run()
+        game_loop.start()
     }
     
-    func sendCommand(in view: MTKView)
-    {
+    func draw(in view: MTKView) {
         guard let drawable = view.currentDrawable,
               let descriptor = view.currentRenderPassDescriptor else { return }
 
@@ -113,10 +117,6 @@ class MetalRenderer: NSObject, MTKViewDelegate {
 
         commandBuffer?.present(drawable)
         commandBuffer?.commit()
-    }
-    
-    func draw(in view: MTKView) {
-        sendCommand(in : view)
     }
 
     func mtkView(_ view: MTKView, drawableSizeWillChange size: CGSize) {
