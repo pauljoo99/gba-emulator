@@ -303,6 +303,8 @@ void CPU::ClearPipeline() noexcept {
     LOG("Dispatch Failed on %u - Instr: %s, Raw Instr: 0x%08X, PC: 0x%04X",
         cpu.dispatch_num, ToString(instr_opcode), instr,
         cpu.pipeline.execute_addr);
+    Debug::debug_snapshot(cpu.all_registers, memory, cpu.pipeline,
+                          "tools/visual/data/");
 
     return false;
   }
@@ -422,6 +424,8 @@ void CPU::ClearPipeline() noexcept {
   LOG("Dispatch Failed on %u - Raw Thumb Instr: 0x%04X, Opcode: %s, PC: 0x%04X",
       cpu.dispatch_num, instr, Thumb::ToString(opcode),
       cpu.pipeline.execute_addr);
+  Debug::debug_snapshot(cpu.all_registers, memory, cpu.pipeline,
+                        "tools/visual/data/");
 
   return false;
 }
@@ -1750,14 +1754,24 @@ bool CPU::Dispatch_Thumb_LDR4(U16 instr,
   return true;
 }
 
-bool CPU::Dispatch_Thumb_LDRB1(U16 instr,
-                               const Memory::Memory &memory) noexcept {
+bool CPU::Dispatch_Thumb_LDRB1(U16 instr, Memory::Memory &memory) noexcept {
   U32 rd = GetBitsInRange(instr, 0, 3);
   U32 rn = GetBitsInRange(instr, 3, 6);
   U32 immed_5 = GetBitsInRange(instr, 6, 11);
   U32 address = registers->r[rn] + immed_5;
 
   registers->r[rd] = ReadByteFromGBAMemory(memory, address);
+
+  if (U32(registers->r[rd]) == 0 && address == 0x04000006) {
+    LOG("Looking for VCOUNT 159 but is currently 0");
+    WriteByteToGBAMemory(memory, address, 159);
+  }
+
+  if (U32(registers->r[rd]) == 159 && address == 0x04000006) {
+    LOG("Looking for VCOUNT 0 but is currently 159");
+    WriteByteToGBAMemory(memory, address, 0);
+  }
+
   registers->r[PC] += 2;
   return true;
 }
