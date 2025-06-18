@@ -58,7 +58,7 @@ bool CpuRunner::Init(int argc, char *argv[]) {
 
   // Load BIOS
   if (!load_file(file_name, (char *)memory->BIOS)) {
-    LOG("Could not load bios!");
+    LOG_VERBOSE("Could not load bios!");
     return false;
   }
 
@@ -73,14 +73,13 @@ void CpuRunner::Run() {
   Arm::CPU *cpu = (Arm::CPU *)Cpu_;
   Memory::Memory *memory = (Memory::Memory *)Memory_;
   if (!initialized) {
-    LOG_DEBUG("CpuRunner was not initialized!");
+    LOG("CpuRunner was not initialized!");
   } else {
     while (cpu->Dispatch(*memory)) {
-      // Later we can mimic halts properly. For now sleep 200 microseconds to
-      // save on compute.
-      std::this_thread::sleep_for(std::chrono::microseconds(500));
+      // Clock time of GBA is 16.57 MHz.
+      std::this_thread::sleep_for(std::chrono::nanoseconds(59));
     }
-    LOG_DEBUG("CpuRunner stopped running!");
+    LOG("CpuRunner stopped running!");
   }
   free(cpu);
   free(memory);

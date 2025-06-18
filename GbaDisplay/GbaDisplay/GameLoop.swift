@@ -113,10 +113,7 @@ class GameLoop {
         // in_palette_buffer = UnsafeMutablePointer<UInt16>.allocate(capacity : kMaxRawBytes)
         
         initCpuRunner()
-        
-        createFakeData()
-        
-        timer = Timer.scheduledTimer(withTimeInterval: 1.0 / 60.0, repeats: true) { [weak self] _ in
+        timer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
             self?.dispatch()
         }
     }
@@ -178,6 +175,20 @@ class GameLoop {
         in_palette_buffer = GetHalfWordMemoryPtr(handle: CpuRunnerHandle, address: 0x05000000)
     }
 
+    private func AddPixelToBuffers(pixel_attribute: PixelAttributes, out_pixel_attr_buffer_size: Int, out_index_buffer_size: Int) -> (Int, Int)
+    {
+        out_pixel_attr_buffer[out_pixel_attr_buffer_size] = pixel_attribute
+
+        out_index_buffer[out_index_buffer_size + 0] = 0
+        out_index_buffer[out_index_buffer_size + 1] = 1
+        out_index_buffer[out_index_buffer_size + 2] = 2
+        out_index_buffer[out_index_buffer_size + 3] = 0
+        out_index_buffer[out_index_buffer_size + 4] = 2
+        out_index_buffer[out_index_buffer_size + 5] = 3
+        
+        return (out_pixel_attr_buffer_size + 1, out_index_buffer_size + 6)
+    }
+    
     private func GbaToMetal_Mode0() -> SpriteMetadata
     {
         var sprite_metadata : SpriteMetadata = SpriteMetadata(
@@ -227,6 +238,7 @@ class GameLoop {
             
             // For each 4 bits (8 bits if d-tile type) in in_video_buffer, add a pixel to pixel_attr_buffer and a pixel to the index buffer
             let begin_out_pixel_attr_buffer_size : UInt32 = UInt32(out_pixel_attr_buffer_size)
+            
             for screen_block_idx in stride(from: in_video_buffer_screen_block_base_idx, to: in_video_buffer_screen_block_base_idx + Int(num_tiles) * 2, by : 2)
             {
                 let screen_entry : UInt16 = (UInt16(in_video_buffer[screen_block_idx + 1]) >> 8) | UInt16(in_video_buffer[screen_block_idx])
@@ -234,33 +246,28 @@ class GameLoop {
                 
                 for i in 0..<64
                 {
-                    // Add pixel attributes
+                    var pixel_attribute : PixelAttributes
                     if (bits_per_pixel == 4)
                     {
+                        // 4bpp
                         fatalError("Not Implemented")
                     }
-                    
-                    if (bits_per_pixel == 8)
+                    else
                     {
+                        // 8bpp
                         let palette_idx : UInt8 = in_video_buffer[tile_idx + i]
                         let color : UInt16 = in_palette_buffer[Int(palette_idx)]
-                        let pixel_attribute = PixelAttributes(
+                        pixel_attribute = PixelAttributes(
                             color: GbaToMetalColor(gba_color : color),
                             sprite_attribute: UInt32(sprite_id),
                             pixel_buffer_start_offset: begin_out_pixel_attr_buffer_size
                         )
-                        out_pixel_attr_buffer[out_pixel_attr_buffer_size] = pixel_attribute
-                        out_pixel_attr_buffer_size += 1
                     }
                     
-                    // Add pixel to index buffer
-                    out_index_buffer[out_index_buffer_size + 0] = 0
-                    out_index_buffer[out_index_buffer_size + 1] = 1
-                    out_index_buffer[out_index_buffer_size + 2] = 2
-                    out_index_buffer[out_index_buffer_size + 3] = 0
-                    out_index_buffer[out_index_buffer_size + 4] = 2
-                    out_index_buffer[out_index_buffer_size + 5] = 3
-                    out_index_buffer_size += 6
+                    (out_pixel_attr_buffer_size, out_index_buffer_size) = AddPixelToBuffers(
+                        pixel_attribute: pixel_attribute,
+                        out_pixel_attr_buffer_size: out_pixel_attr_buffer_size,
+                        out_index_buffer_size: out_index_buffer_size)
                 }
             }
         }
@@ -276,7 +283,7 @@ class GameLoop {
             )
             
             // Sprite is disabled
-            if ((oam_attr.attr0 >> 8 & 0b11) == 0b10)
+            if ((in_DISPCNT >> 12) & 0b1 == 0 || (oam_attr.attr0 >> 8 & 0b11) == 0b10)
             {
                 continue
             }
@@ -314,35 +321,41 @@ class GameLoop {
             
             // For each 4 bits (8 bits if d-tile type) in in_video_buffer, add a pixel to pixel_attr_buffer and a pixel to the index buffer
             let begin_out_pixel_attr_buffer_size : UInt32 = UInt32(out_pixel_attr_buffer_size)
-            for in_video_buffer_idx in stride(from: in_video_buffer_base_idx, to: in_video_buffer_base_idx + bytes_to_process, by : 1)
+            
+            if ((in_DISPCNT >> 6) & 0b1 == 0)
             {
-                // Add pixel attributes
-                if (bits_per_pixel == 4)
+                // 2d Tile Mapping
+                fatalError("Not Implemented")
+            }
+            else
+            {
+                // 1d Tile Mapping
+                for in_video_buffer_idx in stride(from: in_video_buffer_base_idx, to: in_video_buffer_base_idx + bytes_to_process, by : 1)
                 {
-                    fatalError("Not Implemented")
+                    // Add pixel attributes
+                    var pixel_attribute : PixelAttributes;
+                    if (bits_per_pixel == 4)
+                    {
+                        // 4bpp
+                        fatalError("Not Implemented")
+                    }
+                    else
+                    {
+                        // 8bpp
+                        let palette_idx : UInt8 = in_video_buffer[0xC000 + in_video_buffer_idx]
+                        let color : UInt16 = in_palette_buffer[256 + Int(palette_idx)]
+                        pixel_attribute = PixelAttributes(
+                            color: GbaToMetalColor(gba_color : color),
+                            sprite_attribute: UInt32(sprite_id),
+                            pixel_buffer_start_offset: begin_out_pixel_attr_buffer_size
+                        )
+                    }
+                    
+                    (out_pixel_attr_buffer_size, out_index_buffer_size) = AddPixelToBuffers(
+                        pixel_attribute: pixel_attribute,
+                        out_pixel_attr_buffer_size: out_pixel_attr_buffer_size,
+                        out_index_buffer_size: out_index_buffer_size)
                 }
-                
-                if (bits_per_pixel == 8)
-                {
-                    let palette_idx : UInt8 = in_video_buffer[0xC000 + in_video_buffer_idx]
-                    let color : UInt16 = in_palette_buffer[256 + Int(palette_idx)]
-                    let pixel_attribute = PixelAttributes(
-                        color: GbaToMetalColor(gba_color : color),
-                        sprite_attribute: UInt32(sprite_id),
-                        pixel_buffer_start_offset: begin_out_pixel_attr_buffer_size
-                    )
-                    out_pixel_attr_buffer[out_pixel_attr_buffer_size] = pixel_attribute
-                    out_pixel_attr_buffer_size += 1
-                }
-                
-                // Add pixel to index buffer
-                out_index_buffer[out_index_buffer_size + 0] = 0
-                out_index_buffer[out_index_buffer_size + 1] = 1
-                out_index_buffer[out_index_buffer_size + 2] = 2
-                out_index_buffer[out_index_buffer_size + 3] = 0
-                out_index_buffer[out_index_buffer_size + 4] = 2
-                out_index_buffer[out_index_buffer_size + 5] = 3
-                out_index_buffer_size += 6
             }
         }
         
@@ -374,17 +387,7 @@ class GameLoop {
         // Mode
         if (in_DISPCNT & 0b111 == 0)
         {
-            // 2-dimensional
-            print("in_DISPCNT", in_DISPCNT)
-            if ((in_DISPCNT >> 6) & 0b1 == 0)
-            {
-                fatalError("Unimplemented")
-            }
-            else
-            {
-                // 1-dimensional
-                return GbaToMetal_Mode0()
-            }
+            return GbaToMetal_Mode0()
         }
         else
         {
@@ -452,29 +455,39 @@ class GameLoop {
     {
         let IO_MEMORY = GetHalfWordMemoryPtr(handle: CpuRunnerHandle, address: 0x04000000)
 
-        // Some debug statements to make sure we are doing stuff.
-        let DISPCNT = IO_MEMORY[0]
-        let VCOUNT = IO_MEMORY.advanced(by: 6)
-        print(String(format: "DISPCNT: 0x%04X", DISPCNT))
-        print(String(format: "VCOUNT: 0x%04X", VCOUNT.pointee))
+        in_DISPCNT = IO_MEMORY[0x0/2]
+        in_background_registers_0 = Background(ctr: IO_MEMORY[0x8/2], x: IO_MEMORY[0x10/2], y: IO_MEMORY[0x12/2])
+        in_background_registers_1  = Background(ctr: IO_MEMORY[0xa/2], x: IO_MEMORY[0x14/2], y: IO_MEMORY[0x16/2])
+        in_background_registers_2 = Background(ctr: IO_MEMORY[0xc/2], x: IO_MEMORY[0x18/2], y: IO_MEMORY[0x1a/2])
+        in_background_registers_3 = Background(ctr: IO_MEMORY[0xe/2], x: IO_MEMORY[0x1c/2], y: IO_MEMORY[0x1e/2])
+    }
 
-        in_DISPCNT = IO_MEMORY[0x0]
-        in_background_registers_0 = Background(ctr: IO_MEMORY[0x8], x: IO_MEMORY[0x10], y: IO_MEMORY[0x12])
-        in_background_registers_1  = Background(ctr: IO_MEMORY[0xa], x: IO_MEMORY[0x14], y: IO_MEMORY[0x16])
-        in_background_registers_2 = Background(ctr: IO_MEMORY[0xc], x: IO_MEMORY[0x18], y: IO_MEMORY[0x1a])
-        in_background_registers_3 = Background(ctr: IO_MEMORY[0xe], x: IO_MEMORY[0x1c], y: IO_MEMORY[0x1e])
+    private func SignalUpdateBuffersReady()
+    {
+        let IO_MEMORY = GetHalfWordMemoryPtr(handle: CpuRunnerHandle, address: 0x04000000)
+        let VCOUNT = IO_MEMORY.advanced(by: 0x6 / 2)
+        VCOUNT.pointee = 159
+    }
+
+    private func SignalDoNotUpdateBuffers()
+    {
+        let IO_MEMORY = GetHalfWordMemoryPtr(handle: CpuRunnerHandle, address: 0x04000000)
+        let VCOUNT = IO_MEMORY.advanced(by: 0x6 / 2)
+        VCOUNT.pointee = 0
     }
     
     private func dispatch()
     {
         // Set scanline to indicate to CPU that VRAM can be updated.
-        scanLine = 160;
+        SignalUpdateBuffersReady()
         
         // Wait for time for CPU to update buffers.
         usleep(VBLANK_TIME_MS * 1000);
         
         // Set scanline to indicate to CPU to not update buffers until the next dispatch.
-        scanLine = 0;
+        SignalDoNotUpdateBuffers()
+        
+        usleep(VBLANK_TIME_MS * 1000);
         
         // Do action
         // createFakeData()

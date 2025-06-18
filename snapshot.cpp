@@ -64,7 +64,7 @@ void debug_snapshot(const AllRegisters &registers,
                     const Pipeline &pipeline, const char *path) {
   static U32 snapshot_num = 0;
 
-  LOG_DEBUG("Writing Snapshot: %u", snapshot_num);
+  LOG("Writing Snapshot: %u", snapshot_num);
 
   char snapshot_path[MAX_PATH_LENGHT];
   snprintf(snapshot_path, sizeof(snapshot_path), "%s%s_%u/", path, snapshot_dir,

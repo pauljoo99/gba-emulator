@@ -239,12 +239,13 @@ void CPU::ClearPipeline() noexcept {
   Instr instr_opcode;
   if (extended_instr_opcode == ExtendedInstr::NONE) {
     instr_opcode = GetArmOpcode(instr);
-    LOG("Dispatch %u - Instr: %s, Raw Instr: 0x%08X, PC: 0x%04X",
-        cpu.dispatch_num, ToString(instr_opcode), instr,
-        cpu.pipeline.execute_addr);
+    LOG_VERBOSE("Dispatch %u - Instr: %s, Raw Instr: 0x%08X, PC: 0x%04X",
+                cpu.dispatch_num, ToString(instr_opcode), instr,
+                cpu.pipeline.execute_addr);
   } else {
     instr_opcode = ExtendedInstrToArmInstr[U32(extended_instr_opcode)];
-    LOG("Dispatch %u - Extended Instr: %s, Raw Instr: 0x%08X, PC: 0x%04X",
+    LOG_VERBOSE(
+        "Dispatch %u - Extended Instr: %s, Raw Instr: 0x%08X, PC: 0x%04X",
         cpu.dispatch_num, ToString(instr_opcode), instr,
         cpu.pipeline.execute_addr);
   }
@@ -299,6 +300,10 @@ void CPU::ClearPipeline() noexcept {
   case Instr::AND:
     return cpu.Dispatch_AND(instr);
   default:
+    LOG("Dispatch Failed on %u - Instr: %s, Raw Instr: 0x%08X, PC: 0x%04X",
+        cpu.dispatch_num, ToString(instr_opcode), instr,
+        cpu.pipeline.execute_addr);
+
     return false;
   }
 }
@@ -307,9 +312,9 @@ void CPU::ClearPipeline() noexcept {
                                            CPU &cpu) noexcept {
 
   const Thumb::ThumbOpcode opcode = Thumb::GetThumbOpcode(instr);
-  LOG("Dispatch %u - Raw Thumb Instr: 0x%04X, Opcode: %s, PC: 0x%04X",
-      cpu.dispatch_num, instr, Thumb::ToString(opcode),
-      cpu.pipeline.execute_addr);
+  LOG_VERBOSE("Dispatch %u - Raw Thumb Instr: 0x%04X, Opcode: %s, PC: 0x%04X",
+              cpu.dispatch_num, instr, Thumb::ToString(opcode),
+              cpu.pipeline.execute_addr);
 
   switch (opcode) {
   case (Thumb::ThumbOpcode::CMP1):
@@ -413,6 +418,10 @@ void CPU::ClearPipeline() noexcept {
   default:
     break;
   }
+
+  LOG("Dispatch Failed on %u - Raw Thumb Instr: 0x%04X, Opcode: %s, PC: 0x%04X",
+      cpu.dispatch_num, instr, Thumb::ToString(opcode),
+      cpu.pipeline.execute_addr);
 
   return false;
 }
@@ -1747,6 +1756,7 @@ bool CPU::Dispatch_Thumb_LDRB1(U16 instr,
   U32 rn = GetBitsInRange(instr, 3, 6);
   U32 immed_5 = GetBitsInRange(instr, 6, 11);
   U32 address = registers->r[rn] + immed_5;
+
   registers->r[rd] = ReadByteFromGBAMemory(memory, address);
   registers->r[PC] += 2;
   return true;
