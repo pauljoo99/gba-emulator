@@ -269,6 +269,8 @@ void CPU::ClearPipeline() noexcept {
     return cpu.Dispatch_LDRB(instr, memory);
   case Instr::LDRH:
     return cpu.Dispatch_LDRH(instr, memory);
+  case Instr::LDRSH:
+    return cpu.Dispatch_LDRSH(instr, memory);
   case Instr::CMP:
     return cpu.Dispatch_CMP(instr);
   case Instr::TEQ:
@@ -295,6 +297,8 @@ void CPU::ClearPipeline() noexcept {
     return cpu.Dispatch_STR(instr, memory);
   case Instr::ADD:
     return cpu.Dispatch_ADD(instr);
+  case Instr::MUL:
+    return cpu.Dispatch_MUL(instr);
   case Instr::ADC:
     return cpu.Dispatch_ADC(instr);
   case Instr::AND:
@@ -941,6 +945,22 @@ CPU::LoadAndStoreMultipleAddr(U32 instr_) noexcept {
   return true;
 }
 
+[[nodiscard]] bool CPU::Dispatch_LDRSH(U32 instr_,
+                                       const Memory::Memory &memory) noexcept {
+  const SingleDataTransferInstr instr{instr_};
+  if (EvaluateCondition(ConditionCode(instr.fields.cond), registers->CPSR)) {
+    U32 address = LoadAndStoreHalfWordAddr(instr);
+    if ((address & 0b1) == 0) {
+      registers->r[instr.fields.rd] =
+          SignExtend(ReadHalfWordFromGBAMemory(memory, address), 16);
+    } else {
+      ABORT("Bad address: 0x%04X", address);
+    }
+  }
+  registers->r[PC] += 4;
+  return true;
+}
+
 [[nodiscard]] bool CPU::Dispatch_LDR(U32 instr_,
                                      const Memory::Memory &memory) noexcept {
   const SingleDataTransferInstr instr{instr_};
@@ -1217,6 +1237,25 @@ bool CPU::Dispatch_ADD(U32 instr_) noexcept {
                                  shifter.shifter_operand));
       CPSR_SetV(SignedAddOverflow(registers->r[instr.fields.rn],
                                   shifter.shifter_operand));
+    }
+  }
+  registers->r[PC] += 4;
+  return true;
+}
+
+bool CPU::Dispatch_MUL(U32 instr_) noexcept {
+  MULInstr instr(instr_);
+  if (EvaluateCondition(ConditionCode(instr.fields.cond), registers->CPSR)) {
+    if (instr.fields.rd == PC) {
+      ABORT("Cannot rd to R15");
+    }
+
+    registers->r[instr.fields.rd] =
+        registers->r[instr.fields.rm] * registers->r[instr.fields.rs];
+
+    if (instr.fields.s == 1) {
+      CPSR_SetN(GetBit(registers->r[instr.fields.rd], 31));
+      CPSR_SetZ(registers->r[instr.fields.rd] == 0);
     }
   }
   registers->r[PC] += 4;
@@ -1754,24 +1793,14 @@ bool CPU::Dispatch_Thumb_LDR4(U16 instr,
   return true;
 }
 
-bool CPU::Dispatch_Thumb_LDRB1(U16 instr, Memory::Memory &memory) noexcept {
+bool CPU::Dispatch_Thumb_LDRB1(U16 instr,
+                               const Memory::Memory &memory) noexcept {
   U32 rd = GetBitsInRange(instr, 0, 3);
   U32 rn = GetBitsInRange(instr, 3, 6);
   U32 immed_5 = GetBitsInRange(instr, 6, 11);
   U32 address = registers->r[rn] + immed_5;
 
   registers->r[rd] = ReadByteFromGBAMemory(memory, address);
-
-  if (U32(registers->r[rd]) == 0 && address == 0x04000006) {
-    LOG("Looking for VCOUNT 159 but is currently 0");
-    WriteByteToGBAMemory(memory, address, 159);
-  }
-
-  if (U32(registers->r[rd]) == 159 && address == 0x04000006) {
-    LOG("Looking for VCOUNT 0 but is currently 159");
-    WriteByteToGBAMemory(memory, address, 0);
-  }
-
   registers->r[PC] += 2;
   return true;
 }

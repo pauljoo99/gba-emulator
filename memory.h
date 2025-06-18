@@ -3,6 +3,7 @@
 #include "datatypes.h"
 #include "memory_constants.h"
 #include <assert.h>
+#include <cstring>
 
 namespace Emulator::Memory
 

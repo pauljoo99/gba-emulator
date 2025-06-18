@@ -119,6 +119,8 @@ struct CPU {
                                    const Memory::Memory &memory) noexcept;
   [[nodiscard]] bool Dispatch_LDRH(U32 instr,
                                    const Memory::Memory &memory) noexcept;
+  [[nodiscard]] bool Dispatch_LDRSH(U32 instr,
+                                    const Memory::Memory &memory) noexcept;
   [[nodiscard]] bool Dispatch_LDM(U32 instr,
                                   const Memory::Memory &memory) noexcept;
   [[nodiscard]] bool Dispatch_TEQ(U32 instr_) noexcept;
@@ -130,6 +132,7 @@ struct CPU {
   [[nodiscard]] bool Dispatch_SUB(U32 instr) noexcept;
   [[nodiscard]] bool Dispatch_RSB(U32 instr) noexcept;
   [[nodiscard]] bool Dispatch_ADD(U32 instr) noexcept;
+  [[nodiscard]] bool Dispatch_MUL(U32 instr) noexcept;
   [[nodiscard]] bool Dispatch_ADC(U32 instr) noexcept;
   [[nodiscard]] bool Dispatch_AND(U32 instr) noexcept;
 
@@ -170,10 +173,8 @@ struct CPU {
                                          const Memory::Memory &memory) noexcept;
   [[nodiscard]] bool Dispatch_Thumb_LDR4(U16 instr,
                                          const Memory::Memory &memory) noexcept;
-  // TODO: Make memory const. Just doing this for now to simulate VCOUNT going
-  // between 0 and 159.
-  [[nodiscard]] bool Dispatch_Thumb_LDRB1(U16 instr,
-                                          Memory::Memory &memory) noexcept;
+  [[nodiscard]] bool
+  Dispatch_Thumb_LDRB1(U16 instr, const Memory::Memory &memory) noexcept;
   [[nodiscard]] bool Dispatch_Thumb_ASR1(U16 instr) noexcept;
   [[nodiscard]] bool Dispatch_Thumb_B1(U16 instr) noexcept;
   [[nodiscard]] bool Dispatch_Thumb_B2(U16 instr) noexcept;
