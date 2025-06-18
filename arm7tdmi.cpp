@@ -295,6 +295,8 @@ void CPU::ClearPipeline() noexcept {
     return cpu.Dispatch_RSB(instr);
   case Instr::STR:
     return cpu.Dispatch_STR(instr, memory);
+  case Instr::STRH:
+    return cpu.Dispatch_STRH(instr, memory);
   case Instr::ADD:
     return cpu.Dispatch_ADD(instr);
   case Instr::MUL:
@@ -371,6 +373,8 @@ void CPU::ClearPipeline() noexcept {
     return cpu.Dispatch_Thumb_EOR(instr);
   case (Thumb::ThumbOpcode::AND):
     return cpu.Dispatch_Thumb_AND(instr);
+  case (Thumb::ThumbOpcode::CMN):
+    return cpu.Dispatch_Thumb_CMN(instr);
   case (Thumb::ThumbOpcode::ADD1):
     return cpu.Dispatch_Thumb_ADD1(instr);
   case (Thumb::ThumbOpcode::ADD2):
@@ -1020,6 +1024,22 @@ CPU::LoadAndStoreMultipleAddr(U32 instr_) noexcept {
   return true;
 }
 
+[[nodiscard]] bool CPU::Dispatch_STRH(U32 instr_,
+                                      Memory::Memory &memory) noexcept {
+  const SingleDataTransferInstr instr{instr_};
+  if (EvaluateCondition(ConditionCode(instr.fields.cond), registers->CPSR)) {
+    U32 address = LoadAndStoreHalfWordAddr(instr);
+    if ((address & 0b1) == 0) {
+      WriteHalfWordToGBAMemory(memory, address,
+                               U16(registers->r[instr.fields.rd]));
+    } else {
+      ABORT("Bad address: 0x%04X", address);
+    }
+  }
+  registers->r[PC] += 4;
+  return true;
+}
+
 [[nodiscard]] bool CPU::Dispatch_CMP(U32 instr_) noexcept {
   const DataProcessingInstr instr(instr_);
   if (EvaluateCondition(ConditionCode(instr.fields.cond), registers->CPSR)) {
@@ -1339,6 +1359,21 @@ bool CPU::Dispatch_Thumb_CMP1(U16 instr) noexcept {
   CPSR_SetZ(alu_out == 0);
   CPSR_SetC(!UnsignedSubBorrow(registers->r[rn], immed_8));
   CPSR_SetV(SignedSubOverflow(registers->r[rn], immed_8));
+
+  registers->r[PC] += 2;
+  return true;
+}
+
+bool CPU::Dispatch_Thumb_CMN(U16 instr) noexcept {
+  U32 rn = GetBitsInRange(instr, 0, 3);
+  U32 rm = GetBitsInRange(instr, 3, 6);
+
+  U32 alu_out = registers->r[rn] + registers->r[rm];
+
+  CPSR_SetN(GetBit(alu_out, 31));
+  CPSR_SetZ(alu_out == 0);
+  CPSR_SetC(UnsignedAddCarry(registers->r[rn], registers->r[rm]));
+  CPSR_SetV(SignedAddOverflow(registers->r[rn], registers->r[rm]));
 
   registers->r[PC] += 2;
   return true;
