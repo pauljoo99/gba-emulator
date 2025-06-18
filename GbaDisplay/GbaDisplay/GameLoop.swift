@@ -111,7 +111,7 @@ class GameLoop {
     var in_background_registers_2 : Background = Background()
     var in_background_registers_3 : Background = Background()
     
-    let CpuRunnerHandle : CpuRunnerHandle = CpuRunner_create();
+    let CpuRunnerHandle : CpuRunnerHandle = CpuRunner_Create()
     
     var sprite_metadata : SpriteMetadata = SpriteMetadata(m_num_sprites: 0, m_index_buffer_offset: [], m_num_pixels: [])
 
@@ -414,7 +414,7 @@ class GameLoop {
         scanLine = 0;
         
         // Do action
-        CpuRunner_run(CpuRunnerHandle);
+        CpuRunner_Run(CpuRunnerHandle);
         createFakeData()
         
         sprite_metadata = GbaToMetal()

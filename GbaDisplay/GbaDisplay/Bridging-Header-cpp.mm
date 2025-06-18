@@ -10,19 +10,19 @@
 #import "Bridging-Header-cpp.h"
 #import "cpu_runner.h"
 
-CpuRunnerHandle CpuRunner_create() {
+CpuRunnerHandle CpuRunner_Create() {
     return new CpuRunner::CpuRunner();
 }
 
-void CpuRunner_run(CpuRunnerHandle handle)
+void CpuRunner_Run(CpuRunnerHandle handle)
 {
     static_cast<CpuRunner::CpuRunner*>(handle)->Run();
 }
 
-void CpuRunner_destroy(CpuRunnerHandle handle) {
+void CpuRunner_Destroy(CpuRunnerHandle handle) {
     delete static_cast<CpuRunner::CpuRunner*>(handle);
 }
 
-int* CpuRunner_GetVramBuffer(CpuRunnerHandle handle) {
-    return static_cast<CpuRunner::CpuRunner*>(handle)->VramBuffer;
+void* CpuRunner_GetMemory(CpuRunnerHandle handle) {
+    return static_cast<CpuRunner::CpuRunner*>(handle)->Memory_;
 }

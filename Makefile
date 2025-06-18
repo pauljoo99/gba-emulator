@@ -13,11 +13,11 @@ all: $(EXEC) $(EXEC_CPU_RUNNER)
 
 # Create CPU Runner library
 $(EXEC_CPU_RUNNER): cpu_runner.o
-	ar rcs $(EXEC_CPU_RUNNER) $(BUILD_DIR)/cpu_runner.o
+	ar rcs $(EXEC_CPU_RUNNER) $(BUILD_DIR)/cpu_runner.o $(BUILD_DIR)/main.o $(BUILD_DIR)/arm7tdmi.o $(BUILD_DIR)/snapshot.o
 
 # Link object file to create the executable
-$(EXEC): main.o snapshot.o arm7tdmi.o
-	$(CXX) $(BUILD_DIR)/main.o $(BUILD_DIR)/arm7tdmi.o $(BUILD_DIR)/snapshot.o  -o $(EXEC)
+$(EXEC): main.o snapshot.o arm7tdmi.o cpu_runner.o
+	$(CXX) $(BUILD_DIR)/main.o $(BUILD_DIR)/arm7tdmi.o $(BUILD_DIR)/snapshot.o $(BUILD_DIR)/cpu_runner.o -o $(EXEC)
 
 # Compile cpu_runner
 cpu_runner.o:

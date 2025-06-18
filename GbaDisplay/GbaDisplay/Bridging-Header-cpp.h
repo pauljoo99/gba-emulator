@@ -14,10 +14,10 @@ extern "C" {
 
 typedef void* CpuRunnerHandle;
 
-CpuRunnerHandle CpuRunner_create();
-void CpuRunner_run(CpuRunnerHandle handle);
-void CpuRunner_destroy(CpuRunnerHandle handle);
-int* CpuRunner_GetVramBuffer(CpuRunnerHandle handle);
+CpuRunnerHandle CpuRunner_Create();
+void CpuRunner_Run(CpuRunnerHandle handle);
+void CpuRunner_Destroy(CpuRunnerHandle handle);
+void* CpuRunner_GetMemory(CpuRunnerHandle handle);
 
 #ifdef __cplusplus
 }

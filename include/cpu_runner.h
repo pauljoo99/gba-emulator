@@ -3,8 +3,11 @@
 namespace CpuRunner {
 
 struct CpuRunner {
+  bool Init(int argc, char *argv[]);
   void Run();
-  int VramBuffer[2];
+  void *Memory_;
+  void *Cpu_;
+  bool initialized = false;
 };
 
 } // namespace CpuRunner
