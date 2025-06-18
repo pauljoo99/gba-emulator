@@ -70,19 +70,20 @@ bool CpuRunner::Init(int argc, char *argv[]) {
 };
 
 void CpuRunner::Run() {
-  if (!initialized) {
-    LOG_DEBUG("CpuRunner was not initialized!");
-    return;
-  }
-
   Arm::CPU *cpu = (Arm::CPU *)Cpu_;
   Memory::Memory *memory = (Memory::Memory *)Memory_;
-  while (cpu->Dispatch(*memory)) {
-    // Later we can mimic halts properly. For now sleep 200 microseconds to save
-    // on compute.
-    std::this_thread::sleep_for(std::chrono::microseconds(500));
+  if (!initialized) {
+    LOG_DEBUG("CpuRunner was not initialized!");
+  } else {
+    while (cpu->Dispatch(*memory)) {
+      // Later we can mimic halts properly. For now sleep 200 microseconds to
+      // save on compute.
+      std::this_thread::sleep_for(std::chrono::microseconds(500));
+    }
+    LOG_DEBUG("CpuRunner stopped running!");
   }
-  LOG_DEBUG("CpuRunner stopped running!");
+  free(cpu);
+  free(memory);
   return;
 };
 
