@@ -295,6 +295,8 @@ void CPU::ClearPipeline() noexcept {
     return cpu.Dispatch_RSB(instr);
   case Instr::STR:
     return cpu.Dispatch_STR(instr, memory);
+  case Instr::STRB:
+    return cpu.Dispatch_STRB(instr, memory);
   case Instr::STRH:
     return cpu.Dispatch_STRH(instr, memory);
   case Instr::ADD:
@@ -1019,6 +1021,17 @@ CPU::LoadAndStoreMultipleAddr(U32 instr_) noexcept {
       address = LoadAndStoreWordOrByteRegAddr(instr_);
     }
     WriteWordToGBAMemory(memory, address, registers->r[instr.fields.rd]);
+  }
+  registers->r[PC] += 4;
+  return true;
+}
+
+[[nodiscard]] bool CPU::Dispatch_STRB(U32 instr_,
+                                      Memory::Memory &memory) noexcept {
+  const SingleDataTransferInstr instr{instr_};
+  if (EvaluateCondition(ConditionCode(instr.fields.cond), registers->CPSR)) {
+    U32 address = LoadAndStoreWordOrByteAddr(instr_);
+    WriteByteToGBAMemory(memory, address, U8(registers->r[instr.fields.rd]));
   }
   registers->r[PC] += 4;
   return true;
