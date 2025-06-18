@@ -16,9 +16,9 @@ struct Memory {
   U8 IO_Registers[0x1FF];   // 04000000-040003FE   I/O Registers (read/write
                             // as 16-bit)
   // Internal Display Memory
-  U8 PaletteRAM[0x200]; // 05000000-050003FF   BG/OBJ Palette RAM (1 KB)
-  U8 VRAM[0x18000 / 2]; // 06000000-06017FFF   VRAM (96 KB)
-  U8 OAM[0x200];        // 07000000-070003FF   OBJ Attributes (1 KB)
+  U8 PaletteRAM[0x400]; // 05000000-050003FF   BG/OBJ Palette RAM (1 KB)
+  U8 VRAM[0x18000];     // 06000000-06017FFF   VRAM (96 KB)
+  U8 OAM[0x400];        // 07000000-070003FF   OBJ Attributes (1 KB)
 
   // External Memory (Game Pak)
   U8 GamePak_WS0[0x2000000]; // 08000000-09FFFFFF   Game Pak ROM/Flash -

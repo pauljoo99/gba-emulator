@@ -436,6 +436,16 @@ class GameLoop {
         in_object_attr_buffer.update(from: raw_in_object_attr_buffer, count: raw_in_object_attr_buffer.count)
         in_palette_buffer.update(from: raw_palette_buffer, count: raw_palette_buffer.count)
     }
+
+    private func PullGbaData()
+    {
+        let IO_MEMORY = GetWordMemoryPtr(handle: CpuRunnerHandle, address: 0x04000000)
+        let DISPCNT = IO_MEMORY[0]
+        let VCOUNT = IO_MEMORY.advanced(by: 6)
+        print(String(format: "DISPCNT: 0x%04X", DISPCNT))
+        print(String(format: "VCOUNT: 0x%04X", VCOUNT.pointee))
+        VCOUNT.pointee = 160
+    }
     
     private func dispatch()
     {
@@ -450,6 +460,7 @@ class GameLoop {
         
         // Do action
         createFakeData()
+        PullGbaData()
         sprite_metadata = GbaToMetal()
     }
     

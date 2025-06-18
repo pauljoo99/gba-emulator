@@ -17,6 +17,7 @@
 		D56106FE2DFBF58D009E86D7 /* GameLoop.swift in Sources */ = {isa = PBXBuildFile; fileRef = D56106FD2DFBF58D009E86D7 /* GameLoop.swift */; };
 		D56C94562E01F198000E6A1E /* Bridging-Header-cpp.mm in Sources */ = {isa = PBXBuildFile; fileRef = D56C94552E01F198000E6A1E /* Bridging-Header-cpp.mm */; };
 		D56C94592E01F3AE000E6A1E /* cpu_runner.a in Frameworks */ = {isa = PBXBuildFile; fileRef = D56C94582E01F3AE000E6A1E /* cpu_runner.a */; };
+		D56C945D2E027AC1000E6A1E /* MemoryAccessor.swift in Sources */ = {isa = PBXBuildFile; fileRef = D56C945C2E027AC1000E6A1E /* MemoryAccessor.swift */; };
 		D5CF437B2E00C2BF00CDFFBA /* RegisterDecoders.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5CF437A2E00C2BF00CDFFBA /* RegisterDecoders.swift */; };
 /* End PBXBuildFile section */
 
@@ -36,6 +37,7 @@
 		D56C94552E01F198000E6A1E /* Bridging-Header-cpp.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = "Bridging-Header-cpp.mm"; sourceTree = "<group>"; };
 		D56C94582E01F3AE000E6A1E /* cpu_runner.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = cpu_runner.a; path = ../build/cpu_runner.a; sourceTree = "<group>"; };
 		D56C945A2E01F58A000E6A1E /* Bridging-Header-cpp.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "Bridging-Header-cpp.h"; sourceTree = "<group>"; };
+		D56C945C2E027AC1000E6A1E /* MemoryAccessor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemoryAccessor.swift; sourceTree = "<group>"; };
 		D5CF437A2E00C2BF00CDFFBA /* RegisterDecoders.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RegisterDecoders.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -81,6 +83,7 @@
 				D561070D2DFCF7BF009E86D7 /* Bridging-Header.h */,
 				D56C94552E01F198000E6A1E /* Bridging-Header-cpp.mm */,
 				D56C945A2E01F58A000E6A1E /* Bridging-Header-cpp.h */,
+				D56C945C2E027AC1000E6A1E /* MemoryAccessor.swift */,
 				D56106FB2DFB731E009E86D7 /* Shaders.metal */,
 				D56106EA2DFB709F009E86D7 /* Assets.xcassets */,
 				D56106EF2DFB709F009E86D7 /* GbaDisplay.entitlements */,
@@ -180,6 +183,7 @@
 				D56106E92DFB709A009E86D7 /* ContentView.swift in Sources */,
 				D5CF437B2E00C2BF00CDFFBA /* RegisterDecoders.swift in Sources */,
 				D56C94562E01F198000E6A1E /* Bridging-Header-cpp.mm in Sources */,
+				D56C945D2E027AC1000E6A1E /* MemoryAccessor.swift in Sources */,
 				D56106E72DFB709A009E86D7 /* GbaDisplayApp.swift in Sources */,
 				D56106FC2DFB731E009E86D7 /* Shaders.metal in Sources */,
 				D56106FE2DFBF58D009E86D7 /* GameLoop.swift in Sources */,
