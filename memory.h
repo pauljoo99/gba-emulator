@@ -1,13 +1,21 @@
 #pragma once
 
 #include "datatypes.h"
-#include "memory_constants.h"
 #include <assert.h>
 #include <cstring>
 
 namespace Emulator::Memory
 
 {
+
+/// Interrupt Master Enable Register
+constexpr U32 IME = 0x4000208;
+
+/// Interrupt Enable Register
+constexpr U32 IE = 0x04000200;
+
+/// Interrupt Request Flags / IRQ Ack Register
+constexpr U32 IF = 0x4000202;
 
 struct Memory {
   // General Internal Memory
@@ -118,15 +126,35 @@ inline U16 ReadHalfWordFromGBAMemory(const Memory &mem, U32 address) noexcept {
 }
 
 inline void WriteByteToGBAMemory(Memory &mem, U32 address, U8 value) noexcept {
+  // Setting IF clears it.
+  if (address == IF) {
+    U8 current = ReadByteFromGBAMemory(mem, IF);
+    value = current & ~value;
+  }
   memcpy(GetPhysicalMemoryReadWrite(mem, address), &value, sizeof(value));
 }
 
 inline void WriteWordToGBAMemory(Memory &mem, U32 address, U32 value) noexcept {
+  // Setting IF clears it.
+  if (address == IF) {
+    U32 current = ReadWordFromGBAMemory(mem, IF);
+    value = current & ~value;
+  }
   memcpy(GetPhysicalMemoryReadWrite(mem, address), &value, sizeof(value));
 }
 
 inline void WriteHalfWordToGBAMemory(Memory &mem, U32 address,
                                      U16 value) noexcept {
+  // Setting IF clears it.
+  if (address == IF) {
+    U16 current = ReadHalfWordFromGBAMemory(mem, IF);
+    value = current & ~value;
+  }
+  memcpy(GetPhysicalMemoryReadWrite(mem, address), &value, sizeof(value));
+}
+
+inline void WriteHalfWordToGBAMemoryMock(Memory &mem, U32 address,
+                                         U16 value) noexcept {
   memcpy(GetPhysicalMemoryReadWrite(mem, address), &value, sizeof(value));
 }
 

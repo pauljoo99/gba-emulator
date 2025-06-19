@@ -13,7 +13,7 @@ void MockDisplayLoop(Emulator::Memory::Memory *memory) {
     // Trigger VCOUNT interrupt
     U32 IRQ_ENABLED = ReadWordFromGBAMemory(*memory, 0x04000200);
     if (((IRQ_ENABLED & 0b1) == 1) && val == 160) {
-      WriteHalfWordToGBAMemory(*memory, 0x04000202, 0b1);
+      WriteHalfWordToGBAMemoryMock(*memory, 0x04000202, 0b1);
     }
 
     // Runs a 60Hz. 1/60 seconds per screen, 228 scanlines. Each scanline takes

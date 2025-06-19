@@ -228,6 +228,24 @@ void CPU::ClearPipeline() noexcept {
   pipeline.fetch_addr = U32(-1);
 }
 
+void CPU::EnterException_IRQ() noexcept {
+  LOG_VERBOSE("Entering exception IRQ");
+
+  U32 old_cpsr = registers->CPSR;
+  CPSR_SetM(0b10010);
+  CPSR_SetI(true);
+  CPSR_SetT(false);
+  ChangeRegistersOnMode();
+  // Maybe makes more sense in hardware if we increment the address before
+  // executing the instruction but the interrupt handler uses subs pc, r14_irq,
+  // #4 so add by 4 to return to the address we were supposed to execute this
+  // step.
+  registers->r[LR] = pipeline.execute_addr + 4;
+  registers->SPRS = old_cpsr;
+  registers->r[PC] = 0x18;
+  ClearPipeline();
+}
+
 [[nodiscard]] bool ProcessInstruction(U32 instr, Memory::Memory &memory,
                                       CPU &cpu) {
 
@@ -710,8 +728,16 @@ CPU::LoadAndStoreMultipleAddr(U32 instr_) noexcept {
   ChangeRegistersOnMode();
   CPSR_Register cpsr(registers->CPSR);
   if (cpsr.bits.T) {
-    U16 instr = ReadHalfWordFromGBAMemory(memory, registers->r[PC]);
-    if (AdvancePipeline((U32)instr, registers->r[PC])) {
+    U32 instr = ReadWordFromGBAMemory(memory, registers->r[PC]);
+    bool existsInstructionToExecute = AdvancePipeline(instr, registers->r[PC]);
+    if (existsInstructionToExecute) {
+      if ((!CPSR_Register(registers->CPSR).bits.I) &&
+          (ReadHalfWordFromGBAMemory(memory, Emulator::Memory::IME)) &&
+          (ReadHalfWordFromGBAMemory(memory, Emulator::Memory::IE) &
+           ReadHalfWordFromGBAMemory(memory, Emulator::Memory::IF))) {
+        EnterException_IRQ();
+        return true;
+      }
       if (!ProcessThumbInstruction((U16)pipeline.execute, memory, *this)) {
         return false;
       }
@@ -720,7 +746,16 @@ CPU::LoadAndStoreMultipleAddr(U32 instr_) noexcept {
     }
   } else {
     U32 instr = ReadWordFromGBAMemory(memory, registers->r[PC]);
-    if (AdvancePipeline(instr, registers->r[PC])) {
+    bool existsInstructionToExecute = AdvancePipeline(instr, registers->r[PC]);
+    if (existsInstructionToExecute) {
+      if ((!CPSR_Register(registers->CPSR).bits.I) &&
+          (ReadHalfWordFromGBAMemory(memory, Emulator::Memory::IME)) &&
+          (ReadHalfWordFromGBAMemory(memory, Emulator::Memory::IE) &
+           ReadHalfWordFromGBAMemory(memory, Emulator::Memory::IF))) {
+        EnterException_IRQ();
+        return true;
+      }
+
       if (!ProcessInstruction(pipeline.execute, memory, *this)) {
         return false;
       }

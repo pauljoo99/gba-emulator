@@ -212,6 +212,8 @@ struct CPU {
   [[nodiscard]] bool Dispatch_Thumb_POP(U16 instr,
                                         const Memory::Memory &memory) noexcept;
 
+  void EnterException_IRQ() noexcept;
+
   ShifterOperandResult ShifterOperand(DataProcessingInstr instr) noexcept;
 
   ShifterOperandResult
@@ -398,11 +400,27 @@ struct CPU {
     registers->CPSR = BitUtils::SetBitsInMask(registers->CPSR, cpsr, mask);
   }
 
+  inline void CPSR_SetI(bool I) noexcept {
+    CPSR_Register cpsr;
+    cpsr.bits.I = I;
+    CPSR_Register mask;
+    mask.bits.I = 1;
+    registers->CPSR = BitUtils::SetBitsInMask(registers->CPSR, cpsr, mask);
+  }
+
   inline void CPSR_SetT(bool T) noexcept {
     CPSR_Register cpsr;
     cpsr.bits.T = T;
     CPSR_Register mask;
     mask.bits.T = 1;
+    registers->CPSR = BitUtils::SetBitsInMask(registers->CPSR, cpsr, mask);
+  }
+
+  inline void CPSR_SetM(U8 M) noexcept {
+    CPSR_Register cpsr;
+    cpsr.bits.M = M;
+    CPSR_Register mask;
+    mask.bits.M = 0b11111;
     registers->CPSR = BitUtils::SetBitsInMask(registers->CPSR, cpsr, mask);
   }
 };
