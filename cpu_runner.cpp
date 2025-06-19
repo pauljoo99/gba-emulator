@@ -44,11 +44,12 @@ using namespace Emulator;
 }
 
 bool CpuRunner::Init(int argc, char *argv[]) {
-  if (argc != 2) {
+  if (argc != 3) {
     std::cerr << "Usage: " << argv[0] << " <name>" << std::endl;
     return false;
   }
-  char *file_name = argv[1];
+  char *bios_name = argv[1];
+  char *game_name = argv[2];
 
   Arm::CPU *cpu = new Arm::CPU();
   Memory::Memory *memory = new Memory::Memory();
@@ -57,8 +58,14 @@ bool CpuRunner::Init(int argc, char *argv[]) {
   Memory_ = (void *)memory;
 
   // Load BIOS
-  if (!load_file(file_name, (char *)memory->BIOS)) {
+  if (!load_file(bios_name, (char *)memory->BIOS)) {
     LOG_VERBOSE("Could not load bios!");
+    return false;
+  }
+
+  // Load Game Cartridge
+  if (!load_file(game_name, (char *)memory->GamePak_WS0)) {
+    LOG_VERBOSE("Could not load game!");
     return false;
   }
 
