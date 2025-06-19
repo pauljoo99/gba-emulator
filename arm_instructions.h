@@ -112,7 +112,7 @@ struct ShifterOperandResult {
   U32 shifter_carry_out;
 };
 
-struct LoadAndStoreHalfWordImmFields {
+struct LoadAndStoreMiscImmFields {
   U32 immedl : 4;
   U32 : 1;
   U32 h : 1;
@@ -121,16 +121,16 @@ struct LoadAndStoreHalfWordImmFields {
   U32 immedh : 4;
 };
 
-union LoadAndStoreHalfWordImm {
+union LoadAndStoreMiscImm {
   U32 value;
-  LoadAndStoreHalfWordImmFields fields;
+  LoadAndStoreMiscImmFields fields;
 
-  LoadAndStoreHalfWordImm(U32 val = 0) : value(val) {}
+  LoadAndStoreMiscImm(U32 val = 0) : value(val) {}
 
   operator U32() const { return value; } // Implicit conversion
 };
 
-struct LoadAndStoreHalfWordRegFields {
+struct LoadAndStoreMiscRegFields {
   U32 rm : 4;
   U32 : 1;
   U32 h : 1;
@@ -139,11 +139,11 @@ struct LoadAndStoreHalfWordRegFields {
   U32 : 4;
 };
 
-union LoadAndStoreHalfWordReg {
+union LoadAndStoreMiscReg {
   U32 value;
-  LoadAndStoreHalfWordRegFields fields;
+  LoadAndStoreMiscRegFields fields;
 
-  LoadAndStoreHalfWordReg(U32 val = 0) : value(val) {}
+  LoadAndStoreMiscReg(U32 val = 0) : value(val) {}
 
   operator U32() const { return value; } // Implicit conversion
 };

@@ -285,6 +285,8 @@ void CPU::EnterException_IRQ() noexcept {
     return cpu.Dispatch_LDR(instr, memory);
   case Instr::LDRB:
     return cpu.Dispatch_LDRB(instr, memory);
+  case Instr::LDRSB:
+    return cpu.Dispatch_LDRSB(instr, memory);
   case Instr::LDRH:
     return cpu.Dispatch_LDRH(instr, memory);
   case Instr::LDRSH:
@@ -494,9 +496,9 @@ bool EvaluateCondition(ConditionCode cond, U32 cpsr_) {
   }
 }
 
-U32 CPU::LoadAndStoreHalfWordImmAddr(U32 instr_) noexcept {
+U32 CPU::LoadAndStoreMiscImmAddr(U32 instr_) noexcept {
   const SingleDataTransferInstr instr{instr_};
-  const LoadAndStoreHalfWordImm encoding{instr.fields.offset};
+  const LoadAndStoreMiscImm encoding{instr.fields.offset};
 
   U32 address;
   U32 offset_8 = (encoding.fields.immedh << 4) | encoding.fields.immedl;
@@ -526,9 +528,9 @@ U32 CPU::LoadAndStoreHalfWordImmAddr(U32 instr_) noexcept {
   return address;
 }
 
-U32 CPU::LoadAndStoreHalfWordRegAddr(U32 instr_) noexcept {
+U32 CPU::LoadAndStoreMiscRegAddr(U32 instr_) noexcept {
   const SingleDataTransferInstr instr{instr_};
-  const LoadAndStoreHalfWordReg encoding{instr.fields.offset};
+  const LoadAndStoreMiscReg encoding{instr.fields.offset};
 
   U32 address;
   if (instr.fields.p == 1 && instr.fields.w == 0) {
@@ -667,11 +669,11 @@ U32 CPU::LoadAndStoreWordOrByteRegAddr(U32 instr_) noexcept {
   return address;
 }
 
-U32 CPU::LoadAndStoreHalfWordAddr(SingleDataTransferInstr instr) noexcept {
+U32 CPU::LoadAndStoreMiscAddr(SingleDataTransferInstr instr) noexcept {
   if (instr.fields.b == 1) {
-    return LoadAndStoreHalfWordImmAddr(instr);
+    return LoadAndStoreMiscImmAddr(instr);
   } else {
-    return LoadAndStoreHalfWordRegAddr(instr);
+    return LoadAndStoreMiscRegAddr(instr);
   }
 }
 
@@ -970,11 +972,23 @@ CPU::LoadAndStoreMultipleAddr(U32 instr_) noexcept {
   return true;
 }
 
+[[nodiscard]] bool CPU::Dispatch_LDRSB(U32 instr_,
+                                       const Memory::Memory &memory) noexcept {
+  const SingleDataTransferInstr instr{instr_};
+  if (EvaluateCondition(ConditionCode(instr.fields.cond), registers->CPSR)) {
+    U32 address = LoadAndStoreMiscAddr(instr);
+    registers->r[instr.fields.rd] =
+        SignExtend(ReadByteFromGBAMemory(memory, address), 8);
+  }
+  registers->r[PC] += 4;
+  return true;
+}
+
 [[nodiscard]] bool CPU::Dispatch_LDRH(U32 instr_,
                                       const Memory::Memory &memory) noexcept {
   const SingleDataTransferInstr instr{instr_};
   if (EvaluateCondition(ConditionCode(instr.fields.cond), registers->CPSR)) {
-    U32 address = LoadAndStoreHalfWordAddr(instr);
+    U32 address = LoadAndStoreMiscAddr(instr);
     if ((address & 0b1) == 0) {
       registers->r[instr.fields.rd] =
           ReadHalfWordFromGBAMemory(memory, address);
@@ -990,7 +1004,7 @@ CPU::LoadAndStoreMultipleAddr(U32 instr_) noexcept {
                                        const Memory::Memory &memory) noexcept {
   const SingleDataTransferInstr instr{instr_};
   if (EvaluateCondition(ConditionCode(instr.fields.cond), registers->CPSR)) {
-    U32 address = LoadAndStoreHalfWordAddr(instr);
+    U32 address = LoadAndStoreMiscAddr(instr);
     if ((address & 0b1) == 0) {
       registers->r[instr.fields.rd] =
           SignExtend(ReadHalfWordFromGBAMemory(memory, address), 16);
@@ -1076,7 +1090,7 @@ CPU::LoadAndStoreMultipleAddr(U32 instr_) noexcept {
                                       Memory::Memory &memory) noexcept {
   const SingleDataTransferInstr instr{instr_};
   if (EvaluateCondition(ConditionCode(instr.fields.cond), registers->CPSR)) {
-    U32 address = LoadAndStoreHalfWordAddr(instr);
+    U32 address = LoadAndStoreMiscAddr(instr);
     if ((address & 0b1) == 0) {
       WriteHalfWordToGBAMemory(memory, address,
                                U16(registers->r[instr.fields.rd]));
