@@ -2089,7 +2089,7 @@ bool CPU::Dispatch_Thumb_STRH1(U16 instr, Memory::Memory &memory) noexcept {
   U32 rn = GetBitsInRange(instr, 3, 6);
   U32 immed_5 = GetBitsInRange(instr, 6, 11);
 
-  U32 address = registers->r[rn] + (immed_5 * 4);
+  U32 address = registers->r[rn] + (immed_5 * 2);
   if ((address & 0b1) == 0) {
     WriteHalfWordToGBAMemory(memory, address, U16(registers->r[rd]));
   } else {
