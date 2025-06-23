@@ -355,6 +355,8 @@ void CPU::EnterException_IRQ() noexcept {
     return cpu.Dispatch_Thumb_CMP3(instr);
   case (Thumb::ThumbOpcode::MOV1):
     return cpu.Dispatch_Thumb_MOV1(instr);
+  case (Thumb::ThumbOpcode::MOV2):
+    return cpu.Dispatch_Thumb_MOV2(instr);
   case (Thumb::ThumbOpcode::MOV3):
     return cpu.Dispatch_Thumb_MOV3(instr);
   case (Thumb::ThumbOpcode::MVN):
@@ -369,10 +371,16 @@ void CPU::EnterException_IRQ() noexcept {
     return cpu.Dispatch_Thumb_LDR4(instr, memory);
   case (Thumb::ThumbOpcode::LDRB1):
     return cpu.Dispatch_Thumb_LDRB1(instr, memory);
+  case (Thumb::ThumbOpcode::LDRB2):
+    return cpu.Dispatch_Thumb_LDRB2(instr, memory);
+  case (Thumb::ThumbOpcode::LDRSB):
+    return cpu.Dispatch_Thumb_LDRSB(instr, memory);
   case (Thumb::ThumbOpcode::LDRH1):
     return cpu.Dispatch_Thumb_LDRH1(instr, memory);
   case (Thumb::ThumbOpcode::LDRH2):
     return cpu.Dispatch_Thumb_LDRH2(instr, memory);
+  case (Thumb::ThumbOpcode::LDRSH):
+    return cpu.Dispatch_Thumb_LDRSH(instr, memory);
   case (Thumb::ThumbOpcode::LDMIA):
     return cpu.Dispatch_Thumb_LDMIA(instr, memory);
   case (Thumb::ThumbOpcode::STRB1):
@@ -417,6 +425,8 @@ void CPU::EnterException_IRQ() noexcept {
     return cpu.Dispatch_Thumb_LSL2(instr);
   case (Thumb::ThumbOpcode::LSR1):
     return cpu.Dispatch_Thumb_LSR1(instr);
+  case (Thumb::ThumbOpcode::LSR2):
+    return cpu.Dispatch_Thumb_LSR2(instr);
   case (Thumb::ThumbOpcode::ROR):
     return cpu.Dispatch_Thumb_ROR(instr);
   case (Thumb::ThumbOpcode::ASR1):
@@ -1404,6 +1414,21 @@ bool CPU::Dispatch_Thumb_MOV1(U16 instr) noexcept {
   return true;
 }
 
+bool CPU::Dispatch_Thumb_MOV2(U16 instr) noexcept {
+  U32 rd = GetBitsInRange(instr, 0, 3);
+  U32 rn = GetBitsInRange(instr, 3, 6);
+
+  registers->r[rd] = U32(registers->r[rn]);
+
+  CPSR_SetN(GetBit(registers->r[rd], 31));
+  CPSR_SetZ(registers->r[rd] == 0);
+  CPSR_SetC(0);
+  CPSR_SetV(0);
+
+  registers->r[PC] += 2;
+  return true;
+}
+
 bool CPU::Dispatch_Thumb_MOV3(U16 instr) noexcept {
   U32 rd = ConcatBits(GetBit(instr, 7), GetBitsInRange(instr, 0, 3), 3);
   U32 rm = ConcatBits(GetBit(instr, 6), GetBitsInRange(instr, 3, 6), 3);
@@ -1663,6 +1688,30 @@ bool CPU::Dispatch_Thumb_LSR1(U16 instr) noexcept {
   return true;
 }
 
+bool CPU::Dispatch_Thumb_LSR2(U16 instr) noexcept {
+  U32 rd = GetBitsInRange(instr, 0, 3);
+  U32 rs = GetBitsInRange(instr, 3, 6);
+
+  U8 shift_value = U8(registers->r[rs]);
+
+  if (shift_value == 0) {
+  } else if (shift_value < 32) {
+    CPSR_SetC(GetBit(registers->r[rd], shift_value - 1));
+    registers->r[rd] = LogicalShiftRight(registers->r[rd], shift_value);
+  } else if (shift_value == 32) {
+    CPSR_SetC(GetBit(registers->r[rd], 31));
+    registers->r[rd] = 0;
+  } else {
+    CPSR_SetC(0);
+    registers->r[rd] = 0;
+  }
+  CPSR_SetN(GetBit(registers->r[rd], 31));
+  CPSR_SetZ(registers->r[rd] == 0);
+
+  registers->r[PC] += 2;
+  return true;
+}
+
 bool CPU::Dispatch_Thumb_ROR(U16 instr) noexcept {
   U32 rd = GetBitsInRange(instr, 0, 3);
   U32 rs = GetBitsInRange(instr, 3, 6);
@@ -1902,6 +1951,30 @@ bool CPU::Dispatch_Thumb_LDRB1(U16 instr,
   return true;
 }
 
+bool CPU::Dispatch_Thumb_LDRB2(U16 instr,
+                               const Memory::Memory &memory) noexcept {
+  U32 rd = GetBitsInRange(instr, 0, 3);
+  U32 rn = GetBitsInRange(instr, 3, 6);
+  U32 rm = GetBitsInRange(instr, 6, 9);
+  U32 address = registers->r[rn] + registers->r[rm];
+
+  registers->r[rd] = ReadByteFromGBAMemory(memory, address);
+  registers->r[PC] += 2;
+  return true;
+}
+
+bool CPU::Dispatch_Thumb_LDRSB(U16 instr,
+                               const Memory::Memory &memory) noexcept {
+  U32 rd = GetBitsInRange(instr, 0, 3);
+  U32 rn = GetBitsInRange(instr, 3, 6);
+  U32 rm = GetBitsInRange(instr, 6, 9);
+  U32 address = registers->r[rn] + registers->r[rm];
+
+  registers->r[rd] = SignExtend(ReadByteFromGBAMemory(memory, address), 8);
+  registers->r[PC] += 2;
+  return true;
+}
+
 bool CPU::Dispatch_Thumb_LDRH1(U16 instr,
                                const Memory::Memory &memory) noexcept {
   U32 immed_5 = GetBitsInRange(instr, 6, 11);
@@ -1932,6 +2005,23 @@ bool CPU::Dispatch_Thumb_LDRH2(U16 instr,
     ABORT("Unpredictable");
   }
   registers->r[rd] = data;
+  registers->r[PC] += 2;
+  return true;
+}
+
+bool CPU::Dispatch_Thumb_LDRSH(U16 instr,
+                               const Memory::Memory &memory) noexcept {
+  U32 rd = GetBitsInRange(instr, 0, 3);
+  U32 rn = GetBitsInRange(instr, 3, 6);
+  U32 rm = GetBitsInRange(instr, 6, 9);
+  U32 address = registers->r[rn] + registers->r[rm];
+  U16 data;
+  if ((address & 0b1) == 0) {
+    data = ReadHalfWordFromGBAMemory(memory, address);
+  } else {
+    ABORT("Unpredictable");
+  }
+  registers->r[rd] = SignExtend(data, 16);
   registers->r[PC] += 2;
   return true;
 }
