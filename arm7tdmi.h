@@ -135,6 +135,7 @@ struct CPU {
   [[nodiscard]] bool Dispatch_RSB(U32 instr) noexcept;
   [[nodiscard]] bool Dispatch_ADD(U32 instr) noexcept;
   [[nodiscard]] bool Dispatch_MUL(U32 instr) noexcept;
+  [[nodiscard]] bool Dispatch_UMULL(U32 instr) noexcept;
   [[nodiscard]] bool Dispatch_ADC(U32 instr) noexcept;
   [[nodiscard]] bool Dispatch_AND(U32 instr) noexcept;
 

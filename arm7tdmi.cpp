@@ -323,6 +323,8 @@ void CPU::EnterException_IRQ() noexcept {
     return cpu.Dispatch_ADD(instr);
   case Instr::MUL:
     return cpu.Dispatch_MUL(instr);
+  case Instr::UMULL:
+    return cpu.Dispatch_UMULL(instr);
   case Instr::ADC:
     return cpu.Dispatch_ADC(instr);
   case Instr::AND:
@@ -1348,6 +1350,29 @@ bool CPU::Dispatch_MUL(U32 instr_) noexcept {
     if (instr.fields.s == 1) {
       CPSR_SetN(GetBit(registers->r[instr.fields.rd], 31));
       CPSR_SetZ(registers->r[instr.fields.rd] == 0);
+    }
+  }
+  registers->r[PC] += 4;
+  return true;
+}
+
+bool CPU::Dispatch_UMULL(U32 instr_) noexcept {
+  UMULLInstr instr(instr_);
+  if (EvaluateCondition(ConditionCode(instr.fields.cond), registers->CPSR)) {
+    U64 result =
+        U64(registers->r[instr.fields.rm]) * registers->r[instr.fields.rs];
+    registers->r[instr.fields.rdhi] = U32(result >> 32);
+    registers->r[instr.fields.rdlo] = U32(result);
+
+    if (instr.fields.s == 1) {
+      CPSR_SetN(GetBit(registers->r[instr.fields.rdhi], 31));
+      CPSR_SetZ(registers->r[instr.fields.rdhi] == 0 &&
+                registers->r[instr.fields.rdlo] == 0);
+    }
+
+    if (instr.fields.rm == 15 || instr.fields.rs == 15 ||
+        instr.fields.rdhi == 15 || instr.fields.rdlo == 15) {
+      ABORT("Invalid UMULL Instruction");
     }
   }
   registers->r[PC] += 4;
