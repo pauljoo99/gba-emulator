@@ -22,8 +22,8 @@ struct Memory {
   U8 BIOS[0x4000];          // 00000000-00003FFF   BIOS - System ROM (16 KB)
   U8 WRAM_OnBoard[0x40000]; // 02000000-0203FFFF   On-board Work RAM (256 KB)
   U8 WRAM_OnChip[0x8000];   // 03000000-03007FFF   On-chip Work RAM (32 KB)
-  U8 IO_Registers[0x1FF];   // 04000000-040003FE   I/O Registers (read/write
-                            // as 16-bit)
+  U8 IO_Registers[0x10000]; // 04000000-040003FE   I/O Registers (read/write
+                            // as 16-bit). Repeats every 64K
   // Internal Display Memory
   U8 PaletteRAM[0x400]; // 05000000-050003FF   BG/OBJ Palette RAM (1 KB)
   U8 VRAM[0x18000];     // 06000000-06017FFF   VRAM (96 KB)
