@@ -78,4 +78,38 @@ union DISPCNT_t {
   operator U32() const { return value; } // Implicit conversion
 };
 
+struct OAM_Fields {
+  // Attr0
+  U32 y : 8;
+  U32 om : 2;
+  U32 gm : 2;
+  U32 mos : 1;
+  U32 cm : 1;
+  U32 sh : 2;
+
+  // Attr1
+  U32 x : 9;
+  U32 : 3;
+  U32 hf : 1;
+  U32 vf : 1;
+  U32 sz : 2;
+
+  // Attr2
+  U32 tid : 10;
+  U32 pr : 2;
+  U32 pb : 4;
+};
+
+union OAM_t {
+  U32 value;
+  OAM_Fields fields;
+
+  OAM_t(U32 val = 0) : value(val) {}
+
+  operator U32() const { return value; } // Implicit conversion
+};
+
+typedef U32 Tile4[8];
+typedef U32 Tile8[16];
+
 } // namespace Emulator
