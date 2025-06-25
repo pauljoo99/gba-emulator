@@ -1,8 +1,8 @@
+#pragma once
+
 #include "arm7tdmi.h"
 #include "datatypes.h"
 #include "memory.h"
-
-#pragma once
 
 namespace Emulator::Arm::Debug {
 

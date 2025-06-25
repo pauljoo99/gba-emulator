@@ -2,6 +2,7 @@
 #include <stdio.h>
 
 #include "src/datatypes.h"
+#include "src/display_utils.h"
 #include "src/logging.h"
 #include "src/memory.h"
 
@@ -36,7 +37,7 @@ int main(int argc, char *argv[]) {
   // Close the file
   fclose(file_pointer);
 
-  U16 DISPCNT = ReadHalfWordFromGBAMemory(memory, 0x04000000);
+  U16 DISPCNT = ReadHalfWordFromGBAMemory(memory, Emulator::DISPCNT_ADDR);
   LOG("DISPCNT: 0x%04x", DISPCNT);
 
   return 0;
