@@ -122,10 +122,11 @@ void CreateSprites(const Memory::Memory &memory, Pixels &pixels,
 
   bool skip_next = false;
   for (U32 i = 0; i < sizeof(memory.OAM) / sizeof(OAM_t); ++i) {
-    if (skip_next) {
-      skip_next = false;
-      continue;
-    }
+    // TODO: Figure out why I don't skip the next for the affine sprite.
+    // if (skip_next) {
+    //   skip_next = false;
+    //   continue;
+    // }
 
     // This is an affine sprite.
     if (oams[i].fields.om == 0b01 || oams[i].fields.om == 0b11) {
@@ -213,9 +214,6 @@ int main(int argc, char *argv[]) {
 
   // Close the file
   fclose(file_pointer);
-
-  U16 DISPCNT = ReadHalfWordFromGBAMemory(memory, Emulator::DISPCNT_ADDR);
-  LOG("DISPCNT: 0x%04x", DISPCNT);
 
   Pixels pixels{};
   CreateImage(memory, pixels);
