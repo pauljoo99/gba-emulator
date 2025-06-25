@@ -30,5 +30,5 @@ Gba Visualizer Tool
 
 ```
 make to_ppm_bin
-./build/to_ppm_bin "tools/visual/data/snapshot_0/memory.bin"
+./build/to_ppm_bin "tools/visual/data/snapshot_0/memory.bin" "output.ppm"
 ```

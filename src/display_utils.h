@@ -51,4 +51,18 @@ constexpr U32 BLDCNT_ADDR = 0x04000050;
 constexpr U32 BLDALPHA_ADDR = 0x04000052;
 constexpr U32 BLDY_ADDR = 0x04000054;
 // 0x04000056 unused
+
+struct DISPCNT_Fields {
+  U16 offset : 12;
+};
+
+union DISPCNT_t {
+  U16 value;
+  DISPCNT_Fields fields;
+
+  DISPCNT_t(U32 val = 0) : value(val) {}
+
+  operator U32() const { return value; } // Implicit conversion
+};
+
 } // namespace Emulator
