@@ -25,3 +25,10 @@ If not already set,
 - Go to Build Phases -> Link Binary With Libraries and set to build/cpu_runner.a
 - Go to Build Settings -> Header Search Paths and set to include/
 ```
+
+Gba Visualizer Tool
+
+```
+make to_ppm_bin
+./build/to_ppm_bin "tools/visual/data/snapshot_0/memory.bin"
+```

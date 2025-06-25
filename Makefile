@@ -47,6 +47,14 @@ tests: bitutils_test
 bitutils_test:
 	$(CXX) $(CXXFLAGS) $(SRC_DIR)/bitutils_test.cpp -I. -o $(BUILD_DIR)/bitutils_test
 
+########## tools
+
+# to_ppm
+to_ppm_bin:
+	$(CXX) $(CXXFLAGS) tools/display/to_ppm_bin.cpp -I. -o $(BUILD_DIR)/to_ppm_bin
+
+##########
+
 # Clean target to remove object and executable files
 clean:
 	rm -f $(BUILD_DIR)/main.o $(BUILD_DIR)/arm7tdmi.o $(BUILD_DIR)/snapshot.o $(EXEC) *.gch
