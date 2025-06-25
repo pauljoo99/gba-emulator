@@ -16,5 +16,5 @@
 #endif
 
 #define ABORT(fmt, ...)                                                        \
-  LOG_VERBOSE(fmt, ##__VA_ARGS__);                                             \
+  LOG(fmt, ##__VA_ARGS__);                                                     \
   std::abort();

@@ -53,7 +53,20 @@ constexpr U32 BLDY_ADDR = 0x04000054;
 // 0x04000056 unused
 
 struct DISPCNT_Fields {
-  U16 offset : 12;
+  U16 mode : 3;
+  U16 gb : 1;
+  U16 ps : 1;
+  U16 hb : 1;
+  U16 om : 1;
+  U16 fb : 1;
+  U16 bg0 : 1;
+  U16 bg1 : 1;
+  U16 bg2 : 1;
+  U16 bg3 : 1;
+  U16 obj : 1;
+  U16 w0 : 1;
+  U16 w1 : 1;
+  U16 ow : 1;
 };
 
 union DISPCNT_t {

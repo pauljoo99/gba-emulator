@@ -6,6 +6,8 @@
 #include "src/logging.h"
 #include "src/memory.h"
 
+using namespace Emulator;
+
 constexpr U32 WIDTH = 240;
 constexpr U32 HEIGHT = 160;
 
@@ -16,6 +18,34 @@ struct Pixel {
 };
 
 typedef Pixel Pixels[WIDTH * HEIGHT];
+
+void CreateBackground(const Memory::Memory &memory, Pixels &pixels) {
+  ABORT("Unimplemented");
+}
+
+void CreateSprite(const Memory::Memory &memory, Pixels &pixels) {
+  ABORT("Unimplemented");
+}
+
+void CreateImage(const Memory::Memory &memory, Pixels &pixels) {
+  DISPCNT_t DISPCNT = ReadHalfWordFromGBAMemory(memory, Emulator::DISPCNT_ADDR);
+  LOG("0x%04x", DISPCNT.value);
+  if (DISPCNT.fields.bg0) {
+    CreateBackground(memory, pixels);
+  }
+  if (DISPCNT.fields.bg1) {
+    CreateBackground(memory, pixels);
+  }
+  if (DISPCNT.fields.bg2) {
+    CreateBackground(memory, pixels);
+  }
+  if (DISPCNT.fields.bg3) {
+    CreateBackground(memory, pixels);
+  }
+  if (DISPCNT.fields.obj) {
+    CreateSprite(memory, pixels);
+  }
+}
 
 void write_ppm(const char *outfile, const Pixels &pixels) {
   FILE *file_ptr;
@@ -75,6 +105,9 @@ int main(int argc, char *argv[]) {
 
   Pixels pixels{};
   pixels[0] = {.r = 255, .g = 0, .b = 0};
+
+  CreateImage(memory, pixels);
+
   write_ppm(argv[2], pixels);
 
   return 0;
