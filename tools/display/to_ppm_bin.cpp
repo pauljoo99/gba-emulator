@@ -120,24 +120,14 @@ void CreateSprites(const Memory::Memory &memory, Pixels &pixels,
                    DISPCNT_t DISPCNT) {
   OAM_t *oams = (OAM_t *)memory.OAM;
 
-  bool skip_next = false;
   for (U32 i = 0; i < sizeof(memory.OAM) / sizeof(OAM_t); ++i) {
-    // TODO: Figure out why I don't skip the next for the affine sprite.
-    // if (skip_next) {
-    //   skip_next = false;
-    //   continue;
-    // }
-
-    // This is an affine sprite.
-    if (oams[i].fields.om == 0b01 || oams[i].fields.om == 0b11) {
-      skip_next = true;
+    if (oams[i].value == 0) {
+      continue;
     }
 
     if (oams[i].fields.om == 0b00) {
-      if (oams[i].value != 0) {
-        LOG("Sprite enabled for normal rendering!");
-        CreateNormalSprite(memory, oams[i], pixels, DISPCNT);
-      }
+      LOG("Sprite enabled for normal rendering!");
+      CreateNormalSprite(memory, oams[i], pixels, DISPCNT);
     }
   }
 }

@@ -9,8 +9,8 @@ import SwiftUI
 import MetalKit
 
 struct MetalView: NSViewRepresentable {
-    func makeCoordinator() -> MetalRenderer {
-        MetalRenderer(mtkView: mtkView)
+    func makeCoordinator() -> TileRenderer {
+        TileRenderer(mtkView: mtkView)
     }
 
     let mtkView = MTKView()
