@@ -36,7 +36,7 @@ class TileRenderer: NSObject, MTKViewDelegate {
         commandQueue = device.makeCommandQueue()
     }
     
-    func setupBuffers()
+    func setupDemoBuffers()
     {
         let textureDescriptor = MTLTextureDescriptor();
         textureDescriptor.textureType = MTLTextureType.type2DArray
@@ -131,7 +131,7 @@ class TileRenderer: NSObject, MTKViewDelegate {
     func setupPipeline(mtkView: MTKView)
     {
         let library = device.makeDefaultLibrary()
-        let vertexFunc = library?.makeFunction(name: "tile_vertex_main")
+        let vertexFunc = library?.makeFunction(name: "tile_2d_vertex_main")
         let fragFunc = library?.makeFunction(name: "tile_fragment_main")
 
         let pipelineDescriptor = MTLRenderPipelineDescriptor()
@@ -148,7 +148,7 @@ class TileRenderer: NSObject, MTKViewDelegate {
         super.init()
         setupDevice(mtkView : mtkView)
         setupPipeline(mtkView : mtkView)
-        setupBuffers()
+        setupDemoBuffers()
     }
     
     func draw(in view: MTKView) {

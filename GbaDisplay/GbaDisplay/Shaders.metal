@@ -89,9 +89,41 @@ vertex VertexOut tile_vertex_main(uint vertexID [[vertex_id]],
     return out;
 }
 
+vertex VertexOut tile_2d_vertex_main(uint vertexID [[vertex_id]],
+                             uint instanceID [[instance_id]],
+                             const device VertexIn* vertexArray [[buffer(0)]],
+                             const device Oam* oams [[buffer(1)]],
+                             const device uint16_t* oam_ids [[buffer(2)]],
+                             const device uint16_t* base_tile_ids [[buffer(3)]]) {
+    uint abs_tile_id = instanceID;
+    uint local_tile_id = abs_tile_id - base_tile_ids[instanceID];
+    
+    uint oam_id = oam_ids[abs_tile_id];
+    Oam oam = oams[oam_id];
+    
+    uint width_px = Oam_Get_width_px(oam);
+    uint width_tile = width_px / 8;
+    uint local_offset_x = (local_tile_id % width_tile) * 8;
+    uint local_offset_y = (local_tile_id / width_tile) * 8;
+    
+    VertexOut out;
+    float2 position_px(
+                       vertexArray[vertexID].position_px[0] + Oam_Get_x(oam) + local_offset_x,
+                       vertexArray[vertexID].position_px[1] + Oam_Get_y(oam) + local_offset_y);
+    out.position = float4(
+                          (position_px[0] / 240 * 2) - 1.0,
+                          -1 * (position_px[1] / 160 * 2) + 1.0,
+                          0.0,
+                          1.0
+    );
+    out.texCoord = int2(vertexArray[vertexID].texCoord[0], vertexArray[vertexID].texCoord[1]);
+    out.tid = Oam_Get_tid(oam) + (local_offset_y / 8 * 32) + local_offset_x / 8;
+    return out;
+}
+
+
 fragment float4 tile_fragment_main(VertexOut in [[stage_in]],
                                    texture2d_array<uint, access::read> tex [[texture(0)]],
-                                   sampler s [[sampler(0)]],
                                    const device uint16_t *palette_buffer [[buffer(0)]])
 {
     uint4 color_index = tex.read(uint2(in.texCoord), in.tid);

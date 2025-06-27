@@ -30,15 +30,23 @@ func MakeTileVertexBuffer(device: MTLDevice) -> MTLBuffer!
     
 }
 
-private func CreateTileTexture(
+func FillTileTextures(
     handle: CpuRunnerHandle,
     texture: MTLTexture)
 {
+    let tile_base_byte_ptr = GetByteMemoryPtr(handle: handle, address: 0x06000000)
+    let texture_word_ptr = texture.buffer!.contents().assumingMemoryBound(to: UInt32.self)
     
-    
-    let tile_base_byte_ptr = GetByteMemoryPtr(handle: handle, address: 0x06010000)
+    for tile_i in 0x0..<0x18000
+    {
+        texture_word_ptr[tile_i] = UInt32(tile_base_byte_ptr[tile_i])
+    }
+}
+
+func FillPaletteBuffer(handle: CpuRunnerHandle, palette_buffer: MTLBuffer)
+{
     let palette_halfword_ptr = GetHalfWordMemoryPtr(handle: handle, address: 0x05000200)
-    
+    palette_buffer.contents().copyMemory(from: UnsafeRawPointer(palette_halfword_ptr), byteCount: 0x200)
 }
 
 func FillOamAndTileBuffers(
