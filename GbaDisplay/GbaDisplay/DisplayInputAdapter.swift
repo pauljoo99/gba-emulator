@@ -10,7 +10,7 @@ import MetalKit
 
 struct Vertex {
     var position_px: SIMD2<Float>
-    var texCoord: SIMD2<Float>
+    var texCoord: SIMD2<UInt32>
 }
 
 func MakeTileVertexBuffer(device: MTLDevice) -> MTLBuffer!
@@ -30,8 +30,18 @@ func MakeTileVertexBuffer(device: MTLDevice) -> MTLBuffer!
     
 }
 
+private func CreateTileTexture(
+    handle: CpuRunnerHandle,
+    texture: MTLTexture)
+{
+    
+    
+    let tile_base_byte_ptr = GetByteMemoryPtr(handle: handle, address: 0x06010000)
+    let palette_halfword_ptr = GetHalfWordMemoryPtr(handle: handle, address: 0x05000200)
+    
+}
+
 func FillOamAndTileBuffers(
-    device: MTLDevice,
     handle: CpuRunnerHandle,
     index_buffer: MTLBuffer,
     oam_buffer: MTLBuffer,
@@ -42,27 +52,45 @@ func FillOamAndTileBuffers(
     let oam_memory_byte_ptr = GetByteMemoryPtr(handle: handle, address: 0x07000000)
     let oam_memory_ptr = UnsafeMutableRawPointer(oam_memory_byte_ptr).bindMemory(to: Oam.self, capacity: 0x400 / MemoryLayout<Oam>.size)
     
+    let oam_buffer_ptr = UnsafeMutableRawPointer(oam_buffer.contents()).bindMemory(to: Oam.self, capacity: kMaxRawBytes)
+    let base_tile_instance_id_ptr = UnsafeMutableRawPointer(base_tile_instance_id_buffer.contents()).bindMemory(to: UInt16.self, capacity: kMaxRawBytes)
+    let oam_id_ptr = UnsafeMutableRawPointer(oam_id_buffer.contents()).bindMemory(to: UInt16.self, capacity: kMaxRawBytes)
+    
     let index_buffer_ptr = index_buffer.contents().bindMemory(to: UInt16.self, capacity: kMaxSizeBuffer)
     let quad : [UInt16] = [
         0, 1, 2,
         1, 2, 3,
     ]
-    var num_tiles : Int = 0
-    for oam in 0..<max_num_oams
+    var base_tile : Int = 0
+    var num_oams : Int = 0
+    for oam_i in 0..<max_num_oams
     {
         // Disabled
-        if (oam_memory_ptr[oam].mode != 0b10)
+        if (oam_memory_ptr[oam_i].mode != 0b10)
         {
             continue;
         }
+
+        // Set oam
+        oam_buffer_ptr[num_oams] = oam_memory_ptr[oam_i]
+        num_oams += 1
         
-        num_tiles += Int(oam_memory_ptr[oam].widthPx) * Int(oam_memory_ptr[oam].heightPx) / 64
-    }
-    for t in 0..<num_tiles
-    {
-        for q in 0..<6
+        let oam_num_tiles = Int(oam_memory_ptr[oam_i].widthPx) * Int(oam_memory_ptr[oam_i].heightPx) / 64
+        for t in base_tile..<oam_num_tiles
         {
-            index_buffer_ptr[t * 6 + q] = quad[q]
+            // Set Index Buffer with Tiles
+            for q in 0..<6
+            {
+                index_buffer_ptr[t * 6 + q] = quad[q]
+            }
+            
+            // Set base tile instance for each tile
+            base_tile_instance_id_ptr[t] = UInt16(base_tile)
+            
+            // Set oam id for each tile
+            oam_id_ptr[t] = UInt16(oam_i)
         }
+        
+        base_tile += oam_num_tiles
     }
 }

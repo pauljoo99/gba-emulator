@@ -24,6 +24,7 @@ class TileRenderer: NSObject, MTKViewDelegate {
     // Texture
     private var mtlTexture : MTLTexture!
     private var mtlSampler : MTLSamplerState!
+    private var paletteBuffer: MTLBuffer!
                 
     func setupDevice(mtkView: MTKView)
     {
@@ -42,13 +43,13 @@ class TileRenderer: NSObject, MTKViewDelegate {
         textureDescriptor.width = 8
         textureDescriptor.height = 8
         textureDescriptor.arrayLength = 128
-        textureDescriptor.pixelFormat = MTLPixelFormat.rgba8Unorm
+        textureDescriptor.pixelFormat = MTLPixelFormat.r32Uint
         
         mtlTexture = device.makeTexture(descriptor: textureDescriptor)
         let red_tile = UnsafeMutableRawPointer.allocate(byteCount: 4 * 64, alignment: 4)
-        red_tile.initializeMemory(as: UInt32.self, repeating: 0xFF0000FF, count: 64)
+        red_tile.initializeMemory(as: UInt32.self, repeating: 0, count: 64)
         let yellow_tile = UnsafeMutableRawPointer.allocate(byteCount: 4 * 64, alignment: 4)
-        yellow_tile.initializeMemory(as: UInt32.self, repeating: 0xFF00FFFF, count: 64)
+        yellow_tile.initializeMemory(as: UInt32.self, repeating: 1, count: 64)
         
         let region = MTLRegionMake2D(0, 0, 8, 8)
         
@@ -104,6 +105,11 @@ class TileRenderer: NSObject, MTKViewDelegate {
             0, 0, 2
         ]
         
+        // Index by palette buffer index in texture data.
+        let palette_buffer : [UInt16] = [
+            0x00FF, 0xFF00
+        ]
+        
         vertexBuffer = device.makeBuffer(bytes: pixelVertices,
                                          length: kMaxSizeBuffer,
                                          options: [])
@@ -114,6 +120,9 @@ class TileRenderer: NSObject, MTKViewDelegate {
                                          length: kMaxSizeBuffer,
                                          options: [])
         baseTileIdBuffer = device.makeBuffer(bytes: base_tile_ids,
+                                         length: kMaxSizeBuffer,
+                                         options: [])
+        paletteBuffer = device.makeBuffer(bytes: palette_buffer,
                                          length: kMaxSizeBuffer,
                                          options: [])
         indexBuffer = device.makeBuffer(bytes: indices, length: kMaxSizeBuffer, options: [])
@@ -156,6 +165,7 @@ class TileRenderer: NSObject, MTKViewDelegate {
         encoder?.setVertexBuffer(baseTileIdBuffer, offset: 0, index: 3)
         encoder?.setFragmentTexture(mtlTexture, index: 0)
         encoder?.setFragmentSamplerState(mtlSampler, index: 0)
+        encoder?.setFragmentBuffer(paletteBuffer, offset: 0, index: 0)
         
 //        // for oam in 0..<128
         var tile_instance_id : Int = 0
