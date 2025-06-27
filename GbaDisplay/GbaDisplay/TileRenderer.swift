@@ -50,13 +50,16 @@ class TileRenderer: NSObject, MTKViewDelegate {
         textureDescriptor.pixelFormat = MTLPixelFormat.rgba8Unorm
         
         mtlTexture = device.makeTexture(descriptor: textureDescriptor)
-        let texture_data = UnsafeMutableRawPointer.allocate(byteCount: 4 * 64, alignment: 4)
-        texture_data.initializeMemory(as: UInt32.self, repeating: 0xFF0000FF, count: 64)
+        let red_tile = UnsafeMutableRawPointer.allocate(byteCount: 4 * 64, alignment: 4)
+        red_tile.initializeMemory(as: UInt32.self, repeating: 0xFF0000FF, count: 64)
+        let yellow_tile = UnsafeMutableRawPointer.allocate(byteCount: 4 * 64, alignment: 4)
+        yellow_tile.initializeMemory(as: UInt32.self, repeating: 0xFF00FFFF, count: 64)
+        
         let region = MTLRegionMake2D(0, 0, 8, 8)
-        mtlTexture.replace(region: region, mipmapLevel: 0, slice: 0, withBytes: texture_data, bytesPerRow: 4 * 8, bytesPerImage: 4 * 8 * 8)
-        let texture_data2 = UnsafeMutableRawPointer.allocate(byteCount: 4 * 64, alignment: 4)
-        texture_data2.initializeMemory(as: UInt32.self, repeating: 0xFF00FFFF, count: 64)
-        mtlTexture.replace(region: region, mipmapLevel: 0, slice: 1, withBytes: texture_data2, bytesPerRow: 4 * 8, bytesPerImage: 4 * 8 * 8)
+        
+        mtlTexture.replace(region: region, mipmapLevel: 0, slice: 0, withBytes: red_tile, bytesPerRow: 4 * 8, bytesPerImage: 4 * 8 * 8)
+        mtlTexture.replace(region: region, mipmapLevel: 0, slice: 1, withBytes: yellow_tile, bytesPerRow: 4 * 8, bytesPerImage: 4 * 8 * 8)
+        mtlTexture.replace(region: region, mipmapLevel: 0, slice: 2, withBytes: yellow_tile, bytesPerRow: 4 * 8, bytesPerImage: 4 * 8 * 8)
         
         let descriptor = MTLSamplerDescriptor()
         descriptor.minFilter = .nearest
@@ -93,7 +96,7 @@ class TileRenderer: NSObject, MTKViewDelegate {
         // Access by oam id.
         let oams : [UInt64] = [
             CreateOam(x: 120, y: 0, shape: 1, size: 0, tile_id: 0),
-            CreateOam(x: 120, y: 80, shape: 0, size: 0, tile_id: 1),
+            CreateOam(x: 120, y: 80, shape: 0, size: 0, tile_id: 2),
         ]
         
         // Index by absolute tile instance id.
@@ -103,7 +106,7 @@ class TileRenderer: NSObject, MTKViewDelegate {
         
         // Index by absolute tile instance id.
         let base_tile_ids : [UInt16] = [
-            0, 0, 1
+            0, 0, 2
         ]
         
         vertexBuffer = device.makeBuffer(bytes: pixelVertices,

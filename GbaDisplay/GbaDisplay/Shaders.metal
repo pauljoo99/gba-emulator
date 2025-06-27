@@ -84,7 +84,7 @@ vertex VertexOut tile_vertex_main(uint vertexID [[vertex_id]],
                           1.0
     );
     out.texCoord = float2(vertexArray[vertexID].texCoord[0], vertexArray[vertexID].texCoord[1]);
-    out.tid = Oam_Get_tid(oam);
+    out.tid = Oam_Get_tid(oam) + local_tile_id;
     return out;
 }
 
