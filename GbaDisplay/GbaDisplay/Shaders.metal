@@ -7,6 +7,7 @@
 
 #include <metal_stdlib>
 #include "Structs.h"
+#include "oam_parser.metal"
 using namespace metal;
 
 struct VertexIn {

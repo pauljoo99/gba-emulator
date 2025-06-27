@@ -7,11 +7,6 @@
 
 import MetalKit
 
-struct Vertex {
-    var position_px: SIMD2<Float>
-    var texCoord: SIMD2<Float>
-}
-
 class TileRenderer: NSObject, MTKViewDelegate {
     
     // Device Setup
@@ -166,8 +161,9 @@ class TileRenderer: NSObject, MTKViewDelegate {
         var tile_instance_id : Int = 0
         for oam in 0..<2
         {
+            
             let oam_value : Oam = oamBuffer.contents().load(fromByteOffset: oam * 8, as: Oam.self)
-            let num_tiles = Oam_Get_width_px(oam_value) * Oam_Get_height_px(oam_value) / 64
+            let num_tiles = oam_value.widthPx * oam_value.heightPx / 64
             encoder?.drawIndexedPrimitives(type: .triangle,
                                            indexCount: 6,
                                            indexType: .uint16,

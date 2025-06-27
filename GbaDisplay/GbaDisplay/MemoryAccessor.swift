@@ -102,3 +102,65 @@ func CreateOam(
     let attr2 : UInt64 = UInt64(tile_id & (0x3FF))
     return (attr2 << 32) | (attr1 << 16) | (attr0)
 }
+
+extension Oam {
+    var x: UInt16 {
+        return attr1 & 0x1FF
+    }
+
+    var y: UInt16 {
+        return attr0 & 0xFF
+    }
+
+    var shape: UInt16 {
+        return attr0 >> 14
+    }
+
+    var size: UInt16 {
+        return attr1 >> 14
+    }
+
+    var tid: UInt16 {
+        return attr2 & 0x3FF
+    }
+
+    var mode: UInt16 {
+        return (attr0 >> 8) & 0b11
+    }
+
+    var widthPx: UInt16 {
+        switch (shape, size) {
+        case (0b00, 0b00): return 8
+        case (0b01, 0b00): return 16
+        case (0b10, 0b00): return 8
+        case (0b00, 0b01): return 16
+        case (0b01, 0b01): return 32
+        case (0b10, 0b01): return 8
+        case (0b00, 0b10): return 32
+        case (0b01, 0b10): return 32
+        case (0b10, 0b10): return 16
+        case (0b00, 0b11): return 64
+        case (0b01, 0b11): return 64
+        case (0b10, 0b11): return 32
+        default: return 0
+        }
+    }
+
+    var heightPx: UInt16 {
+        switch (shape, size) {
+        case (0b00, 0b00): return 8
+        case (0b01, 0b00): return 8
+        case (0b10, 0b00): return 16
+        case (0b00, 0b01): return 16
+        case (0b01, 0b01): return 8
+        case (0b10, 0b01): return 32
+        case (0b00, 0b10): return 32
+        case (0b01, 0b10): return 16
+        case (0b10, 0b10): return 32
+        case (0b00, 0b11): return 64
+        case (0b01, 0b11): return 32
+        case (0b10, 0b11): return 64
+        default: return 0
+        }
+    }
+}
