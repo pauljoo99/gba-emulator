@@ -13,7 +13,7 @@ struct Vertex {
     var texCoord: SIMD2<UInt32>
 }
 
-func MakeTileVertexBuffer(device: MTLDevice) -> MTLBuffer!
+func FillVertexBuffer(vertex_buffer: MTLBuffer)
 {
     // A 8x8 quad in pixel space.
     let vertices : [Vertex] = [
@@ -23,11 +23,8 @@ func MakeTileVertexBuffer(device: MTLDevice) -> MTLBuffer!
         Vertex(position_px: [8, 0], texCoord: [1, 0]), // Top-right
         Vertex(position_px: [8, 8], texCoord: [1, 1])  // Bottom-right
     ]
-
-    return device.makeBuffer(bytes: vertices,
-                                     length: kMaxSizeBuffer,
-                                     options: [])
     
+    vertex_buffer.contents().assumingMemoryBound(to: Vertex.self).update(from: vertices, count: 4)
 }
 
 func FillTileTextures(
@@ -35,11 +32,17 @@ func FillTileTextures(
     texture: MTLTexture)
 {
     let tile_base_byte_ptr = GetByteMemoryPtr(memory_ptr: memory_ptr, address: 0x06000000)
-    let texture_word_ptr = texture.buffer!.contents().assumingMemoryBound(to: UInt32.self)
     
-    for tile_i in 0x0..<0x18000
+    for tile_i in stride(from: 0x0, to: 0x18000, by: 32)
     {
-        texture_word_ptr[tile_i] = UInt32(tile_base_byte_ptr[tile_i])
+        var pixels : [UInt32] = []
+        for px_i in tile_i..<tile_i + 32
+        {
+            pixels.append(UInt32(tile_base_byte_ptr[px_i]) & 0x0F)
+            pixels.append(UInt32(tile_base_byte_ptr[px_i]) >> 4)
+        }
+        let region = MTLRegionMake2D(0, 0, 8, 8)
+        texture.replace(region: region, mipmapLevel: 0, slice: 0, withBytes: pixels, bytesPerRow: 4 * 8, bytesPerImage: 4 * 8 * 8)
     }
 }
 
@@ -73,18 +76,19 @@ func FillOamAndTileBuffers(
     var num_oams : Int = 0
     for oam_i in 0..<max_num_oams
     {
-        // Disabled
-        if (oam_memory_ptr[oam_i].mode != 0b10)
+        // Find out how oams that are 0 are ignored.
+        if (oam_memory_ptr[oam_i].attr0 == 0 && oam_memory_ptr[oam_i].attr1 == 0)
         {
             continue;
         }
 
         // Set oam
+        let oam = oam_memory_ptr[oam_i]
         oam_buffer_ptr[num_oams] = oam_memory_ptr[oam_i]
         num_oams += 1
         
         let oam_num_tiles = Int(oam_memory_ptr[oam_i].widthPx) * Int(oam_memory_ptr[oam_i].heightPx) / 64
-        for t in base_tile..<oam_num_tiles
+        for t in base_tile..<base_tile + oam_num_tiles
         {
             // Set Index Buffer with Tiles
             for q in 0..<6

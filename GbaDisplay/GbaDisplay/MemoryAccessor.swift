@@ -10,7 +10,7 @@ import Foundation
 let BIOS_SIZE = 0x4000
 let WRAM_ONBOARD_SIZE = 0x40000
 let WRAM_ONCHIP_SIZE = 0x8000
-let IO_REGISTERS_SIZE = 0x1FF
+let IO_REGISTERS_SIZE = 0x10000
 let PALETTE_RAM_SIZE = 0x400
 let VRAM_SIZE = 0x18000
 let OAM_SIZE = 0x400
@@ -48,7 +48,7 @@ func GetByteMemoryPtr(memory_ptr: UnsafeMutableRawPointer, address: UInt32) -> U
         // IO Registers
         return memPtr.advanced(by: BIOS_SIZE + WRAM_ONBOARD_SIZE + WRAM_ONCHIP_SIZE + Int(address - 0x04000000))
 
-    case 0x05000000...0x050001FF:
+    case 0x05000000...0x05000400:
         // Palette RAM
         return memPtr.advanced(by: BIOS_SIZE + WRAM_ONBOARD_SIZE + WRAM_ONCHIP_SIZE + IO_REGISTERS_SIZE + Int(address - 0x05000000))
 
@@ -81,6 +81,7 @@ func GetByteMemoryPtr(memory_ptr: UnsafeMutableRawPointer, address: UInt32) -> U
         return memPtr.advanced(by: BIOS_SIZE + WRAM_ONBOARD_SIZE + WRAM_ONCHIP_SIZE + IO_REGISTERS_SIZE + PALETTE_RAM_SIZE + VRAM_SIZE + OAM_SIZE + 3 * GAMEPAK_WS_SIZE + GAMEPAK_SRAM_SIZE)
 
     default:
+        print(String(format: "Address: 0x%08X (%u)", address, address))
         fatalError("Bad Access")
     }
 }

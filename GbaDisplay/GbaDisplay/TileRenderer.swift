@@ -7,6 +7,10 @@
 
 import MetalKit
 
+import AppKit
+import UniformTypeIdentifiers
+
+
 class TileRenderer: NSObject, MTKViewDelegate {
     
     // Device Setup
@@ -23,7 +27,6 @@ class TileRenderer: NSObject, MTKViewDelegate {
     
     // Texture
     private var mtlTexture : MTLTexture!
-    private var mtlSampler : MTLSamplerState!
     private var paletteBuffer: MTLBuffer!
 
     func setupDevice(mtkView: MTKView)
@@ -34,6 +37,54 @@ class TileRenderer: NSObject, MTKViewDelegate {
         mtkView.clearColor = MTLClearColorMake(0.1, 0.1, 0.1, 1.0)
         mtkView.delegate = self
         commandQueue = device.makeCommandQueue()
+    }
+    
+    func setupRealMemoryDemoBuffers()
+    {
+        let openPanel = NSOpenPanel()
+        openPanel.allowedContentTypes = [UTType(filenameExtension: "bin")!]
+        openPanel.allowsMultipleSelection = false
+        openPanel.canChooseDirectories = false
+        openPanel.canChooseFiles = true
+
+        let memory_data_ptr : UnsafeMutableRawPointer = UnsafeMutableRawPointer.allocate(byteCount: kMaxRawBytes * kMaxRawBytes, alignment: 4)
+        if openPanel.runModal() == .OK, let url = openPanel.url {
+            do {
+                let data = try Data(contentsOf: url)
+                data.copyBytes(to: memory_data_ptr.assumingMemoryBound(to: UInt8.self), count: data.count)
+            }
+            catch
+            {
+                print("Not copied")
+            }
+        } else {
+            print("User cancelled or no file selected")
+        }
+        
+        let textureDescriptor = MTLTextureDescriptor();
+        textureDescriptor.textureType = MTLTextureType.type2DArray
+        textureDescriptor.width = 8
+        textureDescriptor.height = 8
+        textureDescriptor.arrayLength = 128
+        textureDescriptor.pixelFormat = MTLPixelFormat.r32Uint
+        
+        mtlTexture = device.makeTexture(descriptor: textureDescriptor)
+        vertexBuffer = device.makeBuffer(length: kMaxSizeBuffer,
+                                         options: [])
+        oamBuffer = device.makeBuffer(length: kMaxSizeBuffer,
+                                         options: [])
+        oamIdBuffer = device.makeBuffer(length: kMaxSizeBuffer,
+                                         options: [])
+        baseTileIdBuffer = device.makeBuffer(length: kMaxSizeBuffer,
+                                         options: [])
+        paletteBuffer = device.makeBuffer(length: kMaxSizeBuffer,
+                                         options: [])
+        indexBuffer = device.makeBuffer(length: kMaxSizeBuffer, options: [])
+
+        FillVertexBuffer(vertex_buffer: vertexBuffer)
+        FillTileTextures(memory_ptr: memory_data_ptr, texture: mtlTexture)
+        FillPaletteBuffer(memory_ptr: memory_data_ptr, palette_buffer: paletteBuffer)
+        FillOamAndTileBuffers(memory_ptr: memory_data_ptr, index_buffer: indexBuffer, oam_buffer: oamBuffer, oam_id_buffer: oamIdBuffer, base_tile_instance_id_buffer: baseTileIdBuffer)
     }
     
     func setupDemoBuffers()
@@ -57,14 +108,6 @@ class TileRenderer: NSObject, MTKViewDelegate {
         mtlTexture.replace(region: region, mipmapLevel: 0, slice: 1, withBytes: yellow_tile, bytesPerRow: 4 * 8, bytesPerImage: 4 * 8 * 8)
         mtlTexture.replace(region: region, mipmapLevel: 0, slice: 2, withBytes: yellow_tile, bytesPerRow: 4 * 8, bytesPerImage: 4 * 8 * 8)
         
-        let descriptor = MTLSamplerDescriptor()
-        descriptor.minFilter = .nearest
-        descriptor.magFilter = .nearest
-        descriptor.sAddressMode = .clampToEdge
-        descriptor.tAddressMode = .clampToEdge
-
-        mtlSampler = device.makeSamplerState(descriptor: descriptor)
-
         // A 8x8 quad in pixel space.
         let pixelVertices : [Vertex] = [
             // Position
@@ -148,7 +191,8 @@ class TileRenderer: NSObject, MTKViewDelegate {
         super.init()
         setupDevice(mtkView : mtkView)
         setupPipeline(mtkView : mtkView)
-        setupDemoBuffers()
+        setupRealMemoryDemoBuffers()
+        // setupDemoBuffers()
     }
     
     func draw(in view: MTKView) {
@@ -164,21 +208,26 @@ class TileRenderer: NSObject, MTKViewDelegate {
         encoder?.setVertexBuffer(oamIdBuffer, offset: 0, index: 2)
         encoder?.setVertexBuffer(baseTileIdBuffer, offset: 0, index: 3)
         encoder?.setFragmentTexture(mtlTexture, index: 0)
-        encoder?.setFragmentSamplerState(mtlSampler, index: 0)
         encoder?.setFragmentBuffer(paletteBuffer, offset: 0, index: 0)
         
-//        // for oam in 0..<128
         var tile_instance_id : Int = 0
-        for oam in 0..<2
+        for oam_i in 0..<128
         {
             
-            let oam_value : Oam = oamBuffer.contents().load(fromByteOffset: oam * 8, as: Oam.self)
-            let num_tiles = oam_value.widthPx * oam_value.heightPx / 64
+            let oam : Oam = oamBuffer.contents().assumingMemoryBound(to: Oam.self)[oam_i]
+            
+            // Find out how oams that are 0 are ignored.
+            if (oam.attr0 == 0 && oam.attr1 == 0)
+            {
+                continue;
+            }
+            
+            let num_tiles = oam.widthPx * oam.heightPx / 64
             encoder?.drawIndexedPrimitives(type: .triangle,
                                            indexCount: 6,
                                            indexType: .uint16,
                                            indexBuffer: indexBuffer,
-                                           indexBufferOffset: oam * 6 * 2,
+                                           indexBufferOffset: oam_i * 6 * 2,
                                            instanceCount:  Int(num_tiles),
                                            baseVertex: 0,
                                            baseInstance: tile_instance_id)
