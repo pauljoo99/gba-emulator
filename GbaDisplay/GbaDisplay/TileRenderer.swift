@@ -66,7 +66,7 @@ class TileRenderer: NSObject, MTKViewDelegate {
 
         mtlSampler = device.makeSamplerState(descriptor: descriptor)
 
-        
+        // A 8x8 quad in pixel space.
         let pixelVertices : [Vertex] = [
             // Position
             Vertex(position_px: [0, 0], texCoord: [0, 0]), // Top-left
@@ -75,6 +75,7 @@ class TileRenderer: NSObject, MTKViewDelegate {
             Vertex(position_px: [8, 8], texCoord: [1, 1])  // Bottom-right
         ]
         
+        // Require one index per quad.
         let indices : [UInt16] = [
             // First quad
             0, 1, 2,
@@ -89,15 +90,18 @@ class TileRenderer: NSObject, MTKViewDelegate {
             1, 2, 3,
         ]
         
+        // Access by oam id.
         let oams : [UInt64] = [
             CreateOam(x: 120, y: 0, shape: 1, size: 0, tile_id: 0),
             CreateOam(x: 120, y: 80, shape: 0, size: 0, tile_id: 1),
         ]
         
+        // Index by absolute tile instance id.
         let oam_ids : [UInt16] = [
             0, 0, 1
         ]
         
+        // Index by absolute tile instance id.
         let base_tile_ids : [UInt16] = [
             0, 0, 1
         ]
