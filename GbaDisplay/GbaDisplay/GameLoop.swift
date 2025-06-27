@@ -170,9 +170,11 @@ class GameLoop {
             CpuRunner_Run(self.CpuRunnerHandle)
         }
 
-        in_video_buffer = GetByteMemoryPtr(handle: CpuRunnerHandle, address: 0x06000000)
-        in_object_attr_buffer = GetHalfWordMemoryPtr(handle: CpuRunnerHandle, address: 0x07000000)
-        in_palette_buffer = GetHalfWordMemoryPtr(handle: CpuRunnerHandle, address: 0x05000000)
+        let memory_ptr = CpuRunner_GetMemory(CpuRunnerHandle)!
+        
+        in_video_buffer = GetByteMemoryPtr(memory_ptr: memory_ptr, address: 0x06000000)
+        in_object_attr_buffer = GetHalfWordMemoryPtr(memory_ptr: memory_ptr, address: 0x07000000)
+        in_palette_buffer = GetHalfWordMemoryPtr(memory_ptr: memory_ptr, address: 0x05000000)
     }
 
     private func AddPixelToBuffers(pixel_attribute: PixelAttributes, out_pixel_attr_buffer_size: Int, out_index_buffer_size: Int) -> (Int, Int)
@@ -453,7 +455,7 @@ class GameLoop {
 
     private func PullGbaData()
     {
-        let IO_MEMORY = GetHalfWordMemoryPtr(handle: CpuRunnerHandle, address: 0x04000000)
+        let IO_MEMORY = GetHalfWordMemoryPtr(memory_ptr: CpuRunner_GetMemory(CpuRunnerHandle)!, address: 0x04000000)
 
         in_DISPCNT = IO_MEMORY[0x0/2]
         in_background_registers_0 = Background(ctr: IO_MEMORY[0x8/2], x: IO_MEMORY[0x10/2], y: IO_MEMORY[0x12/2])
@@ -464,14 +466,14 @@ class GameLoop {
 
     private func SignalUpdateBuffersReady()
     {
-        let IO_MEMORY = GetHalfWordMemoryPtr(handle: CpuRunnerHandle, address: 0x04000000)
+        let IO_MEMORY = GetHalfWordMemoryPtr(memory_ptr: CpuRunner_GetMemory(CpuRunnerHandle)!, address: 0x04000000)
         let VCOUNT = IO_MEMORY.advanced(by: 0x6 / 2)
         VCOUNT.pointee = 159
     }
 
     private func SignalDoNotUpdateBuffers()
     {
-        let IO_MEMORY = GetHalfWordMemoryPtr(handle: CpuRunnerHandle, address: 0x04000000)
+        let IO_MEMORY = GetHalfWordMemoryPtr(memory_ptr: CpuRunner_GetMemory(CpuRunnerHandle)!, address: 0x04000000)
         let VCOUNT = IO_MEMORY.advanced(by: 0x6 / 2)
         VCOUNT.pointee = 0
     }

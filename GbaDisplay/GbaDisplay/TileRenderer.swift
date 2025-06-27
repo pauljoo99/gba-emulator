@@ -25,7 +25,7 @@ class TileRenderer: NSObject, MTKViewDelegate {
     private var mtlTexture : MTLTexture!
     private var mtlSampler : MTLSamplerState!
     private var paletteBuffer: MTLBuffer!
-                
+
     func setupDevice(mtkView: MTKView)
     {
         self.device = MTLCreateSystemDefaultDevice()

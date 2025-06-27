@@ -31,10 +31,10 @@ func MakeTileVertexBuffer(device: MTLDevice) -> MTLBuffer!
 }
 
 func FillTileTextures(
-    handle: CpuRunnerHandle,
+    memory_ptr: UnsafeMutableRawPointer,
     texture: MTLTexture)
 {
-    let tile_base_byte_ptr = GetByteMemoryPtr(handle: handle, address: 0x06000000)
+    let tile_base_byte_ptr = GetByteMemoryPtr(memory_ptr: memory_ptr, address: 0x06000000)
     let texture_word_ptr = texture.buffer!.contents().assumingMemoryBound(to: UInt32.self)
     
     for tile_i in 0x0..<0x18000
@@ -43,21 +43,21 @@ func FillTileTextures(
     }
 }
 
-func FillPaletteBuffer(handle: CpuRunnerHandle, palette_buffer: MTLBuffer)
+func FillPaletteBuffer(memory_ptr: UnsafeMutableRawPointer, palette_buffer: MTLBuffer)
 {
-    let palette_halfword_ptr = GetHalfWordMemoryPtr(handle: handle, address: 0x05000200)
+    let palette_halfword_ptr = GetHalfWordMemoryPtr(memory_ptr: memory_ptr, address: 0x05000200)
     palette_buffer.contents().copyMemory(from: UnsafeRawPointer(palette_halfword_ptr), byteCount: 0x200)
 }
 
 func FillOamAndTileBuffers(
-    handle: CpuRunnerHandle,
+    memory_ptr: UnsafeMutableRawPointer,
     index_buffer: MTLBuffer,
     oam_buffer: MTLBuffer,
     oam_id_buffer: MTLBuffer,
     base_tile_instance_id_buffer: MTLBuffer)
 {
     let max_num_oams = 0x200 / MemoryLayout<Oam>.size
-    let oam_memory_byte_ptr = GetByteMemoryPtr(handle: handle, address: 0x07000000)
+    let oam_memory_byte_ptr = GetByteMemoryPtr(memory_ptr: memory_ptr, address: 0x07000000)
     let oam_memory_ptr = UnsafeMutableRawPointer(oam_memory_byte_ptr).bindMemory(to: Oam.self, capacity: 0x400 / MemoryLayout<Oam>.size)
     
     let oam_buffer_ptr = UnsafeMutableRawPointer(oam_buffer.contents()).bindMemory(to: Oam.self, capacity: kMaxRawBytes)

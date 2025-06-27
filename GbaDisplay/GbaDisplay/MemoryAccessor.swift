@@ -20,21 +20,16 @@ let MYSTERY_ADDR_SIZE = 1
 
 let TOTAL_MEMORY_SIZE = BIOS_SIZE + WRAM_ONBOARD_SIZE + WRAM_ONCHIP_SIZE + IO_REGISTERS_SIZE + PALETTE_RAM_SIZE + VRAM_SIZE + OAM_SIZE + 3 * GAMEPAK_WS_SIZE + GAMEPAK_SRAM_SIZE
 
-func GetHalfWordMemoryPtr(handle: CpuRunnerHandle, address: UInt32) -> UnsafeMutablePointer<UInt16> {
-    return UnsafeMutableRawPointer(GetByteMemoryPtr(handle: handle, address: address)).bindMemory(to: UInt16.self, capacity: TOTAL_MEMORY_SIZE / 2)
+func GetHalfWordMemoryPtr(memory_ptr: UnsafeMutableRawPointer, address: UInt32) -> UnsafeMutablePointer<UInt16> {
+    return UnsafeMutableRawPointer(GetByteMemoryPtr(memory_ptr: memory_ptr, address: address)).bindMemory(to: UInt16.self, capacity: TOTAL_MEMORY_SIZE / 2)
 }
 
-func GetWordMemoryPtr(handle: CpuRunnerHandle, address: UInt32) -> UnsafeMutablePointer<UInt32> {
-    return UnsafeMutableRawPointer(GetByteMemoryPtr(handle: handle, address: address)).bindMemory(to: UInt32.self, capacity: TOTAL_MEMORY_SIZE / 4)
+func GetWordMemoryPtr(memory_ptr: UnsafeMutableRawPointer, address: UInt32) -> UnsafeMutablePointer<UInt32> {
+    return UnsafeMutableRawPointer(GetByteMemoryPtr(memory_ptr: memory_ptr, address: address)).bindMemory(to: UInt32.self, capacity: TOTAL_MEMORY_SIZE / 4)
 }
 
-func GetByteMemoryPtr(handle: CpuRunnerHandle, address: UInt32) -> UnsafeMutablePointer<UInt8> {
-    guard let basePtr = CpuRunner_GetMemory(handle) else {
-        fatalError("Bad Access")
-    }
-
-    let totalMemorySize = TOTAL_MEMORY_SIZE
-    let memPtr = basePtr.bindMemory(to: UInt8.self, capacity: totalMemorySize) // Bind as UInt8 pointer
+func GetByteMemoryPtr(memory_ptr: UnsafeMutableRawPointer, address: UInt32) -> UnsafeMutablePointer<UInt8> {
+    let memPtr = memory_ptr.assumingMemoryBound(to: UInt8.self) // Bind as UInt8 pointer
 
     switch address {
     case 0x00000000...0x00003FFF:
