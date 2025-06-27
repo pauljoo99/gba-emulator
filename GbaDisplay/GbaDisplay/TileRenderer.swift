@@ -8,7 +8,7 @@
 import MetalKit
 
 struct Vertex {
-    var position: SIMD2<Float>
+    var position_px: SIMD2<Float>
     var texCoord: SIMD2<Float>
 }
 
@@ -22,7 +22,9 @@ class TileRenderer: NSObject, MTKViewDelegate {
     // Buffers to be used by the GPU
     private var vertexBuffer: MTLBuffer!
     private var indexBuffer: MTLBuffer!
+    private var oamBuffer: MTLBuffer!
     private var oamIdBuffer: MTLBuffer!
+    private var baseTileIdBuffer: MTLBuffer!
     
     // Texture
     private var mtlTexture : MTLTexture!
@@ -67,25 +69,49 @@ class TileRenderer: NSObject, MTKViewDelegate {
         
         let pixelVertices : [Vertex] = [
             // Position
-            Vertex(position: [-1,  1], texCoord: [0, 0]), // Top-left
-            Vertex(position: [-1, -1], texCoord: [0, 1]), // Bottom-left
-            Vertex(position: [ 1,  1], texCoord: [1, 0]), // Top-right
-            Vertex(position: [ 1, -1], texCoord: [1, 1])  // Bottom-right
+            Vertex(position_px: [0, 0], texCoord: [0, 0]), // Top-left
+            Vertex(position_px: [0, 8], texCoord: [0, 1]), // Bottom-left
+            Vertex(position_px: [8, 0], texCoord: [1, 0]), // Top-right
+            Vertex(position_px: [8, 8], texCoord: [1, 1])  // Bottom-right
         ]
         
         let indices : [UInt16] = [
+            // First quad
+            0, 1, 2,
+            1, 2, 3,
+            
+            // Second quad
+            0, 1, 2,
+            1, 2, 3,
+            
+            // third quad
             0, 1, 2,
             1, 2, 3,
         ]
         
+        let oams : [UInt64] = [
+            CreateOam(x: 120, y: 0, shape: 1, size: 0, tile_id: 0),
+            CreateOam(x: 120, y: 80, shape: 0, size: 0, tile_id: 1),
+        ]
+        
         let oam_ids : [UInt16] = [
-            0, 1
+            0, 0, 1
+        ]
+        
+        let base_tile_ids : [UInt16] = [
+            0, 0, 1
         ]
         
         vertexBuffer = device.makeBuffer(bytes: pixelVertices,
                                          length: kMaxSizeBuffer,
                                          options: [])
+        oamBuffer = device.makeBuffer(bytes: oams,
+                                         length: kMaxSizeBuffer,
+                                         options: [])
         oamIdBuffer = device.makeBuffer(bytes: oam_ids,
+                                         length: kMaxSizeBuffer,
+                                         options: [])
+        baseTileIdBuffer = device.makeBuffer(bytes: base_tile_ids,
                                          length: kMaxSizeBuffer,
                                          options: [])
         indexBuffer = device.makeBuffer(bytes: indices, length: kMaxSizeBuffer, options: [])
@@ -123,16 +149,28 @@ class TileRenderer: NSObject, MTKViewDelegate {
 
         encoder?.setRenderPipelineState(pipelineState)
         encoder?.setVertexBuffer(vertexBuffer, offset: 0, index: 0)
-        encoder?.setVertexBuffer(oamIdBuffer, offset: 0, index: 1)
+        encoder?.setVertexBuffer(oamBuffer, offset: 0, index: 1)
+        encoder?.setVertexBuffer(oamIdBuffer, offset: 0, index: 2)
+        encoder?.setVertexBuffer(baseTileIdBuffer, offset: 0, index: 3)
         encoder?.setFragmentTexture(mtlTexture, index: 0)
         encoder?.setFragmentSamplerState(mtlSampler, index: 0)
         
-        encoder?.drawIndexedPrimitives(type: .triangle,
-                                       indexCount: 6,
-                                       indexType: .uint16,
-                                       indexBuffer: indexBuffer,
-                                       indexBufferOffset: 0,
-                                       instanceCount:  1)
+//        // for oam in 0..<128
+        var tile_instance_id : Int = 0
+        for oam in 0..<2
+        {
+            let oam_value : Oam = oamBuffer.contents().load(fromByteOffset: oam * 8, as: Oam.self)
+            let num_tiles = Oam_Get_width_px(oam_value) * Oam_Get_height_px(oam_value) / 64
+            encoder?.drawIndexedPrimitives(type: .triangle,
+                                           indexCount: 6,
+                                           indexType: .uint16,
+                                           indexBuffer: indexBuffer,
+                                           indexBufferOffset: oam * 6 * 2,
+                                           instanceCount:  Int(num_tiles),
+                                           baseVertex: 0,
+                                           baseInstance: tile_instance_id)
+            tile_instance_id += Int(num_tiles);
+        }
 
         encoder?.endEncoding()
 

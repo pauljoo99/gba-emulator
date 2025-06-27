@@ -9,12 +9,16 @@
 #include "Structs.h"
 using namespace metal;
 
+struct VertexIn {
+    float2 position_px;
+    float2 texCoord;
+};
 
 struct VertexOut {
     float4 position [[position]];
     float3 color;
     float2 texCoord;
-    float tid;
+    uint16_t tid;
 };
 
 //vertex VertexOut vertex_main(uint vertexID [[vertex_id]],
@@ -54,17 +58,33 @@ struct VertexOut {
 
 vertex VertexOut tile_vertex_main(uint vertexID [[vertex_id]],
                              uint instanceID [[instance_id]],
-                             const device float3* vertexArray [[buffer(0)]],
-                             const device uint16_t* oam_id [[buffer(1)]]) {
+                             const device VertexIn* vertexArray [[buffer(0)]],
+                             const device Oam* oams [[buffer(1)]],
+                             const device uint16_t* oam_ids [[buffer(2)]],
+                             const device uint16_t* base_tile_ids [[buffer(3)]]) {
+    uint abs_tile_id = instanceID;
+    uint local_tile_id = abs_tile_id - base_tile_ids[instanceID];
+    
+    uint oam_id = oam_ids[abs_tile_id];
+    Oam oam = oams[oam_id];
+    
+    uint width_px = Oam_Get_width_px(oam);
+    uint width_tile = width_px / 8;
+    uint local_offset_x = (local_tile_id % width_tile) * 8;
+    uint local_offset_y = (local_tile_id / width_tile) * 8;
+    
     VertexOut out;
+    float2 position_px(
+                       vertexArray[vertexID].position_px[0] + Oam_Get_x(oam) + local_offset_x,
+                       vertexArray[vertexID].position_px[1] + Oam_Get_y(oam) + local_offset_y);
     out.position = float4(
-                          vertexArray[vertexID][0],
-                          vertexArray[vertexID][1],
+                          (position_px[0] / 240 * 2) - 1.0,
+                          -1 * (position_px[1] / 160 * 2) + 1.0,
                           0.0,
                           1.0
     );
-    out.texCoord = float2(vertexArray[vertexID][2], vertexArray[vertexID][3]);
-    out.tid = oam_id[1];
+    out.texCoord = float2(vertexArray[vertexID].texCoord[0], vertexArray[vertexID].texCoord[1]);
+    out.tid = Oam_Get_tid(oam);
     return out;
 }
 

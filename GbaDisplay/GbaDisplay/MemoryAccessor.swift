@@ -89,3 +89,16 @@ func GetByteMemoryPtr(handle: CpuRunnerHandle, address: UInt32) -> UnsafeMutable
         fatalError("Bad Access")
     }
 }
+
+func CreateOam(
+    x : UInt16,
+    y : UInt16,
+    shape : UInt16,
+    size : UInt16,
+    tile_id : UInt16) -> UInt64
+{
+    let attr0 : UInt64 = UInt64(((shape & 0b11) << 14) | (y & (0xFF)))
+    let attr1 : UInt64 = UInt64(((size & 0b11) << 14) | (x & (0x1FF)))
+    let attr2 : UInt64 = UInt64(tile_id & (0x3FF))
+    return (attr2 << 32) | (attr1 << 16) | (attr0)
+}
