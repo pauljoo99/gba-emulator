@@ -117,7 +117,7 @@ vertex VertexOut tile_2d_vertex_main(uint vertexID [[vertex_id]],
                           1.0
     );
     out.texCoord = float2(vertexArray[vertexID].texCoord[0], vertexArray[vertexID].texCoord[1]);
-    out.tid = (Oam_Get_tid(oam) + (local_offset_y / 8 * 32) + local_offset_x / 8) / 2;
+    out.tid = (Oam_Get_tid(oam) / 2 + (local_offset_y / 8 * 30) + local_offset_x / 8);
     return out;
 }
 
@@ -131,9 +131,9 @@ fragment float4 tile_fragment_main(VertexOut in [[stage_in]],
     
     uint16_t rgba = palette_buffer[color_index[0]];
     
-    float r = float((rgba >>  0) & 0xFF) / 255.0;
-    float g = float((rgba >>  8) & 0xFF) / 255.0;
-    float b = float((rgba >> 16) & 0xFF) / 255.0;
+    float r = 1.0 - float((rgba >>  0) & 0xFF) / 255.0;
+    float g = 1.0 - float((rgba >>  8) & 0xFF) / 255.0;
+    float b = 1.0 - float((rgba >> 16) & 0xFF) / 255.0;
     float a = 1.0;
 
     return float4(r, g, b, a);

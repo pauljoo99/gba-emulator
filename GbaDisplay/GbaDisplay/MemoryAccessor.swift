@@ -52,11 +52,11 @@ func GetByteMemoryPtr(memory_ptr: UnsafeMutableRawPointer, address: UInt32) -> U
         // Palette RAM
         return memPtr.advanced(by: BIOS_SIZE + WRAM_ONBOARD_SIZE + WRAM_ONCHIP_SIZE + IO_REGISTERS_SIZE + Int(address - 0x05000000))
 
-    case 0x06000000...0x0600BFFF:
+    case 0x06000000..<0x06018000:
         // VRAM
         return memPtr.advanced(by: BIOS_SIZE + WRAM_ONBOARD_SIZE + WRAM_ONCHIP_SIZE + IO_REGISTERS_SIZE + PALETTE_RAM_SIZE + Int(address - 0x06000000))
 
-    case 0x07000000...0x070001FF:
+    case 0x07000000...0x07000400:
         // OAM
         return memPtr.advanced(by: BIOS_SIZE + WRAM_ONBOARD_SIZE + WRAM_ONCHIP_SIZE + IO_REGISTERS_SIZE + PALETTE_RAM_SIZE + VRAM_SIZE + Int(address - 0x07000000))
 

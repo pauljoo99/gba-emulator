@@ -31,9 +31,8 @@ func FillTileTextures(
     memory_ptr: UnsafeMutableRawPointer,
     texture: MTLTexture)
 {
-    let tile_base_byte_ptr = GetByteMemoryPtr(memory_ptr: memory_ptr, address: 0x06000000)
-    
-    for tile_i in stride(from: 0x0, to: 0x18000, by: 64)
+    let tile_base_byte_ptr = GetByteMemoryPtr(memory_ptr: memory_ptr, address: 0x06010000)
+    for tile_i in stride(from: 0x0, to: 0x8000, by: 64)
     {
         var pixels : [UInt32] = []
         for px_i in tile_i..<tile_i + 64
@@ -41,7 +40,7 @@ func FillTileTextures(
             pixels.append(UInt32(tile_base_byte_ptr[px_i]))
         }
         let region = MTLRegionMake2D(0, 0, 8, 8)
-        texture.replace(region: region, mipmapLevel: 0, slice: 0, withBytes: pixels, bytesPerRow: 4 * 8, bytesPerImage: 4 * 8 * 8)
+        texture.replace(region: region, mipmapLevel: 0, slice: tile_i / 64, withBytes: pixels, bytesPerRow: 4 * 8, bytesPerImage: 4 * 8 * 8)
     }
 }
 
@@ -58,7 +57,7 @@ func FillOamAndTileBuffers(
     oam_id_buffer: MTLBuffer,
     base_tile_instance_id_buffer: MTLBuffer)
 {
-    let max_num_oams = 0x200 / MemoryLayout<Oam>.size
+    let max_num_oams = 0x400 / MemoryLayout<Oam>.size
     let oam_memory_byte_ptr = GetByteMemoryPtr(memory_ptr: memory_ptr, address: 0x07000000)
     let oam_memory_ptr = UnsafeMutableRawPointer(oam_memory_byte_ptr).bindMemory(to: Oam.self, capacity: 0x400 / MemoryLayout<Oam>.size)
     

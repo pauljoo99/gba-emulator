@@ -66,9 +66,12 @@ class TileRenderer: NSObject, MTKViewDelegate {
         textureDescriptor.textureType = MTLTextureType.type2DArray
         textureDescriptor.width = 8
         textureDescriptor.height = 8
-        textureDescriptor.arrayLength = 128
+        textureDescriptor.arrayLength = 512
         textureDescriptor.pixelFormat = MTLPixelFormat.r32Uint
         
+        let samplerDescriptor = MTLSamplerDescriptor()
+        
+        mtlSampler = device.makeSamplerState(descriptor: samplerDescriptor)
         mtlTexture = device.makeTexture(descriptor: textureDescriptor)
         vertexBuffer = device.makeBuffer(length: kMaxSizeBuffer,
                                          options: [])
@@ -218,8 +221,8 @@ class TileRenderer: NSObject, MTKViewDelegate {
         super.init()
         setupDevice(mtkView : mtkView)
         setupPipeline(mtkView : mtkView)
-        // setupRealMemoryDemoBuffers()
-        setupDemoBuffers()
+        setupRealMemoryDemoBuffers()
+        // setupDemoBuffers()
     }
     
     func draw(in view: MTKView) {
