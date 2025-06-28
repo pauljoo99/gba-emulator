@@ -10,7 +10,7 @@ import MetalKit
 
 struct Vertex {
     var position_px: SIMD2<Float>
-    var texCoord: SIMD2<UInt32>
+    var texCoord: SIMD2<Float>
 }
 
 func FillVertexBuffer(vertex_buffer: MTLBuffer)

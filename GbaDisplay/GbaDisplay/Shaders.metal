@@ -12,13 +12,13 @@ using namespace metal;
 
 struct VertexIn {
     float2 position_px;
-    uint2 texCoord;
+    float2 texCoord;
 };
 
 struct VertexOut {
     float4 position [[position]];
     float3 color;
-    int2 texCoord;
+    float2 texCoord;
     uint16_t tid;
 };
 
@@ -84,7 +84,7 @@ vertex VertexOut tile_vertex_main(uint vertexID [[vertex_id]],
                           0.0,
                           1.0
     );
-    out.texCoord = int2(vertexArray[vertexID].texCoord[0], vertexArray[vertexID].texCoord[1]);
+    out.texCoord = float2(vertexArray[vertexID].texCoord[0], vertexArray[vertexID].texCoord[1]);
     out.tid = Oam_Get_tid(oam) + local_tile_id;
     return out;
 }
@@ -116,17 +116,18 @@ vertex VertexOut tile_2d_vertex_main(uint vertexID [[vertex_id]],
                           0.0,
                           1.0
     );
-    out.texCoord = int2(vertexArray[vertexID].texCoord[0], vertexArray[vertexID].texCoord[1]);
+    out.texCoord = float2(vertexArray[vertexID].texCoord[0], vertexArray[vertexID].texCoord[1]);
     out.tid = (Oam_Get_tid(oam) + (local_offset_y / 8 * 32) + local_offset_x / 8) / 2;
     return out;
 }
 
 
 fragment float4 tile_fragment_main(VertexOut in [[stage_in]],
-                                   texture2d_array<uint, access::read> tex [[texture(0)]],
+                                   texture2d_array<uint, access::sample> tex [[texture(0)]],
+                                   sampler s [[sampler(0)]],
                                    const device uint16_t *palette_buffer [[buffer(0)]])
 {
-    uint4 color_index = tex.read(uint2(in.texCoord), in.tid);
+    uint4 color_index = tex.sample(s, in.texCoord, in.tid);
     
     uint16_t rgba = palette_buffer[color_index[0]];
     

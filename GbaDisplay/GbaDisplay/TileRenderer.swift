@@ -28,6 +28,7 @@ class TileRenderer: NSObject, MTKViewDelegate {
     // Texture
     private var mtlTexture : MTLTexture!
     private var paletteBuffer: MTLBuffer!
+    private var mtlSampler : MTLSamplerState!
 
     func setupDevice(mtkView: MTKView)
     {
@@ -61,7 +62,7 @@ class TileRenderer: NSObject, MTKViewDelegate {
             print("User cancelled or no file selected")
         }
         
-        let textureDescriptor = MTLTextureDescriptor();
+        let textureDescriptor = MTLTextureDescriptor()
         textureDescriptor.textureType = MTLTextureType.type2DArray
         textureDescriptor.width = 8
         textureDescriptor.height = 8
@@ -97,20 +98,27 @@ class TileRenderer: NSObject, MTKViewDelegate {
         textureDescriptor.pixelFormat = MTLPixelFormat.r32Uint
         
         mtlTexture = device.makeTexture(descriptor: textureDescriptor)
-        let red_tile = UnsafeMutableRawPointer.allocate(byteCount: 4 * 64, alignment: 4)
-        red_tile.initializeMemory(as: UInt32.self, repeating: 0, count: 64)
-//        let yellow_tile = UnsafeMutableRawPointer.allocate(byteCount: 4 * 64, alignment: 4)
-//        yellow_tile.initializeMemory(as: UInt32.self, repeating: 1, count: 64)
         
-        let yellow_tile = [
-            1, 0, 0, 0, 0, 0, 0, 1,
-            1, 0, 0, 0, 0, 0, 0, 1,
-            1, 0, 0, 0, 0, 0, 0, 1,
-            1, 0, 0, 1, 0, 0, 0, 1,
-            1, 0, 0, 0, 0, 0, 0, 1,
-            1, 0, 0, 0, 0, 0, 0, 1,
-            1, 0, 0, 0, 0, 0, 0, 1,
-            1, 0, 0, 0, 0, 0, 0, 1,
+        let red_tile : [UInt32] = [
+            0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0,
+        ]
+
+        let yellow_tile : [UInt32] = [
+            1, 1, 1, 1, 1, 1, 1, 1,
+            1, 1, 0, 0, 0, 0, 0, 1,
+            1, 1, 0, 1, 0, 1, 0, 1,
+            1, 1, 0, 0, 0, 0, 0, 1,
+            1, 1, 1, 0, 1, 0, 1, 1,
+            1, 1, 0, 1, 1, 1, 0, 1,
+            1, 1, 1, 0, 1, 0, 1, 1,
+            1, 1, 0, 1, 1, 1, 0, 1,
         ]
         
         let region = MTLRegionMake2D(0, 0, 8, 8)
@@ -123,9 +131,9 @@ class TileRenderer: NSObject, MTKViewDelegate {
         let pixelVertices : [Vertex] = [
             // Position
             Vertex(position_px: [0, 0], texCoord: [0, 0]), // Top-left
-            Vertex(position_px: [0, 8], texCoord: [0, 8]), // Bottom-left
-            Vertex(position_px: [8, 0], texCoord: [8, 0]), // Top-right
-            Vertex(position_px: [8, 8], texCoord: [8, 8])  // Bottom-right
+            Vertex(position_px: [0, 8], texCoord: [0, 1]), // Bottom-left
+            Vertex(position_px: [8, 0], texCoord: [1, 0]), // Top-right
+            Vertex(position_px: [8, 8], texCoord: [1, 1])  // Bottom-right
         ]
         
         // Require one index per quad.
@@ -167,6 +175,10 @@ class TileRenderer: NSObject, MTKViewDelegate {
         let palette_buffer : [UInt16] = [
             0x00FF, 0xFF00
         ]
+        
+        let samplerDescriptor = MTLSamplerDescriptor()
+        
+        mtlSampler = device.makeSamplerState(descriptor: samplerDescriptor)
         
         vertexBuffer = device.makeBuffer(bytes: pixelVertices,
                                          length: kMaxSizeBuffer,
@@ -224,6 +236,7 @@ class TileRenderer: NSObject, MTKViewDelegate {
         encoder?.setVertexBuffer(baseTileIdBuffer, offset: 0, index: 3)
         encoder?.setFragmentTexture(mtlTexture, index: 0)
         encoder?.setFragmentBuffer(paletteBuffer, offset: 0, index: 0)
+        encoder?.setFragmentSamplerState(mtlSampler, index: 0)
         
         var tile_instance_id : Int = 0
         for oam_i in 0..<128
