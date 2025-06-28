@@ -62,17 +62,17 @@ vertex VertexOut tile_vertex_main(uint vertexID [[vertex_id]],
                              const device VertexIn* vertexArray [[buffer(0)]],
                              const device Oam* oams [[buffer(1)]],
                              const device uint16_t* oam_ids [[buffer(2)]],
-                             const device uint16_t* base_tile_ids [[buffer(3)]]) {
-    uint abs_tile_id = instanceID;
-    uint local_tile_id = abs_tile_id - base_tile_ids[instanceID];
+                             const device uint16_t* base_tile_inst_ids [[buffer(3)]]) {
+    uint abs_tile_inst_id = instanceID;
+    uint local_tile_inst_id = abs_tile_inst_id - base_tile_inst_ids[instanceID];
     
-    uint oam_id = oam_ids[abs_tile_id];
+    uint oam_id = oam_ids[abs_tile_inst_id];
     Oam oam = oams[oam_id];
     
     uint width_px = Oam_Get_width_px(oam);
     uint width_tile = width_px / 8;
-    uint local_offset_x = (local_tile_id % width_tile) * 8;
-    uint local_offset_y = (local_tile_id / width_tile) * 8;
+    uint local_offset_x = (local_tile_inst_id % width_tile) * 8;
+    uint local_offset_y = (local_tile_inst_id / width_tile) * 8;
     
     VertexOut out;
     float2 position_px(
@@ -85,7 +85,7 @@ vertex VertexOut tile_vertex_main(uint vertexID [[vertex_id]],
                           1.0
     );
     out.texCoord = float2(vertexArray[vertexID].texCoord[0], vertexArray[vertexID].texCoord[1]);
-    out.tid = Oam_Get_tid(oam) + local_tile_id;
+    out.tid = Oam_Get_tid(oam) + local_tile_inst_id;
     return out;
 }
 
@@ -94,17 +94,17 @@ vertex VertexOut tile_2d_vertex_main(uint vertexID [[vertex_id]],
                              const device VertexIn* vertexArray [[buffer(0)]],
                              const device Oam* oams [[buffer(1)]],
                              const device uint16_t* oam_ids [[buffer(2)]],
-                             const device uint16_t* base_tile_ids [[buffer(3)]]) {
-    uint abs_tile_id = instanceID;
-    uint local_tile_id = abs_tile_id - base_tile_ids[instanceID];
+                             const device uint16_t* base_tile_inst_ids [[buffer(3)]]) {
+    uint abs_tile_inst_id = instanceID;
+    uint local_tile_inst_id = abs_tile_inst_id - base_tile_inst_ids[instanceID];
     
-    uint oam_id = oam_ids[abs_tile_id];
+    uint oam_id = oam_ids[abs_tile_inst_id];
     Oam oam = oams[oam_id];
     
     uint width_px = Oam_Get_width_px(oam);
     uint width_tile = width_px / 8;
-    uint local_offset_x = (local_tile_id % width_tile) * 8;
-    uint local_offset_y = (local_tile_id / width_tile) * 8;
+    uint local_offset_x = (local_tile_inst_id % width_tile) * 8;
+    uint local_offset_y = (local_tile_inst_id / width_tile) * 8;
     
     VertexOut out;
     float2 position_px(
@@ -117,7 +117,7 @@ vertex VertexOut tile_2d_vertex_main(uint vertexID [[vertex_id]],
                           1.0
     );
     out.texCoord = float2(vertexArray[vertexID].texCoord[0], vertexArray[vertexID].texCoord[1]);
-    out.tid = (Oam_Get_tid(oam) / 2 + (local_offset_y / 8 * 30) + local_offset_x / 8);
+    out.tid = Oam_Get_tid(oam) / 2 + (local_offset_y / 8 * 32 / 2) + local_offset_x / 8;
     return out;
 }
 
