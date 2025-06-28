@@ -99,8 +99,19 @@ class TileRenderer: NSObject, MTKViewDelegate {
         mtlTexture = device.makeTexture(descriptor: textureDescriptor)
         let red_tile = UnsafeMutableRawPointer.allocate(byteCount: 4 * 64, alignment: 4)
         red_tile.initializeMemory(as: UInt32.self, repeating: 0, count: 64)
-        let yellow_tile = UnsafeMutableRawPointer.allocate(byteCount: 4 * 64, alignment: 4)
-        yellow_tile.initializeMemory(as: UInt32.self, repeating: 1, count: 64)
+//        let yellow_tile = UnsafeMutableRawPointer.allocate(byteCount: 4 * 64, alignment: 4)
+//        yellow_tile.initializeMemory(as: UInt32.self, repeating: 1, count: 64)
+        
+        let yellow_tile = [
+            1, 0, 0, 0, 0, 0, 0, 1,
+            1, 0, 0, 0, 0, 0, 0, 1,
+            1, 0, 0, 0, 0, 0, 0, 1,
+            1, 0, 0, 1, 0, 0, 0, 1,
+            1, 0, 0, 0, 0, 0, 0, 1,
+            1, 0, 0, 0, 0, 0, 0, 1,
+            1, 0, 0, 0, 0, 0, 0, 1,
+            1, 0, 0, 0, 0, 0, 0, 1,
+        ]
         
         let region = MTLRegionMake2D(0, 0, 8, 8)
         
@@ -112,9 +123,9 @@ class TileRenderer: NSObject, MTKViewDelegate {
         let pixelVertices : [Vertex] = [
             // Position
             Vertex(position_px: [0, 0], texCoord: [0, 0]), // Top-left
-            Vertex(position_px: [0, 8], texCoord: [0, 1]), // Bottom-left
-            Vertex(position_px: [8, 0], texCoord: [1, 0]), // Top-right
-            Vertex(position_px: [8, 8], texCoord: [1, 1])  // Bottom-right
+            Vertex(position_px: [0, 8], texCoord: [0, 8]), // Bottom-left
+            Vertex(position_px: [8, 0], texCoord: [8, 0]), // Top-right
+            Vertex(position_px: [8, 8], texCoord: [8, 8])  // Bottom-right
         ]
         
         // Require one index per quad.
@@ -133,10 +144,14 @@ class TileRenderer: NSObject, MTKViewDelegate {
         ]
         
         // Access by oam id.
-        let oams : [UInt64] = [
+        var oams : [UInt64] = [
             CreateOam(x: 120, y: 0, shape: 1, size: 0, tile_id: 0),
             CreateOam(x: 120, y: 80, shape: 0, size: 0, tile_id: 2),
         ]
+        for _ in 2..<128
+        {
+            oams.append(0)
+        }
         
         // Index by absolute tile instance id.
         let oam_ids : [UInt16] = [
@@ -191,8 +206,8 @@ class TileRenderer: NSObject, MTKViewDelegate {
         super.init()
         setupDevice(mtkView : mtkView)
         setupPipeline(mtkView : mtkView)
-        setupRealMemoryDemoBuffers()
-        // setupDemoBuffers()
+        // setupRealMemoryDemoBuffers()
+        setupDemoBuffers()
     }
     
     func draw(in view: MTKView) {

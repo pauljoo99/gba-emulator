@@ -33,13 +33,12 @@ func FillTileTextures(
 {
     let tile_base_byte_ptr = GetByteMemoryPtr(memory_ptr: memory_ptr, address: 0x06000000)
     
-    for tile_i in stride(from: 0x0, to: 0x18000, by: 32)
+    for tile_i in stride(from: 0x0, to: 0x18000, by: 64)
     {
         var pixels : [UInt32] = []
-        for px_i in tile_i..<tile_i + 32
+        for px_i in tile_i..<tile_i + 64
         {
-            pixels.append(UInt32(tile_base_byte_ptr[px_i]) & 0x0F)
-            pixels.append(UInt32(tile_base_byte_ptr[px_i]) >> 4)
+            pixels.append(UInt32(tile_base_byte_ptr[px_i]))
         }
         let region = MTLRegionMake2D(0, 0, 8, 8)
         texture.replace(region: region, mipmapLevel: 0, slice: 0, withBytes: pixels, bytesPerRow: 4 * 8, bytesPerImage: 4 * 8 * 8)

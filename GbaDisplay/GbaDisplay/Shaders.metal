@@ -117,7 +117,7 @@ vertex VertexOut tile_2d_vertex_main(uint vertexID [[vertex_id]],
                           1.0
     );
     out.texCoord = int2(vertexArray[vertexID].texCoord[0], vertexArray[vertexID].texCoord[1]);
-    out.tid = Oam_Get_tid(oam) + (local_offset_y / 8 * 32) + local_offset_x / 8;
+    out.tid = (Oam_Get_tid(oam) + (local_offset_y / 8 * 32) + local_offset_x / 8) / 2;
     return out;
 }
 
