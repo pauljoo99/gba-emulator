@@ -79,11 +79,6 @@ class MetalRenderer: NSObject, MTKViewDelegate {
         setupBuffers()
         
         // Start the game loop
-        game_loop.load_buffers(
-            index_buffer: indexBuffer.contents().bindMemory(to: UInt16.self, capacity: kMaxSizeBuffer),
-            pixel_attr_buffer: pixelAttributeBuffer.contents().bindMemory(to: PixelAttributes.self, capacity: kMaxSizeBuffer),
-            sprite_attr_buffer: spriteAttributeBuffer.contents().bindMemory(to: SpriteAttributes.self, capacity: kMaxSizeBuffer)
-        )
         game_loop.start()
     }
     

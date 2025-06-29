@@ -10,6 +10,7 @@ import MetalKit
 import AppKit
 import UniformTypeIdentifiers
 
+let kMaxSizeBuffer = 1024 * 1024
 
 class TileRenderer: NSObject, MTKViewDelegate {
     
@@ -115,13 +116,13 @@ class TileRenderer: NSObject, MTKViewDelegate {
 
         let yellow_tile : [UInt32] = [
             1, 1, 1, 1, 1, 1, 1, 1,
-            1, 1, 0, 0, 0, 0, 0, 1,
-            1, 1, 0, 1, 0, 1, 0, 1,
-            1, 1, 0, 0, 0, 0, 0, 1,
-            1, 1, 1, 0, 1, 0, 1, 1,
-            1, 1, 0, 1, 1, 1, 0, 1,
-            1, 1, 1, 0, 1, 0, 1, 1,
-            1, 1, 0, 1, 1, 1, 0, 1,
+            1, 0, 0, 0, 0, 0, 0, 1,
+            1, 0, 1, 0, 0, 1, 0, 1,
+            1, 0, 0, 0, 0, 0, 0, 1,
+            1, 1, 0, 1, 1, 0, 1, 1,
+            1, 0, 1, 1, 1, 1, 0, 1,
+            1, 1, 0, 1, 1, 0, 1, 1,
+            1, 0, 1, 1, 1, 1, 0, 1,
         ]
         
         let region = MTLRegionMake2D(0, 0, 8, 8)

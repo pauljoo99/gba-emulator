@@ -15,7 +15,6 @@
 		D56106EB2DFB709F009E86D7 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = D56106EA2DFB709F009E86D7 /* Assets.xcassets */; };
 		D56106EE2DFB709F009E86D7 /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = D56106ED2DFB709F009E86D7 /* Preview Assets.xcassets */; };
 		D56106F62DFB7290009E86D7 /* MetalView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D56106F52DFB7290009E86D7 /* MetalView.swift */; };
-		D56106F82DFB72EB009E86D7 /* MetalRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = D56106F72DFB72EB009E86D7 /* MetalRenderer.swift */; };
 		D56106FC2DFB731E009E86D7 /* Shaders.metal in Sources */ = {isa = PBXBuildFile; fileRef = D56106FB2DFB731E009E86D7 /* Shaders.metal */; };
 		D56106FE2DFBF58D009E86D7 /* GameLoop.swift in Sources */ = {isa = PBXBuildFile; fileRef = D56106FD2DFBF58D009E86D7 /* GameLoop.swift */; };
 		D56C94562E01F198000E6A1E /* Bridging-Header-cpp.mm in Sources */ = {isa = PBXBuildFile; fileRef = D56C94552E01F198000E6A1E /* Bridging-Header-cpp.mm */; };
@@ -35,7 +34,6 @@
 		D56106ED2DFB709F009E86D7 /* Preview Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
 		D56106EF2DFB709F009E86D7 /* GbaDisplay.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = GbaDisplay.entitlements; sourceTree = "<group>"; };
 		D56106F52DFB7290009E86D7 /* MetalView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MetalView.swift; sourceTree = "<group>"; };
-		D56106F72DFB72EB009E86D7 /* MetalRenderer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MetalRenderer.swift; sourceTree = "<group>"; };
 		D56106FB2DFB731E009E86D7 /* Shaders.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = Shaders.metal; sourceTree = "<group>"; };
 		D56106FD2DFBF58D009E86D7 /* GameLoop.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GameLoop.swift; sourceTree = "<group>"; };
 		D561070C2DFCF77B009E86D7 /* Structs.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Structs.h; sourceTree = "<group>"; };
@@ -82,7 +80,6 @@
 				D56106E62DFB709A009E86D7 /* GbaDisplayApp.swift */,
 				D56106E82DFB709A009E86D7 /* ContentView.swift */,
 				D56106F52DFB7290009E86D7 /* MetalView.swift */,
-				D56106F72DFB72EB009E86D7 /* MetalRenderer.swift */,
 				D520EB8B2E0C945800025C28 /* TileRenderer.swift */,
 				D520EB8D2E0E7C2C00025C28 /* DisplayInputAdapter.swift */,
 				D56106FD2DFBF58D009E86D7 /* GameLoop.swift */,
@@ -187,7 +184,6 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				D56106F82DFB72EB009E86D7 /* MetalRenderer.swift in Sources */,
 				D56106F62DFB7290009E86D7 /* MetalView.swift in Sources */,
 				D56106E92DFB709A009E86D7 /* ContentView.swift in Sources */,
 				D5CF437B2E00C2BF00CDFFBA /* RegisterDecoders.swift in Sources */,
