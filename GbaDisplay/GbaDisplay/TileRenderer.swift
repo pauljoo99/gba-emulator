@@ -316,6 +316,11 @@ class TileRenderer: NSObject, MTKViewDelegate {
             {
                 continue;
             }
+            
+            if (oam.color_mode == 0)
+            {
+                print("SEE 4bpp color mode!")
+            }
                         
             let num_tiles = oam.widthPx * oam.heightPx / 64
             encoder?.drawIndexedPrimitives(type: .triangle,

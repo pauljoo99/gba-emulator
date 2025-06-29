@@ -88,12 +88,6 @@ func FillOamAndTileBuffers(
     var num_oams : Int = 0
     for oam_i in 0..<max_num_oams
     {
-        // Find out how oams that are 0 are ignored.
-        if (oam_memory_ptr[oam_i].attr0 == 0 && oam_memory_ptr[oam_i].attr1 == 0)
-        {
-            continue;
-        }
-
         // Set oam
         let oam = oam_memory_ptr[oam_i]
         oam_buffer_ptr[num_oams] = oam_memory_ptr[oam_i]

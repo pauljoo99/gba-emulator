@@ -44,6 +44,21 @@ vertex VertexOut tile_vertex_main(uint vertexID [[vertex_id]],
     float2 position_px(
                        vertexArray[vertexID].position_px[0] + Oam_Get_x(oam) + local_offset_x,
                        vertexArray[vertexID].position_px[1] + Oam_Get_y(oam) + local_offset_y);
+    
+    if (Oam_Get_mode(oam) == 0b10 || Oam_Get_mode(oam) == 0b11)
+    {
+        float a = oams[oam_id].fill;
+        float b = oams[oam_id + 1].fill;
+        float c = oams[oam_id + 2].fill;
+        float d = oams[oam_id + 3].fill;
+        float det = a * d - b * c;
+        matrix<float, 2, 2> affine_transform(
+            float2(d / det, -1 * b / det),   // column 0
+            float2(-1 * c / det, -1 * a / det)    // column 1
+        );
+        position_px = affine_transform * position_px;
+    }
+    
     out.position = float4(
                           (position_px[0] / 240 * 2) - 1.0,
                           -1 * (position_px[1] / 160 * 2) + 1.0,
