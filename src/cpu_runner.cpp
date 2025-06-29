@@ -86,7 +86,7 @@ void CpuRunner::Run() {
   } else {
     while (cpu->Dispatch(*memory)) {
       // Clock time of GBA is 16.57 MHz.
-      std::this_thread::sleep_for(std::chrono::nanoseconds(59));
+      // std::this_thread::sleep_for(std::chrono::nanoseconds(59));
     }
     LOG("CpuRunner stopped running!");
   }

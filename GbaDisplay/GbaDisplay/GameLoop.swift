@@ -42,7 +42,7 @@ class GameLoop {
     
     public func start()
     {
-        timer = Timer.scheduledTimer(withTimeInterval: 60.0, repeats: true) { [weak self] _ in
+        timer = Timer.scheduledTimer(withTimeInterval: 0.016, repeats: true) { [weak self] _ in
             self?.dispatch()
         }
         DispatchQueue.global(qos: .background).async {
