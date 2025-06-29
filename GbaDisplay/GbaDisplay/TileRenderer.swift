@@ -27,7 +27,8 @@ class TileRenderer: NSObject, MTKViewDelegate {
     private var baseTileIdBuffer: MTLBuffer!
     
     // Texture
-    private var mtlTexture : MTLTexture!
+    private var mtlTexture4bpp : MTLTexture!
+    private var mtlTexture8bppExtension : MTLTexture!
     private var paletteBuffer: MTLBuffer!
     private var mtlSampler : MTLSamplerState!
     
@@ -59,13 +60,14 @@ class TileRenderer: NSObject, MTKViewDelegate {
         textureDescriptor.textureType = MTLTextureType.type2DArray
         textureDescriptor.width = 8
         textureDescriptor.height = 8
-        textureDescriptor.arrayLength = 512
+        textureDescriptor.arrayLength = 0x8000 / 32
         textureDescriptor.pixelFormat = MTLPixelFormat.r32Uint
         
         let samplerDescriptor = MTLSamplerDescriptor()
         
         mtlSampler = device.makeSamplerState(descriptor: samplerDescriptor)
-        mtlTexture = device.makeTexture(descriptor: textureDescriptor)
+        mtlTexture4bpp = device.makeTexture(descriptor: textureDescriptor)
+        mtlTexture8bppExtension = device.makeTexture(descriptor: textureDescriptor)
         vertexBuffer = device.makeBuffer(length: kMaxSizeBuffer,
                                          options: [])
         oamBuffer = device.makeBuffer(length: kMaxSizeBuffer,
@@ -105,13 +107,14 @@ class TileRenderer: NSObject, MTKViewDelegate {
         textureDescriptor.textureType = MTLTextureType.type2DArray
         textureDescriptor.width = 8
         textureDescriptor.height = 8
-        textureDescriptor.arrayLength = 512
+        textureDescriptor.arrayLength = 0x8000 / 32
         textureDescriptor.pixelFormat = MTLPixelFormat.r32Uint
         
         let samplerDescriptor = MTLSamplerDescriptor()
         
         mtlSampler = device.makeSamplerState(descriptor: samplerDescriptor)
-        mtlTexture = device.makeTexture(descriptor: textureDescriptor)
+        mtlTexture4bpp = device.makeTexture(descriptor: textureDescriptor)
+        mtlTexture8bppExtension = device.makeTexture(descriptor: textureDescriptor)
         vertexBuffer = device.makeBuffer(length: kMaxSizeBuffer,
                                          options: [])
         oamBuffer = device.makeBuffer(length: kMaxSizeBuffer,
@@ -134,7 +137,8 @@ class TileRenderer: NSObject, MTKViewDelegate {
         textureDescriptor.arrayLength = 128
         textureDescriptor.pixelFormat = MTLPixelFormat.r32Uint
         
-        mtlTexture = device.makeTexture(descriptor: textureDescriptor)
+        mtlTexture4bpp = device.makeTexture(descriptor: textureDescriptor)
+        mtlTexture8bppExtension = device.makeTexture(descriptor: textureDescriptor)
         
         let red_tile : [UInt32] = [
             0, 0, 0, 0, 0, 0, 0, 0,
@@ -160,9 +164,9 @@ class TileRenderer: NSObject, MTKViewDelegate {
         
         let region = MTLRegionMake2D(0, 0, 8, 8)
         
-        mtlTexture.replace(region: region, mipmapLevel: 0, slice: 0, withBytes: red_tile, bytesPerRow: 4 * 8, bytesPerImage: 4 * 8 * 8)
-        mtlTexture.replace(region: region, mipmapLevel: 0, slice: 1, withBytes: yellow_tile, bytesPerRow: 4 * 8, bytesPerImage: 4 * 8 * 8)
-        mtlTexture.replace(region: region, mipmapLevel: 0, slice: 2, withBytes: yellow_tile, bytesPerRow: 4 * 8, bytesPerImage: 4 * 8 * 8)
+        mtlTexture4bpp.replace(region: region, mipmapLevel: 0, slice: 0, withBytes: red_tile, bytesPerRow: 4 * 8, bytesPerImage: 4 * 8 * 8)
+        mtlTexture4bpp.replace(region: region, mipmapLevel: 0, slice: 1, withBytes: yellow_tile, bytesPerRow: 4 * 8, bytesPerImage: 4 * 8 * 8)
+        mtlTexture4bpp.replace(region: region, mipmapLevel: 0, slice: 2, withBytes: yellow_tile, bytesPerRow: 4 * 8, bytesPerImage: 4 * 8 * 8)
         
         // A 8x8 quad in pixel space.
         let pixelVertices : [Vertex] = [
@@ -190,8 +194,8 @@ class TileRenderer: NSObject, MTKViewDelegate {
         
         // Access by oam id.
         var oams : [UInt64] = [
-            CreateOam(x: 120, y: 0, shape: 1, size: 0, tile_id: 0),
-            CreateOam(x: 120, y: 80, shape: 0, size: 0, tile_id: 2),
+            CreateOam(x: 120, y: 0, shape: 1, size: 0, tile_id: 0, is_8bpp: 1),
+            CreateOam(x: 120, y: 80, shape: 0, size: 0, tile_id: 2, is_8bpp: 1),
         ]
         for _ in 2..<128
         {
@@ -265,7 +269,7 @@ class TileRenderer: NSObject, MTKViewDelegate {
         }
         
         FillVertexBuffer(vertex_buffer: vertexBuffer)
-        FillTileTextures(memory_ptr: memory_data_ptr, texture: mtlTexture)
+        FillTileTextures(memory_ptr: memory_data_ptr, tex4bpp: mtlTexture4bpp, tex8bppExtension: mtlTexture8bppExtension)
         FillPaletteBuffer(memory_ptr: memory_data_ptr, palette_buffer: paletteBuffer)
         FillOamAndTileBuffers(memory_ptr: memory_data_ptr, index_buffer: indexBuffer, oam_buffer: oamBuffer, oam_id_buffer: oamIdBuffer, base_tile_instance_id_buffer: baseTileIdBuffer)
     }
@@ -296,7 +300,8 @@ class TileRenderer: NSObject, MTKViewDelegate {
         encoder?.setVertexBuffer(oamBuffer, offset: 0, index: 1)
         encoder?.setVertexBuffer(oamIdBuffer, offset: 0, index: 2)
         encoder?.setVertexBuffer(baseTileIdBuffer, offset: 0, index: 3)
-        encoder?.setFragmentTexture(mtlTexture, index: 0)
+        encoder?.setFragmentTexture(mtlTexture4bpp, index: 0)
+        encoder?.setFragmentTexture(mtlTexture8bppExtension, index: 1)
         encoder?.setFragmentBuffer(paletteBuffer, offset: 0, index: 0)
         encoder?.setFragmentSamplerState(mtlSampler, index: 0)
         

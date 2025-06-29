@@ -19,6 +19,7 @@ struct VertexOut {
     float4 position [[position]];
     float2 texCoord;
     uint16_t tid;
+    Oam oam;
 };
 
 vertex VertexOut tile_vertex_main(uint vertexID [[vertex_id]],
@@ -48,6 +49,7 @@ vertex VertexOut tile_vertex_main(uint vertexID [[vertex_id]],
                           0.0,
                           1.0
     );
+    
     out.texCoord = float2(vertexArray[vertexID].texCoord[0], vertexArray[vertexID].texCoord[1]);
     out.tid = Oam_Get_tid(oam) + local_tile_inst_id;
     return out;
@@ -81,20 +83,42 @@ vertex VertexOut tile_2d_vertex_main(uint vertexID [[vertex_id]],
                           1.0
     );
     out.texCoord = float2(vertexArray[vertexID].texCoord[0], vertexArray[vertexID].texCoord[1]);
-    out.tid = Oam_Get_tid(oam) / 2 + (local_offset_y / 8 * 32 / 2) + local_offset_x / 8;
+    
+    // 8bpp
+    if (Oam_Get_color_mode(oam) == 1)
+    {
+        out.tid = Oam_Get_tid(oam) + local_offset_y / 8 * 32 + local_offset_x / 8 * 2;
+    }
+    else
+    // 4bpp
+    {
+        out.tid = Oam_Get_tid(oam) + local_offset_y / 8 * 32 + local_offset_x / 8;
+    }
     return out;
 }
 
 
 fragment float4 tile_fragment_main(VertexOut in [[stage_in]],
-                                   texture2d_array<uint, access::sample> tex [[texture(0)]],
+                                   texture2d_array<uint, access::sample> tex4bpp [[texture(0)]],
+                                   texture2d_array<uint, access::sample> tex8bppExtension [[texture(1)]],
                                    sampler s [[sampler(0)]],
                                    const device uint16_t *palette_buffer [[buffer(0)]])
 {
-    uint4 color_index = tex.sample(s, in.texCoord, in.tid);
-    
-    uint16_t rgba = palette_buffer[color_index[0]];
-    
+    uint16_t rgba;
+    if (Oam_Get_color_mode(in.oam) == 1)
+    {
+        // 8bpp
+        uint4 color_index = tex8bppExtension.sample(s, in.texCoord, in.tid);
+        rgba = palette_buffer[color_index[0]];
+    }
+    else
+    {
+        // 4bpp
+        ushort palette_bank = Oam_Get_palette_bank(in.oam);
+        uint4 color_index_lo = tex4bpp.sample(s, in.texCoord, in.tid);
+        rgba = palette_buffer[(palette_bank << 4) | color_index_lo[0]];
+    }
+        
     float r = 1.0 - float((rgba >>  0) & 0xFF) / 255.0;
     float g = 1.0 - float((rgba >>  8) & 0xFF) / 255.0;
     float b = 1.0 - float((rgba >> 16) & 0xFF) / 255.0;

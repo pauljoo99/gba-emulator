@@ -91,9 +91,14 @@ func CreateOam(
     y : UInt16,
     shape : UInt16,
     size : UInt16,
-    tile_id : UInt16) -> UInt64
+    tile_id : UInt16,
+    is_8bpp : UInt16) -> UInt64
 {
-    let attr0 : UInt64 = UInt64(((shape & 0b11) << 14) | (y & (0xFF)))
+    let attr0 : UInt64 = UInt64(
+        ((shape & 0b11) << 14) |
+        (y & (0xFF)) |
+        (is_8bpp << 12)
+    )
     let attr1 : UInt64 = UInt64(((size & 0b11) << 14) | (x & (0x1FF)))
     let attr2 : UInt64 = UInt64(tile_id & (0x3FF))
     return (attr2 << 32) | (attr1 << 16) | (attr0)
@@ -124,6 +129,10 @@ extension Oam {
         return (attr0 >> 8) & 0b11
     }
 
+    var color_mode: UInt16 {
+        return (attr0 >> 13) & 0b1
+    }
+    
     var widthPx: UInt16 {
         switch (shape, size) {
         case (0b00, 0b00): return 8

@@ -13,7 +13,8 @@ struct Vertex {
     var texCoord: SIMD2<Float>
 }
 
-var pixels = [UInt32](repeating: 0, count: 64)
+var pixels4bpp = [UInt32](repeating: 0, count: 64)
+var pixels8bppExtension = [UInt32](repeating: 0, count: 64)
 
 func FillVertexBuffer(vertex_buffer: MTLBuffer)
 {
@@ -31,17 +32,29 @@ func FillVertexBuffer(vertex_buffer: MTLBuffer)
 
 func FillTileTextures(
     memory_ptr: UnsafeMutableRawPointer,
-    texture: MTLTexture)
+    tex4bpp: MTLTexture,
+    tex8bppExtension: MTLTexture)
 {
     let tile_base_byte_ptr = GetByteMemoryPtr(memory_ptr: memory_ptr, address: 0x06010000)
-    for tile_i in stride(from: 0x0, to: 0x8000, by: 64)
+    for tile_i in stride(from: 0x0, to: 0x8000, by: 32)
     {
-        for px_i in tile_i..<tile_i + 64
-        {
-            pixels[px_i - tile_i] = (UInt32(tile_base_byte_ptr[px_i]))
-        }
         let region = MTLRegionMake2D(0, 0, 8, 8)
-        texture.replace(region: region, mipmapLevel: 0, slice: tile_i / 64, withBytes: pixels, bytesPerRow: 4 * 8, bytesPerImage: 4 * 8 * 8)
+        
+        for px_i in stride(from: tile_i, to: tile_i + 64, by: 2)
+        {
+            pixels4bpp[px_i - tile_i] = (UInt32(tile_base_byte_ptr[px_i]) & 0xF)
+            pixels4bpp[px_i - tile_i + 1] = (UInt32(tile_base_byte_ptr[px_i]) & 0xF)
+        }
+        tex4bpp.replace(region: region, mipmapLevel: 0, slice: tile_i / 32, withBytes: pixels4bpp, bytesPerRow: 4 * 8, bytesPerImage: 4 * 8 * 8)
+
+        if ((tile_i / 32) % 2 == 0)
+        {
+            for px_i in tile_i..<tile_i + 64
+            {
+                pixels8bppExtension[px_i - tile_i] = (UInt32(tile_base_byte_ptr[px_i]))
+            }
+            tex8bppExtension.replace(region: region, mipmapLevel: 0, slice: tile_i / 32, withBytes: pixels8bppExtension, bytesPerRow: 4 * 8, bytesPerImage: 4 * 8 * 8)
+        }
     }
 }
 

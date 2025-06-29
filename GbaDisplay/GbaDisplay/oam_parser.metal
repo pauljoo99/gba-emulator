@@ -37,6 +37,14 @@ inline ushort Oam_Get_mode(Oam oam) {
     return (oam.attr0 >> 8) & 0b11;
 }
 
+inline ushort Oam_Get_color_mode(Oam oam) {
+    return (oam.attr0 >> 13) & 0b1;
+}
+
+inline ushort Oam_Get_palette_bank(Oam oam) {
+    return (oam.attr2 >> 12) & 0xF;
+}
+
 inline ushort Oam_Get_width_px(Oam oam) {
     ushort shape = Oam_Get_sh(oam);
     ushort size = Oam_Get_sz(oam);
