@@ -59,11 +59,11 @@ func FillOamAndTileBuffers(
 {
     let max_num_oams = 0x400 / MemoryLayout<Oam>.size
     let oam_memory_byte_ptr = GetByteMemoryPtr(memory_ptr: memory_ptr, address: 0x07000000)
-    let oam_memory_ptr = UnsafeMutableRawPointer(oam_memory_byte_ptr).bindMemory(to: Oam.self, capacity: 0x400 / MemoryLayout<Oam>.size)
+    let oam_memory_ptr = UnsafeMutableRawPointer(oam_memory_byte_ptr).assumingMemoryBound(to: Oam.self)
     
-    let oam_buffer_ptr = UnsafeMutableRawPointer(oam_buffer.contents()).bindMemory(to: Oam.self, capacity: kMaxRawBytes)
-    let base_tile_instance_id_ptr = UnsafeMutableRawPointer(base_tile_instance_id_buffer.contents()).bindMemory(to: UInt16.self, capacity: kMaxRawBytes)
-    let oam_id_ptr = UnsafeMutableRawPointer(oam_id_buffer.contents()).bindMemory(to: UInt16.self, capacity: kMaxRawBytes)
+    let oam_buffer_ptr = UnsafeMutableRawPointer(oam_buffer.contents()).assumingMemoryBound(to: Oam.self)
+    let base_tile_instance_id_ptr = UnsafeMutableRawPointer(base_tile_instance_id_buffer.contents()).assumingMemoryBound(to: UInt16.self)
+    let oam_id_ptr = UnsafeMutableRawPointer(oam_id_buffer.contents()).assumingMemoryBound(to: UInt16.self)
     
     let index_buffer_ptr = index_buffer.contents().bindMemory(to: UInt16.self, capacity: kMaxSizeBuffer)
     let quad : [UInt16] = [

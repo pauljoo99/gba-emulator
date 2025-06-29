@@ -42,7 +42,7 @@ class GameLoop {
     
     public func start()
     {
-        timer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
+        timer = Timer.scheduledTimer(withTimeInterval: 60.0, repeats: true) { [weak self] _ in
             self?.dispatch()
         }
         DispatchQueue.global(qos: .background).async {
@@ -85,8 +85,6 @@ class GameLoop {
         
         // Set scanline to indicate to CPU to not update buffers until the next dispatch.
         SignalDoNotUpdateBuffers()
-        
-        usleep(VBLANK_TIME_MS * 1000);
     }
     
 }
