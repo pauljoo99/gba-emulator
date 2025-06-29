@@ -316,7 +316,7 @@ class TileRenderer: NSObject, MTKViewDelegate {
             {
                 continue;
             }
-            
+                        
             let num_tiles = oam.widthPx * oam.heightPx / 64
             encoder?.drawIndexedPrimitives(type: .triangle,
                                            indexCount: 6,

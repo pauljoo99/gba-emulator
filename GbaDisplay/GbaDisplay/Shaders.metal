@@ -19,7 +19,8 @@ struct VertexOut {
     float4 position [[position]];
     float2 texCoord;
     uint16_t tid;
-    Oam oam;
+    uint16_t oam_color_mode;
+    uint16_t oam_palette_bank;
 };
 
 vertex VertexOut tile_vertex_main(uint vertexID [[vertex_id]],
@@ -88,11 +89,14 @@ vertex VertexOut tile_2d_vertex_main(uint vertexID [[vertex_id]],
     if (Oam_Get_color_mode(oam) == 1)
     {
         out.tid = Oam_Get_tid(oam) + local_offset_y / 8 * 32 + local_offset_x / 8 * 2;
+        out.oam_color_mode = 1;
     }
     else
     // 4bpp
     {
         out.tid = Oam_Get_tid(oam) + local_offset_y / 8 * 32 + local_offset_x / 8;
+        out.oam_color_mode = 0;
+        out.oam_palette_bank = Oam_Get_palette_bank(oam);
     }
     return out;
 }
@@ -105,7 +109,7 @@ fragment float4 tile_fragment_main(VertexOut in [[stage_in]],
                                    const device uint16_t *palette_buffer [[buffer(0)]])
 {
     uint16_t rgba;
-    if (Oam_Get_color_mode(in.oam) == 1)
+    if (in.oam_color_mode == 1)
     {
         // 8bpp
         uint4 color_index = tex8bppExtension.sample(s, in.texCoord, in.tid);
@@ -114,7 +118,7 @@ fragment float4 tile_fragment_main(VertexOut in [[stage_in]],
     else
     {
         // 4bpp
-        ushort palette_bank = Oam_Get_palette_bank(in.oam);
+        ushort palette_bank = in.oam_palette_bank;
         uint4 color_index_lo = tex4bpp.sample(s, in.texCoord, in.tid);
         rgba = palette_buffer[(palette_bank << 4) | color_index_lo[0]];
     }
