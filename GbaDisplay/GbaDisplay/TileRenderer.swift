@@ -317,9 +317,9 @@ class TileRenderer: NSObject, MTKViewDelegate {
                 continue;
             }
             
-            if (oam.color_mode == 0)
+            if (oam.mode == 0b10)
             {
-                print("SEE 4bpp color mode!")
+                print("Warning, affine sprites not yet implemented!")
             }
                         
             let num_tiles = oam.widthPx * oam.heightPx / 64

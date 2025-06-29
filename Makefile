@@ -53,6 +53,11 @@ bitutils_test:
 to_ppm_bin:
 	$(CXX) $(CXXFLAGS) tools/display/to_ppm_bin.cpp -I. -o $(BUILD_DIR)/to_ppm_bin
 
+# atlas_layout
+atlas_layout_bin:
+	$(CXX) $(CXXFLAGS) tools/display/atlas_layout_bin.cpp -I. -o $(BUILD_DIR)/atlas_layout_bin
+
+
 ##########
 
 # Clean target to remove object and executable files

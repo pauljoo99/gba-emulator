@@ -23,6 +23,10 @@ struct VertexOut {
     uint16_t oam_palette_bank;
 };
 
+float fixed_to_float(short val) {
+    return float(val) / 256.0;
+}
+
 vertex VertexOut tile_vertex_main(uint vertexID [[vertex_id]],
                              uint instanceID [[instance_id]],
                              const device VertexIn* vertexArray [[buffer(0)]],
@@ -84,6 +88,7 @@ vertex VertexOut tile_2d_vertex_main(uint vertexID [[vertex_id]],
     Oam oam = oams[oam_id];
     
     uint width_px = Oam_Get_width_px(oam);
+    uint height_px = Oam_Get_height_px(oam);
     uint width_tile = width_px / 8;
     uint local_offset_x = (local_tile_inst_id % width_tile) * 8;
     uint local_offset_y = (local_tile_inst_id / width_tile) * 8;
@@ -92,6 +97,44 @@ vertex VertexOut tile_2d_vertex_main(uint vertexID [[vertex_id]],
     float2 position_px(
                        vertexArray[vertexID].position_px[0] + Oam_Get_x(oam) + local_offset_x,
                        vertexArray[vertexID].position_px[1] + Oam_Get_y(oam) + local_offset_y);
+        
+    float2 sprite_center_px(width_px / 2.0 + Oam_Get_x(oam), height_px / 2.0 + Oam_Get_y(oam));
+    if (Oam_Get_mode(oam) == 0b10 || Oam_Get_mode(oam) == 0b11)
+    {
+        // Center
+        position_px = position_px - sprite_center_px;
+
+        // Scale
+        float a = fixed_to_float(oams[oam_id].fill);
+        float b = fixed_to_float(oams[oam_id + 1].fill);
+        float c = fixed_to_float(oams[oam_id + 2].fill);
+        float d = fixed_to_float(oams[oam_id + 3].fill);
+
+//        float a = fixed_to_float(float(1 << 8));
+//        float b = 0;
+//        float c = 0;
+//        float d = fixed_to_float(float(1 << 8));
+
+        float det = a * d - b * c;
+        matrix<float, 2, 2> affine_transform(
+            float2(d / det, -1.0 * c / det),   // column 0
+            float2(-1.0 * b / det, a / det)    // column 1
+        );
+//        matrix<float, 2, 2> affine_transform(
+//            float2(0, 1),   // column 0
+//            float2(-1, 0)    // column 1
+//        );
+//        matrix<float, 2, 2> affine_transform(
+//            float2(a, c),   // column 0
+//            float2(b, d)    // column 1
+//        );
+        position_px = affine_transform * position_px;
+
+        // Bring back
+        position_px = position_px + sprite_center_px;
+    }
+
+    
     out.position = float4(
                           (position_px[0] / 240 * 2) - 1.0,
                           -1 * (position_px[1] / 160 * 2) + 1.0,

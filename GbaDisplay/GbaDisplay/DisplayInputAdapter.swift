@@ -89,7 +89,6 @@ func FillOamAndTileBuffers(
     for oam_i in 0..<max_num_oams
     {
         // Set oam
-        let oam = oam_memory_ptr[oam_i]
         oam_buffer_ptr[num_oams] = oam_memory_ptr[oam_i]
         num_oams += 1
         
