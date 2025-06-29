@@ -34,6 +34,9 @@ class TileRenderer: NSObject, MTKViewDelegate {
     // CPU Runner
     private var game_loop = GameLoop()
     private var memory_data_ptr : UnsafeMutableRawPointer!
+    
+    // First drawing
+    private var first_drawing = true
 
     func setupDevice(mtkView: MTKView)
     {
@@ -252,9 +255,6 @@ class TileRenderer: NSObject, MTKViewDelegate {
         super.init()
         setupDevice(mtkView : mtkView)
         setupPipeline(mtkView : mtkView)
-        setupCpuRunnerAndBuffers()
-        // setupRealMemoryDemoBuffers()
-        // setupDemoBuffers()
     }
     
     private func updateBuffers()
@@ -271,6 +271,14 @@ class TileRenderer: NSObject, MTKViewDelegate {
     }
     
     func draw(in view: MTKView) {
+        
+        if (first_drawing)
+        {
+            first_drawing = false
+            setupCpuRunnerAndBuffers()
+            // setupRealMemoryDemoBuffers()
+            // setupDemoBuffers()
+        }
         
         updateBuffers()
         
