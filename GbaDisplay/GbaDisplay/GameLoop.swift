@@ -66,6 +66,8 @@ class GameLoop {
         let IO_MEMORY = GetHalfWordMemoryPtr(memory_ptr: CpuRunner_GetMemory(CpuRunnerHandle)!, address: 0x04000000)
         let VCOUNT = IO_MEMORY.advanced(by: 0x6 / 2)
         VCOUNT.pointee = 159
+        let INTERRUPT = IO_MEMORY.advanced(by: 0x2 / 2)
+        INTERRUPT.pointee = 1
     }
 
     private func SignalDoNotUpdateBuffers()
