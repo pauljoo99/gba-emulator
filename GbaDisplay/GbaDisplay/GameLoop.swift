@@ -35,6 +35,10 @@ class GameLoop {
                 let ptr = UnsafeMutablePointer(mutating: buffer.baseAddress)
                 CpuRunner_Init(CpuRunnerHandle, Int32(cArgv.count), ptr)
             }
+            
+            for ptr in cArgv {
+                free(ptr)
+            }
         } else {
             print("No files selected")
         }
@@ -66,7 +70,7 @@ class GameLoop {
         let IO_MEMORY = GetHalfWordMemoryPtr(memory_ptr: CpuRunner_GetMemory(CpuRunnerHandle)!, address: 0x04000000)
         let VCOUNT = IO_MEMORY.advanced(by: 0x6 / 2)
         VCOUNT.pointee = 159
-        let INTERRUPT = IO_MEMORY.advanced(by: 0x2 / 2)
+        let INTERRUPT = IO_MEMORY.advanced(by: 0x202 / 2)
         INTERRUPT.pointee = 1
     }
 
