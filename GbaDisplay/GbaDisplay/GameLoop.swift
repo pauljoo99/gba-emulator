@@ -15,10 +15,38 @@ let kMaxRawBytes : Int = 1024 * 1024;
 
 class GameLoop {
     
+    public func initCpuRunner()
+    {
+        let openPanel = NSOpenPanel()
+        openPanel.allowedContentTypes = [UTType(filenameExtension: "gba")!, UTType(filenameExtension: "bin")!]
+        openPanel.allowsMultipleSelection = true
+        openPanel.canChooseDirectories = false
+        openPanel.canChooseFiles = true
+        if openPanel.runModal() == .OK
+        {
+            let urls = openPanel.urls
+            let argv = [
+                "GbaDisplay",
+                urls[0].path,
+                urls[1].path
+            ]
+            let cArgv: [UnsafeMutablePointer<CChar>?] = argv.map { strdup($0) }
+            cArgv.withUnsafeBufferPointer { buffer in
+                let ptr = UnsafeMutablePointer(mutating: buffer.baseAddress)
+                CpuRunner_Init(CpuRunnerHandle, Int32(cArgv.count), ptr)
+            }
+        } else {
+            print("No files selected")
+        }
+    }
+    
     public func start()
     {
         timer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
             self?.dispatch()
+        }
+        DispatchQueue.global(qos: .background).async {
+            CpuRunner_Run(self.CpuRunnerHandle)
         }
     }
 

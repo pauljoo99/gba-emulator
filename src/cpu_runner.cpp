@@ -44,6 +44,7 @@ using namespace Emulator;
 }
 
 bool CpuRunner::Init(int argc, char *argv[]) {
+  LOG("Initializing CpuRunner");
   if (argc != 3) {
     std::cerr << "Usage: " << argv[0] << " <name>" << std::endl;
     return false;
@@ -77,6 +78,7 @@ bool CpuRunner::Init(int argc, char *argv[]) {
 };
 
 void CpuRunner::Run() {
+  LOG("Running CpuRunner");
   Arm::CPU *cpu = (Arm::CPU *)Cpu_;
   Memory::Memory *memory = (Memory::Memory *)Memory_;
   if (!initialized) {

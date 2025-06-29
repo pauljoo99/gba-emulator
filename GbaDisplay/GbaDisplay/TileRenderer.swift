@@ -30,6 +30,10 @@ class TileRenderer: NSObject, MTKViewDelegate {
     private var mtlTexture : MTLTexture!
     private var paletteBuffer: MTLBuffer!
     private var mtlSampler : MTLSamplerState!
+    
+    // CPU Runner
+    private var game_loop = GameLoop()
+    private var memory_data_ptr : UnsafeMutableRawPointer!
 
     func setupDevice(mtkView: MTKView)
     {
@@ -41,6 +45,37 @@ class TileRenderer: NSObject, MTKViewDelegate {
         commandQueue = device.makeCommandQueue()
     }
     
+    func setupCpuRunnerAndBuffers()
+    {
+        game_loop.initCpuRunner()
+        game_loop.start()
+        
+        memory_data_ptr = CpuRunner_GetMemory(game_loop.CpuRunnerHandle)
+        
+        let textureDescriptor = MTLTextureDescriptor()
+        textureDescriptor.textureType = MTLTextureType.type2DArray
+        textureDescriptor.width = 8
+        textureDescriptor.height = 8
+        textureDescriptor.arrayLength = 512
+        textureDescriptor.pixelFormat = MTLPixelFormat.r32Uint
+        
+        let samplerDescriptor = MTLSamplerDescriptor()
+        
+        mtlSampler = device.makeSamplerState(descriptor: samplerDescriptor)
+        mtlTexture = device.makeTexture(descriptor: textureDescriptor)
+        vertexBuffer = device.makeBuffer(length: kMaxSizeBuffer,
+                                         options: [])
+        oamBuffer = device.makeBuffer(length: kMaxSizeBuffer,
+                                         options: [])
+        oamIdBuffer = device.makeBuffer(length: kMaxSizeBuffer,
+                                         options: [])
+        baseTileIdBuffer = device.makeBuffer(length: kMaxSizeBuffer,
+                                         options: [])
+        paletteBuffer = device.makeBuffer(length: kMaxSizeBuffer,
+                                         options: [])
+        indexBuffer = device.makeBuffer(length: kMaxSizeBuffer, options: [])
+    }
+    
     func setupRealMemoryDemoBuffers()
     {
         let openPanel = NSOpenPanel()
@@ -49,7 +84,7 @@ class TileRenderer: NSObject, MTKViewDelegate {
         openPanel.canChooseDirectories = false
         openPanel.canChooseFiles = true
 
-        let memory_data_ptr : UnsafeMutableRawPointer = UnsafeMutableRawPointer.allocate(byteCount: kMaxRawBytes * kMaxRawBytes, alignment: 4)
+        memory_data_ptr = UnsafeMutableRawPointer.allocate(byteCount: kMaxRawBytes * kMaxRawBytes, alignment: 4)
         if openPanel.runModal() == .OK, let url = openPanel.url {
             do {
                 let data = try Data(contentsOf: url)
@@ -85,11 +120,6 @@ class TileRenderer: NSObject, MTKViewDelegate {
         paletteBuffer = device.makeBuffer(length: kMaxSizeBuffer,
                                          options: [])
         indexBuffer = device.makeBuffer(length: kMaxSizeBuffer, options: [])
-
-        FillVertexBuffer(vertex_buffer: vertexBuffer)
-        FillTileTextures(memory_ptr: memory_data_ptr, texture: mtlTexture)
-        FillPaletteBuffer(memory_ptr: memory_data_ptr, palette_buffer: paletteBuffer)
-        FillOamAndTileBuffers(memory_ptr: memory_data_ptr, index_buffer: indexBuffer, oam_buffer: oamBuffer, oam_id_buffer: oamIdBuffer, base_tile_instance_id_buffer: baseTileIdBuffer)
     }
     
     func setupDemoBuffers()
@@ -222,11 +252,28 @@ class TileRenderer: NSObject, MTKViewDelegate {
         super.init()
         setupDevice(mtkView : mtkView)
         setupPipeline(mtkView : mtkView)
-        setupRealMemoryDemoBuffers()
+        setupCpuRunnerAndBuffers()
+        // setupRealMemoryDemoBuffers()
         // setupDemoBuffers()
     }
     
+    private func updateBuffers()
+    {
+        if (memory_data_ptr == nil)
+        {
+            return
+        }
+        
+        FillVertexBuffer(vertex_buffer: vertexBuffer)
+        FillTileTextures(memory_ptr: memory_data_ptr, texture: mtlTexture)
+        FillPaletteBuffer(memory_ptr: memory_data_ptr, palette_buffer: paletteBuffer)
+        FillOamAndTileBuffers(memory_ptr: memory_data_ptr, index_buffer: indexBuffer, oam_buffer: oamBuffer, oam_id_buffer: oamIdBuffer, base_tile_instance_id_buffer: baseTileIdBuffer)
+    }
+    
     func draw(in view: MTKView) {
+        
+        updateBuffers()
+        
         guard let drawable = view.currentDrawable,
               let descriptor = view.currentRenderPassDescriptor else { return }
         
