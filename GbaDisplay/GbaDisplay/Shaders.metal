@@ -85,15 +85,15 @@ vertex VertexOut tile_2d_vertex_main(uint vertexID [[vertex_id]],
     );
     out.texCoord = float2(vertexArray[vertexID].texCoord[0], vertexArray[vertexID].texCoord[1]);
     
-    // 8bpp
     if (Oam_Get_color_mode(oam) == 1)
     {
+        // 8bpp
         out.tid = Oam_Get_tid(oam) + local_offset_y / 8 * 32 + local_offset_x / 8 * 2;
         out.oam_color_mode = 1;
     }
     else
-    // 4bpp
     {
+        // 4bpp
         out.tid = Oam_Get_tid(oam) + local_offset_y / 8 * 32 + local_offset_x / 8;
         out.oam_color_mode = 0;
         out.oam_palette_bank = Oam_Get_palette_bank(oam);
