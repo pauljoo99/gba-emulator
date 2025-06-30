@@ -1233,6 +1233,9 @@ bool CPU::Dispatch_LDM(U32 instr_, const Memory::Memory &memory) noexcept {
         if (cpsr.bits.T == 1) {
           registers->r[PC] = value & 0xFFFFFFFE;
           ClearPipeline();
+        } else {
+          registers->r[PC] = value & 0xFFFFFFFC;
+          ClearPipeline();
         }
         address += 4;
 
@@ -1677,10 +1680,10 @@ bool CPU::Dispatch_Thumb_LSL2(U16 instr) noexcept {
   U32 rs_byte = GetBitsInRange(registers->r[rs], 0, 8);
   if (rs_byte == 0) {
   } else if (rs_byte < 32) {
-    CPSR_SetC(GetBit(registers->r[rd], rs_byte - 1));
-    registers->r[rd] = LogicalShiftRight(registers->r[rd], rs_byte);
+    CPSR_SetC(GetBit(registers->r[rd], 32 - rs_byte));
+    registers->r[rd] = LogicalShiftLeft(registers->r[rd], rs_byte);
   } else if (rs_byte == 32) {
-    CPSR_SetC(GetBit(registers->r[rd], 31));
+    CPSR_SetC(GetBit(registers->r[rd], 0));
     registers->r[rd] = 0;
   } else {
     CPSR_SetC(0);
@@ -1903,7 +1906,7 @@ bool CPU::Dispatch_Thumb_BL(U16 instr) noexcept {
 }
 
 bool CPU::Dispatch_Thumb_BX(U16 instr) noexcept {
-  U32 rm = GetBitsInRange(instr, 3, 7);
+  U32 rm = ConcatBits(GetBit(instr, 6), GetBitsInRange(instr, 3, 6), 3);
   CPSR_SetT(GetBit(registers->r[rm], 0));
   registers->r[PC] = GetBitsInRange(registers->r[rm], 1, 32) << 1;
   ClearPipeline();
@@ -2102,11 +2105,11 @@ bool CPU::Dispatch_Thumb_PUSH(U16 instr, Memory::Memory &memory) noexcept {
 
 bool CPU::Dispatch_Thumb_POP(U16 instr, const Memory::Memory &memory) noexcept {
   U32 register_list = GetBitsInRange(instr, 0, 8);
-  U32 include_lr = GetBit(instr, 8);
+  U32 include_pc = GetBit(instr, 8);
 
   U32 start_address = registers->r[SP];
   U32 end_address =
-      registers->r[SP] + 4 * (include_lr + CountSetBits(register_list));
+      registers->r[SP] + 4 * (include_pc + CountSetBits(register_list));
   U32 address = start_address;
   for (U32 i = 0; i < 8; ++i) {
     if (GetBit(register_list, i) == 1) {
@@ -2114,7 +2117,7 @@ bool CPU::Dispatch_Thumb_POP(U16 instr, const Memory::Memory &memory) noexcept {
       address += 4;
     }
   }
-  if (include_lr == 1) {
+  if (include_pc == 1) {
     U32 value = ReadWordFromGBAMemory(memory, address);
     registers->r[PC] = value & 0xFFFFFFFE;
     ClearPipeline();
@@ -2124,7 +2127,7 @@ bool CPU::Dispatch_Thumb_POP(U16 instr, const Memory::Memory &memory) noexcept {
   assert(end_address == address);
   registers->r[SP] = end_address;
 
-  if (include_lr == 0) {
+  if (include_pc == 0) {
     registers->r[PC] += 2;
   }
   return true;
