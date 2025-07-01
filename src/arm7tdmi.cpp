@@ -6,6 +6,7 @@
 #include "arm_extended_instructions.h"
 #include "arm_instructions.h"
 #include "bitutils.h"
+#include "logger.h"
 #include "logging.h"
 #include "snapshot.h"
 #include "thumb_instructions.h"
@@ -267,6 +268,8 @@ void CPU::EnterException_IRQ() noexcept {
         cpu.dispatch_num, ToString(instr_opcode), instr,
         cpu.pipeline.execute_addr);
   }
+  DispatchLogger::LOG_DISPATCH(instr, cpu.pipeline.execute_addr,
+                               U32(instr_opcode), false);
 
   switch (instr_opcode) {
   case Instr::B:
@@ -347,6 +350,7 @@ void CPU::EnterException_IRQ() noexcept {
   LOG_VERBOSE("Dispatch %u - Raw Thumb Instr: 0x%04X, Opcode: %s, PC: 0x%04X",
               cpu.dispatch_num, instr, Thumb::ToString(opcode),
               cpu.pipeline.execute_addr);
+  DispatchLogger::LOG_DISPATCH(instr, cpu.pipeline.execute_addr, opcode, true);
 
   switch (opcode) {
   case (Thumb::ThumbOpcode::CMP1):

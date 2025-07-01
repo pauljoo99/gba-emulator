@@ -1,7 +1,9 @@
+#pragma once
+
 #include <cstdlib>
 #include <stdio.h>
 
-#pragma once
+#include "logger.h"
 
 #define LOG(fmt, ...)                                                          \
   printf("\033[1m[LOG] %s:%d:\033[0m " fmt "\n", __FILE__, __LINE__,           \
@@ -17,4 +19,5 @@
 
 #define ABORT(fmt, ...)                                                        \
   LOG(fmt, ##__VA_ARGS__);                                                     \
+  DispatchLogger::DUMP_LOGS();                                                 \
   std::abort();

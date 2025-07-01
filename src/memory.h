@@ -1,6 +1,7 @@
 #pragma once
 
 #include "datatypes.h"
+#include "logging.h"
 #include <assert.h>
 #include <cstring>
 

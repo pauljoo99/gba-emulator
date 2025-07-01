@@ -4,6 +4,7 @@
 #include "arm_instructions.h"
 #include "bitutils.h"
 #include "datatypes.h"
+#include "logger.h"
 #include "logging.h"
 #include "memory.h"
 #include <cstdlib>

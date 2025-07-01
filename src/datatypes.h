@@ -1,6 +1,5 @@
 #pragma once
 
-#include "logging.h"
 #include <cstdint>
 
 using U8 = uint8_t;
