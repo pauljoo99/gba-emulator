@@ -32,3 +32,10 @@ Gba Visualizer Tool
 make to_ppm_bin
 ./build/to_ppm_bin "tools/visual/data/snapshot_0/memory.bin" "output.ppm"
 ```
+
+Gba Logging Tool. When the code aborts, logs of the last 1024\*1024 instructions are dumped. In order to read the logs, run
+
+```
+make log_reader_bin
+./build/log_reader_bin -1 5
+```
