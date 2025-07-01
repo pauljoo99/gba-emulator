@@ -18,11 +18,11 @@ debug: $(EXEC) $(EXEC_CPU_RUNNER)
 
 # Create CPU Runner library
 $(EXEC_CPU_RUNNER): cpu_runner.o
-	ar rcs $(EXEC_CPU_RUNNER) $(BUILD_DIR)/cpu_runner.o $(BUILD_DIR)/main.o $(BUILD_DIR)/arm7tdmi.o $(BUILD_DIR)/snapshot.o
+	ar rcs $(EXEC_CPU_RUNNER) $(BUILD_DIR)/cpu_runner.o $(BUILD_DIR)/main.o $(BUILD_DIR)/arm7tdmi.o $(BUILD_DIR)/snapshot.o $(BUILD_DIR)/logger.o
 
 # Link object file to create the executable
-$(EXEC): main.o snapshot.o arm7tdmi.o cpu_runner.o
-	$(CXX) $(BUILD_DIR)/main.o $(BUILD_DIR)/arm7tdmi.o $(BUILD_DIR)/snapshot.o $(BUILD_DIR)/cpu_runner.o -o $(EXEC)
+$(EXEC): main.o snapshot.o arm7tdmi.o cpu_runner.o logger.o
+	$(CXX) $(BUILD_DIR)/main.o $(BUILD_DIR)/arm7tdmi.o $(BUILD_DIR)/snapshot.o $(BUILD_DIR)/cpu_runner.o $(BUILD_DIR)/logger.o -o $(EXEC)
 
 # Compile cpu_runner
 cpu_runner.o:
@@ -31,6 +31,10 @@ cpu_runner.o:
 # Compile main
 main.o:
 	$(CXX) $(CXXFLAGS) -c $(SRC_DIR)/main.cpp -I. -o $(BUILD_DIR)/main.o
+
+# Compile logger
+logger.o:
+	$(CXX) $(CXXFLAGS) -c $(SRC_DIR)/logger.cpp -I. -o $(BUILD_DIR)/logger.o
 
 # Compile arm
 arm7tdmi.o:
@@ -56,6 +60,10 @@ to_ppm_bin:
 # atlas_layout
 atlas_layout_bin:
 	$(CXX) $(CXXFLAGS) tools/display/atlas_layout_bin.cpp -I. -o $(BUILD_DIR)/atlas_layout_bin
+
+# log_reader_bin
+log_reader_bin:
+	$(CXX) $(CXXFLAGS) tools/logging/log_reader_bin.cpp -I. -o $(BUILD_DIR)/log_reader_bin
 
 
 ##########
