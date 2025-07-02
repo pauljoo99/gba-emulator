@@ -13,7 +13,7 @@ struct OpcodeFields {
   U32 thumb : 1;
 };
 
-struct Opcode {
+union Opcode {
   U32 value;
   OpcodeFields fields;
   Opcode(U32 val = 0) : value(val) {}
@@ -26,13 +26,24 @@ struct DispatchInfo {
   U32 opcode;
 };
 
+struct MemStoreInfo {
+  U32 raw_instr;
+  U32 execute_addr;
+  U32 addr;
+  U32 value;
+};
+
 struct DispatchLoggerT {
-  U32 end_index = 0;
+  U32 end_index_logs = 0;
   DispatchInfo dispatch_logs[kMaxOpcodes];
+
+  U32 end_index_mem_store = 0;
+  MemStoreInfo dispatch_mem_store[kMaxOpcodes];
 };
 extern DispatchLoggerT DispatchLogger;
 
 void LOG_DISPATCH(U32 raw_instr, U32 addr, U32 opcode, bool thumb);
+void LOG_MEMORY_STORE(U32 raw_instr, U32 execute_addr, U32 addr, U32 value);
 void DUMP_LOGS();
 
 } // namespace Emulator::DispatchLogger

@@ -62,8 +62,8 @@ atlas_layout_bin:
 	$(CXX) $(CXXFLAGS) tools/display/atlas_layout_bin.cpp -I. -o $(BUILD_DIR)/atlas_layout_bin
 
 # log_reader_bin
-log_reader_bin:
-	$(CXX) $(CXXFLAGS) tools/logging/log_reader_bin.cpp -I. -o $(BUILD_DIR)/log_reader_bin
+log_reader_bin: logger.o
+	$(CXX) $(CXXFLAGS) tools/logging/log_reader_bin.cpp $(BUILD_DIR)/logger.o -I. -o $(BUILD_DIR)/log_reader_bin
 
 
 ##########
