@@ -77,8 +77,10 @@ int log_reader(int argc, char *argv[]) {
       strcpy(instr_opcode, Emulator::Arm::ToString(
                                Emulator::Arm::Instr(opcode.fields.opcode)));
     }
-    LOG("Step %u, Instr Type %s, Opcode %s, Raw Instr: 0x%04x, Addr: 0x%04x", i,
-        instr_type, instr_opcode, info.instr, info.execute_addr);
+    LOG("Step %u, Dispatch num: %u, Instr Type %s, Opcode %s, Raw Instr: "
+        "0x%04x, Addr: 0x%04x",
+        i, info.dispatch_num, instr_type, instr_opcode, info.instr,
+        info.execute_addr);
   }
   return 0;
 }
@@ -109,10 +111,12 @@ int store_reader(int argc, char *argv[]) {
     }
     Emulator::DispatchLogger::MemStoreInfo info =
         Emulator::DispatchLogger::DispatchLogger.dispatch_mem_store[index];
-    LOG("Store %u, Execute Addr: 0x%04x, Raw Instr: 0x%04x, Addr: 0x%04x, "
+    LOG("Store %u, Dispatch num: %u, Execute Addr: 0x%04x, Raw Instr: 0x%04x, "
+        "Addr: 0x%04x, "
         "Value: "
         "0x%04x",
-        i, info.execute_addr, info.raw_instr, info.addr, info.value);
+        i, info.dispatch_num, info.execute_addr, info.raw_instr, info.addr,
+        info.value);
   }
   return 0;
 }

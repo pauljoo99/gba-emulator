@@ -15,19 +15,20 @@ namespace Emulator::Arm {
 
 using namespace BitUtils;
 
-#define STORE_WORD(instr, execute_addr, memory, address, value)                \
-  Emulator::DispatchLogger::LOG_MEMORY_STORE(instr, execute_addr, address,     \
-                                             value);                           \
+#define STORE_WORD(dispatch_num, instr, execute_addr, memory, address, value)  \
+  Emulator::DispatchLogger::LOG_MEMORY_STORE(dispatch_num, instr,              \
+                                             execute_addr, address, value);    \
   WriteWordToGBAMemory(memory, address, value);
 
-#define STORE_HALFWORD(instr, execute_addr, memory, address, value)            \
-  Emulator::DispatchLogger::LOG_MEMORY_STORE(instr, execute_addr, address,     \
-                                             value);                           \
+#define STORE_HALFWORD(dispatch_num, instr, execute_addr, memory, address,     \
+                       value)                                                  \
+  Emulator::DispatchLogger::LOG_MEMORY_STORE(dispatch_num, instr,              \
+                                             execute_addr, address, value);    \
   WriteHalfWordToGBAMemory(memory, address, value);
 
-#define STORE_BYTE(instr, execute_addr, memory, address, value)                \
-  Emulator::DispatchLogger::LOG_MEMORY_STORE(instr, execute_addr, address,     \
-                                             value);                           \
+#define STORE_BYTE(dispatch_num, instr, execute_addr, memory, address, value)  \
+  Emulator::DispatchLogger::LOG_MEMORY_STORE(dispatch_num, instr,              \
+                                             execute_addr, address, value);    \
   WriteByteToGBAMemory(memory, address, value);
 
 ShifterOperandResult CPU::ShifterOperand(DataProcessingInstr instr) noexcept {
@@ -283,8 +284,9 @@ void CPU::EnterException_IRQ() noexcept {
         cpu.dispatch_num, ToString(instr_opcode), instr,
         cpu.pipeline.execute_addr);
   }
-  DispatchLogger::LOG_DISPATCH(instr, cpu.pipeline.execute_addr,
-                               U32(instr_opcode), false);
+  DispatchLogger::LOG_DISPATCH(cpu.dispatch_num, instr,
+                               cpu.pipeline.execute_addr, U32(instr_opcode),
+                               false);
 
   switch (instr_opcode) {
   case Instr::B:
@@ -365,8 +367,8 @@ void CPU::EnterException_IRQ() noexcept {
   LOG_VERBOSE("Dispatch %u - Raw Thumb Instr: 0x%04X, Opcode: %s, PC: 0x%04X",
               cpu.dispatch_num, instr, Thumb::ToString(opcode),
               cpu.pipeline.execute_addr);
-  DispatchLogger::LOG_DISPATCH(instr, cpu.pipeline.execute_addr, U32(opcode),
-                               true);
+  DispatchLogger::LOG_DISPATCH(cpu.dispatch_num, instr,
+                               cpu.pipeline.execute_addr, U32(opcode), true);
 
   switch (opcode) {
   case (Thumb::ThumbOpcode::CMP1):
@@ -1076,6 +1078,11 @@ CPU::LoadAndStoreMultipleAddr(U32 instr_) noexcept {
       value = 0;
     }
 
+    if (pipeline.execute_addr == 0x0134) {
+      LOG("Address: 0x%04x, Value: 0x%04x, Raw read: 0x%04x", address, value,
+          ReadWordFromGBAMemory(memory, address));
+    }
+
     if (instr.fields.rd == PC) {
       registers->r[instr.fields.rd] = value & 0xFFFFFFFC;
       ClearPipeline();
@@ -1101,7 +1108,7 @@ CPU::LoadAndStoreMultipleAddr(U32 instr_) noexcept {
     } else {
       address = LoadAndStoreWordOrByteRegAddr(instr_);
     }
-    STORE_WORD(instr_, pipeline.execute_addr, memory, address,
+    STORE_WORD(dispatch_num, instr_, pipeline.execute_addr, memory, address,
                registers->r[instr.fields.rd]);
   }
   registers->r[PC] += 4;
@@ -1113,7 +1120,7 @@ CPU::LoadAndStoreMultipleAddr(U32 instr_) noexcept {
   const SingleDataTransferInstr instr{instr_};
   if (EvaluateCondition(ConditionCode(instr.fields.cond), registers->CPSR)) {
     U32 address = LoadAndStoreWordOrByteAddr(instr_);
-    STORE_BYTE(instr_, pipeline.execute_addr, memory, address,
+    STORE_BYTE(dispatch_num, instr_, pipeline.execute_addr, memory, address,
                U8(registers->r[instr.fields.rd]));
   }
   registers->r[PC] += 4;
@@ -1126,8 +1133,8 @@ CPU::LoadAndStoreMultipleAddr(U32 instr_) noexcept {
   if (EvaluateCondition(ConditionCode(instr.fields.cond), registers->CPSR)) {
     U32 address = LoadAndStoreMiscAddr(instr);
     if ((address & 0b1) == 0) {
-      STORE_HALFWORD(instr_, pipeline.execute_addr, memory, address,
-                     U16(registers->r[instr.fields.rd]));
+      STORE_HALFWORD(dispatch_num, instr_, pipeline.execute_addr, memory,
+                     address, U16(registers->r[instr.fields.rd]));
     } else {
       ABORT("Bad address: 0x%04X", address);
     }
@@ -1193,7 +1200,8 @@ bool CPU::Dispatch_STM(U32 instr_, Memory::Memory &memory) noexcept {
     // If s == 0, then STM1, else STM2.
     U32 val = instr.fields.s == 1 ? user_registers.r[i] : registers->r[i];
     if (GetBit(instr.fields.register_list, i) == 1) {
-      STORE_WORD(instr_, pipeline.execute_addr, memory, address, val);
+      STORE_WORD(dispatch_num, instr_, pipeline.execute_addr, memory, address,
+                 val);
       address += 4;
     }
   }
@@ -2108,13 +2116,14 @@ bool CPU::Dispatch_Thumb_PUSH(U16 instr, Memory::Memory &memory) noexcept {
   U32 address = start_address;
   for (U32 i = 0; i < 8; ++i) {
     if (GetBit(register_list, i) == 1) {
-      STORE_WORD(instr, pipeline.execute_addr, memory, address,
+      STORE_WORD(dispatch_num, instr, pipeline.execute_addr, memory, address,
                  registers->r[i]);
       address += 4;
     }
   }
   if (include_lr == 1) {
-    STORE_WORD(instr, pipeline.execute_addr, memory, address, registers->r[LR]);
+    STORE_WORD(dispatch_num, instr, pipeline.execute_addr, memory, address,
+               registers->r[LR]);
     address += 4;
   }
 
@@ -2161,7 +2170,7 @@ bool CPU::Dispatch_Thumb_STRB1(U16 instr, Memory::Memory &memory) noexcept {
   U32 rn = GetBitsInRange(instr, 3, 6);
   U32 rd = GetBitsInRange(instr, 0, 3);
   U32 address = registers->r[rn] + immed_5;
-  STORE_BYTE(instr, pipeline.execute_addr, memory, address,
+  STORE_BYTE(dispatch_num, instr, pipeline.execute_addr, memory, address,
              U8(registers->r[rd]));
   registers->r[PC] += 2;
   return true;
@@ -2173,7 +2182,8 @@ bool CPU::Dispatch_Thumb_STR1(U16 instr, Memory::Memory &memory) noexcept {
   U32 immed_5 = GetBitsInRange(instr, 6, 11);
   U32 address = registers->r[rn] + immed_5 * 4;
   if (GetBitsInRange(address, 0, 2) == 0b00) {
-    STORE_WORD(instr, pipeline.execute_addr, memory, address, registers->r[rd]);
+    STORE_WORD(dispatch_num, instr, pipeline.execute_addr, memory, address,
+               registers->r[rd]);
   } else {
     ABORT("Unpredictable");
   }
@@ -2187,7 +2197,8 @@ bool CPU::Dispatch_Thumb_STR2(U16 instr, Memory::Memory &memory) noexcept {
   U32 rm = GetBitsInRange(instr, 6, 9);
   U32 address = registers->r[rn] + registers->r[rm];
   if (GetBitsInRange(address, 0, 2) == 0b00) {
-    STORE_WORD(instr, pipeline.execute_addr, memory, address, registers->r[rd]);
+    STORE_WORD(dispatch_num, instr, pipeline.execute_addr, memory, address,
+               registers->r[rd]);
   } else {
     ABORT("Unpredictable");
   }
@@ -2200,7 +2211,8 @@ bool CPU::Dispatch_Thumb_STR3(U16 instr, Memory::Memory &memory) noexcept {
   U32 rd = GetBitsInRange(instr, 8, 11);
   U32 address = registers->r[SP] + (immed_8 * 4);
   if (GetBitsInRange(address, 0, 2) == 0b00) {
-    STORE_WORD(instr, pipeline.execute_addr, memory, address, registers->r[rd]);
+    STORE_WORD(dispatch_num, instr, pipeline.execute_addr, memory, address,
+               registers->r[rd]);
   } else {
     ABORT("Unpredicatable: Bad address");
   }
@@ -2216,7 +2228,7 @@ bool CPU::Dispatch_Thumb_STMIA(U16 instr, Memory::Memory &memory) noexcept {
   U32 address = start_address;
   for (U32 i = 0; i < 8; ++i) {
     if (GetBit(register_list, i) == 1) {
-      STORE_WORD(instr, pipeline.execute_addr, memory, address,
+      STORE_WORD(dispatch_num, instr, pipeline.execute_addr, memory, address,
                  registers->r[i]);
       address += 4;
     }
@@ -2234,7 +2246,7 @@ bool CPU::Dispatch_Thumb_STRH1(U16 instr, Memory::Memory &memory) noexcept {
 
   U32 address = registers->r[rn] + (immed_5 * 2);
   if ((address & 0b1) == 0) {
-    STORE_HALFWORD(instr, pipeline.execute_addr, memory, address,
+    STORE_HALFWORD(dispatch_num, instr, pipeline.execute_addr, memory, address,
                    U16(registers->r[rd]));
   } else {
     ABORT("Unpredicatable: Bad address 0x%04X", address);
@@ -2250,7 +2262,7 @@ bool CPU::Dispatch_Thumb_STRH2(U16 instr, Memory::Memory &memory) noexcept {
 
   U32 address = registers->r[rn] + registers->r[rm];
   if ((address & 0b1) == 0) {
-    STORE_HALFWORD(instr, pipeline.execute_addr, memory, address,
+    STORE_HALFWORD(dispatch_num, instr, pipeline.execute_addr, memory, address,
                    U16(registers->r[rd]));
   } else {
     ABORT("Unpredicatable: Bad address 0x%04X", address);

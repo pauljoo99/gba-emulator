@@ -21,12 +21,14 @@ union Opcode {
 };
 
 struct DispatchInfo {
+  U32 dispatch_num;
   U32 instr;
   U32 execute_addr;
   U32 opcode;
 };
 
 struct MemStoreInfo {
+  U32 dispatch_num;
   U32 raw_instr;
   U32 execute_addr;
   U32 addr;
@@ -42,8 +44,10 @@ struct DispatchLoggerT {
 };
 extern DispatchLoggerT DispatchLogger;
 
-void LOG_DISPATCH(U32 raw_instr, U32 addr, U32 opcode, bool thumb);
-void LOG_MEMORY_STORE(U32 raw_instr, U32 execute_addr, U32 addr, U32 value);
+void LOG_DISPATCH(U32 dispatch_num, U32 raw_instr, U32 addr, U32 opcode,
+                  bool thumb);
+void LOG_MEMORY_STORE(U32 dispatch_num, U32 raw_instr, U32 execute_addr,
+                      U32 addr, U32 value);
 void DUMP_LOGS();
 
 } // namespace Emulator::DispatchLogger
