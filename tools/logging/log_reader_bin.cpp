@@ -52,9 +52,16 @@ int emit_logs(int argc, char *argv[]) {
 
     switch (log_type) {
     case LogType::CONTEXT: {
+
       auto &ctx = *(Context *)(&Logger.raw_data[log_idx * sizeof(Context)]);
-      printf("Context: instr=0x%04x, addr=0x%04x, thumb=%d, opcode=0x%u\n",
-             ctx.instr, ctx.addr, ctx.thumb, ctx.opcode);
+      char opcode[100];
+      strcpy(opcode,
+             ctx.thumb == 1
+                 ? Emulator::Thumb::ToString(
+                       (Emulator::Thumb::ThumbOpcode)ctx.opcode)
+                 : Emulator::Arm::ToString((Emulator::Arm::Instr)ctx.opcode));
+      printf("Context: instr=0x%04x, addr=0x%04x, thumb=%d, opcode=%s\n",
+             ctx.instr, ctx.addr, ctx.thumb, opcode);
       break;
     }
     case LogType::STORE: {
