@@ -6,78 +6,38 @@
 
 namespace Emulator::DispatchLogger {
 
-constexpr U32 kMaxOpcodes = 1024 * 1024;
+constexpr U32 kMaxLogs = 1024 * 1024;
+
+enum class LogType : U8 { CONTEXT = 0, STORE = 1, MOV = 2 };
 
 struct Context {
-  U32 dispatch_num;
-  U32 raw_instr;
-  U32 execute_addr;
+  U32 instr;
+  U32 addr;
+  U32 thumb;
+  U32 opcode;
 };
 extern Context ctx;
 
-struct OpcodeFields {
-  U32 opcode : 8;
-  U32 thumb : 1;
-};
-
-union Opcode {
-  U32 value;
-  OpcodeFields fields;
-  Opcode(U32 val = 0) : value(val) {}
-  operator U32() const { return value; } // Implicit conversion
-};
-
-struct DispatchInfo {
-  U32 dispatch_num;
-  U32 instr;
-  U32 execute_addr;
-  U32 opcode;
-};
-
-struct MemStoreInfo {
-  U32 dispatch_num;
-  U32 raw_instr;
-  U32 execute_addr;
-  U32 addr;
-  U32 value;
-};
-
-struct MovInfo {
-  U32 dispatch_num;
-  U32 raw_instr;
-  U32 execute_addr;
+struct Mov {
   U32 rd;
-  U32 value;
+  U32 val;
 };
 
-struct LoadInfo {
-  U32 dispatch_num;
-  U32 raw_instr;
-  U32 execute_addr;
-  U32 address;
-  U32 value;
+struct Str {
+  U32 addr;
+  U32 val;
 };
 
-struct DispatchLoggerT {
-  U32 end_index_logs = 0;
-  DispatchInfo dispatch_logs[kMaxOpcodes];
-
-  U32 end_index_mem_store = 0;
-  MemStoreInfo dispatch_mem_store[kMaxOpcodes];
-
-  U32 end_index_mov = 0;
-  MovInfo dispatch_mov[kMaxOpcodes];
-
-  U32 end_index_load = 0;
-  LoadInfo dispatch_load[kMaxOpcodes];
+struct Logs {
+  U32 log_type_end_idx = 0;
+  LogType log_type[kMaxLogs];
+  U8 raw_data[kMaxLogs * sizeof(Context)];
 };
-extern DispatchLoggerT DispatchLogger;
+extern Logs Logger;
 
-void SET_CONTEXT(U32 dispatch_num, U32 raw_instr, U32 addr);
-void LOG_DISPATCH(U32 opcode, bool thumb);
+void SET_CONTEXT(U32 instr, U32 addr, U32 thumb, U32 opcode);
 void LOG_STORE(U32 addr, U32 value);
 void LOG_MOV(U32 rd, U32 value);
-void LOG_LOAD(U32 addr, U32 value);
 void DUMP_LOGS();
 
 } // namespace Emulator::DispatchLogger

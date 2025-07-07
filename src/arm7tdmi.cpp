@@ -284,9 +284,8 @@ void CPU::EnterException_IRQ() noexcept {
         cpu.dispatch_num, ToString(instr_opcode), instr,
         cpu.pipeline.execute_addr);
   }
-  DispatchLogger::SET_CONTEXT(cpu.dispatch_num, instr,
-                              cpu.pipeline.execute_addr);
-  DispatchLogger::LOG_DISPATCH(U32(instr_opcode), false);
+  DispatchLogger::SET_CONTEXT(cpu.pipeline.execute, cpu.pipeline.execute_addr,
+                              0, U32(instr_opcode));
 
   switch (instr_opcode) {
   case Instr::B:
@@ -367,9 +366,8 @@ void CPU::EnterException_IRQ() noexcept {
   LOG_VERBOSE("Dispatch %u - Raw Thumb Instr: 0x%04X, Opcode: %s, PC: 0x%04X",
               cpu.dispatch_num, instr, Thumb::ToString(opcode),
               cpu.pipeline.execute_addr);
-  DispatchLogger::SET_CONTEXT(cpu.dispatch_num, instr,
-                              cpu.pipeline.execute_addr);
-  DispatchLogger::LOG_DISPATCH(U32(opcode), true);
+  DispatchLogger::SET_CONTEXT(cpu.pipeline.execute, cpu.pipeline.execute_addr,
+                              1, U32(opcode));
 
   switch (opcode) {
   case (Thumb::ThumbOpcode::CMP1):
