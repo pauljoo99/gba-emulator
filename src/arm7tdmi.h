@@ -261,6 +261,7 @@ struct CPU {
   U32 LoadAndStoreMiscAddr(SingleDataTransferInstr instr) noexcept;
 
   void DMATransfer(Memory::Memory &memory) noexcept;
+  U8 DMATransfer_PREV_VCOUNT = 0;
 
   LoadAndStoreMultipleAddrResult LoadAndStoreMultipleAddr(U32 instr_) noexcept;
 

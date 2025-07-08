@@ -63,6 +63,11 @@ inline U8 LoadByteWithLogging(const Memory::Memory &memory,
 
 void CPU::DMATransfer(Memory::Memory &memory) noexcept {
 
+  U8 NEW_VCOUNT = Emulator::Memory::ReadByteFromGBAMemory(memory, 0x04000006);
+  bool vcount_signal =
+      DMATransfer_PREV_VCOUNT != NEW_VCOUNT && NEW_VCOUNT == 160;
+  DMATransfer_PREV_VCOUNT = NEW_VCOUNT;
+
   for (U32 dma_num = 0; dma_num < 4; ++dma_num) {
     U32 offset = dma_num * 12;
     U32 DMA0SAD =
@@ -75,6 +80,21 @@ void CPU::DMATransfer(Memory::Memory &memory) noexcept {
         Emulator::Memory::ReadHalfWordFromGBAMemory(memory, 0x40000ba + offset);
 
     if (DMA0CNT_H.fields.en == 1) {
+      if (DMA0CNT_H.fields.tm == 0b11) {
+        if (dma_num != 3) {
+          // Sound mode, not implemented. TODO.
+          continue;
+        } else {
+          LOG("Video Capture Mode. Ought to implement");
+        }
+      } else if (DMA0CNT_H.fields.tm == 0b01) {
+        if (!vcount_signal) {
+          continue;
+        }
+      } else if (DMA0CNT_H.fields.tm == 0b10) {
+        ABORT("Unimplemented");
+      }
+
       U32 src_addr = DMA0SAD;
       U32 dst_addr = DMA0DAD;
       U32 chunk_size = DMA0CNT_H.fields.cs == 0 ? 2 : 4;
@@ -83,7 +103,7 @@ void CPU::DMATransfer(Memory::Memory &memory) noexcept {
           U16 val = LOAD_HALFWORD(memory, src_addr);
           STORE_HALFWORD(memory, dst_addr, val);
         } else {
-          U16 val = LOAD_WORD(memory, src_addr);
+          U32 val = LOAD_WORD(memory, src_addr);
           STORE_WORD(memory, dst_addr, val);
         }
 
@@ -107,6 +127,11 @@ void CPU::DMATransfer(Memory::Memory &memory) noexcept {
           ABORT("Invalid DMA direction");
         }
       }
+    }
+
+    if (DMA0CNT_H.fields.r == 0) {
+      DMA0CNT_H.fields.en = 0;
+      WriteHalfWordToGBAMemory(memory, 0x40000ba + offset, DMA0CNT_H.value);
     }
   }
 }

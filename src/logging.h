@@ -19,5 +19,5 @@
 
 #define ABORT(fmt, ...)                                                        \
   LOG(fmt, ##__VA_ARGS__);                                                     \
-  DispatchLogger::DUMP_LOGS();                                                 \
+  Emulator::DispatchLogger::DUMP_LOGS();                                       \
   std::abort();
