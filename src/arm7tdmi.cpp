@@ -371,6 +371,11 @@ void CPU::EnterException_IRQ() noexcept {
 [[nodiscard]] bool ProcessInstruction(U32 instr, Memory::Memory &memory,
                                       CPU &cpu) {
 
+  if ((cpu.pipeline.execute_addr & 0b11) != 0) {
+    ABORT("Pipeline execute address is not aligned to 4 bytes: 0x%04X",
+          cpu.pipeline.execute_addr);
+  }
+
   ExtendedInstr extended_instr_opcode = GetExtendedArmOpcode(instr);
   assert(extended_instr_opcode != ExtendedInstr::UNDEFINED1 ||
          extended_instr_opcode != ExtendedInstr::UNDEFINED2 ||
@@ -466,6 +471,11 @@ void CPU::EnterException_IRQ() noexcept {
 
 [[nodiscard]] bool ProcessThumbInstruction(U16 instr, Memory::Memory &memory,
                                            CPU &cpu) noexcept {
+
+  if ((cpu.pipeline.execute_addr & 0b1) != 0) {
+    ABORT("Pipeline execute address is not aligned to 2 bytes: 0x%04X",
+          cpu.pipeline.execute_addr);
+  }
 
   const Thumb::ThumbOpcode opcode = Thumb::GetThumbOpcode(instr);
   LOG_VERBOSE("Dispatch %u - Raw Thumb Instr: 0x%04X, Opcode: %s, PC: 0x%04X",
@@ -870,13 +880,13 @@ CPU::LoadAndStoreMultipleAddr(U32 instr_) noexcept {
 }
 
 [[nodiscard]] bool CPU::Dispatch(Memory::Memory &memory) noexcept {
-  // TODO: Only do DMATransfer when needed.
   DMATransfer(memory);
   ChangeRegistersOnMode();
   CPSR_Register cpsr(registers->CPSR);
   if (cpsr.bits.T) {
-    U32 instr = ReadWordFromGBAMemory(memory, registers->r[PC]);
-    bool existsInstructionToExecute = AdvancePipeline(instr, registers->r[PC]);
+    U16 instr = ReadHalfWordFromGBAMemory(memory, registers->r[PC] & ~1);
+    bool existsInstructionToExecute =
+        AdvancePipeline(instr, registers->r[PC] & ~1);
     if (existsInstructionToExecute) {
       if ((!CPSR_Register(registers->CPSR).bits.I) &&
           (ReadHalfWordFromGBAMemory(memory, Emulator::Memory::IME)) &&
@@ -1592,7 +1602,12 @@ bool CPU::Dispatch_Thumb_MOV3(U16 instr) noexcept {
   U32 rd = ConcatBits(GetBit(instr, 7), GetBitsInRange(instr, 0, 3), 3);
   U32 rm = ConcatBits(GetBit(instr, 6), GetBitsInRange(instr, 3, 6), 3);
   MOV(registers, rd, U32(registers->r[rm]));
-  MOV(registers, PC, registers->r[PC] + 2);
+
+  if (rd != PC) {
+    MOV(registers, PC, registers->r[PC] + 2);
+  } else {
+    ClearPipeline();
+  }
   return true;
 }
 
