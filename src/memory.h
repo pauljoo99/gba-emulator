@@ -9,6 +9,36 @@ namespace Emulator::Memory
 
 {
 
+struct DMA_CNT_L_Fields {
+  U16 n : 16;
+};
+
+union DMA_CNT_L {
+  U16 value;
+  DMA_CNT_L_Fields fields;
+  DMA_CNT_L(U16 val = 0) : value(val) {}
+  operator U32() const { return value; } // Implicit conversion
+};
+
+struct DMA_CNT_H_Fields {
+  U16 : 5;
+  U16 da : 2;
+  U16 sa : 2;
+  U16 r : 1;
+  U16 cs : 1;
+  U16 : 1;
+  U16 tm : 2;
+  U16 i : 1;
+  U16 en : 1;
+};
+
+union DMA_CNT_H {
+  U16 value;
+  DMA_CNT_H_Fields fields;
+  DMA_CNT_H(U16 val = 0) : value(val) {}
+  operator U32() const { return value; } // Implicit conversion
+};
+
 /// Interrupt Master Enable Register
 constexpr U32 IME = 0x4000208;
 

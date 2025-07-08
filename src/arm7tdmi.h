@@ -260,6 +260,8 @@ struct CPU {
   U32 LoadAndStoreMiscRegAddr(U32 instr_) noexcept;
   U32 LoadAndStoreMiscAddr(SingleDataTransferInstr instr) noexcept;
 
+  void DMATransfer(Memory::Memory &memory) noexcept;
+
   LoadAndStoreMultipleAddrResult LoadAndStoreMultipleAddr(U32 instr_) noexcept;
 
   void ClearPipeline() noexcept;

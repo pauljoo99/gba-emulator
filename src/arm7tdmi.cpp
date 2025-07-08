@@ -61,6 +61,56 @@ inline U8 LoadByteWithLogging(const Memory::Memory &memory,
 
 #define LOAD_BYTE(memory, address) LoadByteWithLogging(memory, address)
 
+void CPU::DMATransfer(Memory::Memory &memory) noexcept {
+
+  for (U32 dma_num = 0; dma_num < 4; ++dma_num) {
+    U32 offset = dma_num * 12;
+    U32 DMA0SAD =
+        Emulator::Memory::ReadWordFromGBAMemory(memory, 0x40000b0 + offset);
+    U32 DMA0DAD =
+        Emulator::Memory::ReadWordFromGBAMemory(memory, 0x40000b4 + offset);
+    Memory::DMA_CNT_L DMA0CNT_L =
+        Emulator::Memory::ReadHalfWordFromGBAMemory(memory, 0x40000b8 + offset);
+    Memory::DMA_CNT_H DMA0CNT_H =
+        Emulator::Memory::ReadHalfWordFromGBAMemory(memory, 0x40000ba + offset);
+
+    if (DMA0CNT_H.fields.en == 1) {
+      U32 src_addr = DMA0SAD;
+      U32 dst_addr = DMA0DAD;
+      U32 chunk_size = DMA0CNT_H.fields.cs == 0 ? 2 : 4;
+      for (U32 i = 0; i < DMA0CNT_L.fields.n; ++i) {
+        if (chunk_size == 2) {
+          U16 val = LOAD_HALFWORD(memory, src_addr);
+          STORE_HALFWORD(memory, dst_addr, val);
+        } else {
+          U16 val = LOAD_WORD(memory, src_addr);
+          STORE_WORD(memory, dst_addr, val);
+        }
+
+        if (DMA0CNT_H.fields.da == 0b00) {
+          dst_addr += chunk_size;
+        } else if (DMA0CNT_H.fields.da == 0b01) {
+          dst_addr -= chunk_size;
+        } else if (DMA0CNT_H.fields.da == 0b10) {
+          // Fixed
+        } else {
+          ABORT("Invalid DMA direction");
+        }
+
+        if (DMA0CNT_H.fields.sa == 0b00) {
+          src_addr += chunk_size;
+        } else if (DMA0CNT_H.fields.sa == 0b01) {
+          src_addr -= chunk_size;
+        } else if (DMA0CNT_H.fields.sa == 0b10) {
+          // Fixed
+        } else {
+          ABORT("Invalid DMA direction");
+        }
+      }
+    }
+  }
+}
+
 ShifterOperandResult CPU::ShifterOperand(DataProcessingInstr instr) noexcept {
   if (instr.fields.i) {
     return ShifterOperandImmediate(instr.fields.operand_2);
@@ -795,6 +845,8 @@ CPU::LoadAndStoreMultipleAddr(U32 instr_) noexcept {
 }
 
 [[nodiscard]] bool CPU::Dispatch(Memory::Memory &memory) noexcept {
+  // TODO: Only do DMATransfer when needed.
+  DMATransfer(memory);
   ChangeRegistersOnMode();
   CPSR_Register cpsr(registers->CPSR);
   if (cpsr.bits.T) {

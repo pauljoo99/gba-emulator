@@ -15,6 +15,13 @@ void MockDisplayLoop(Emulator::Memory::Memory *memory) {
       WriteHalfWordToGBAMemoryMock(*memory, 0x04000202, 0b1);
     }
 
+    for (U32 i = 0; i < 18; ++i) {
+      U32 dma = ReadWordFromGBAMemory(*memory, 0x40000b0 + i * 4);
+      if (dma != 0) {
+        printf("DMA: 0x%04x, 0x%04x\n", dma, 0x40000b0 + i * 4);
+      }
+    }
+
     // Runs a 60Hz. 1/60 seconds per screen, 228 scanlines. Each scanline takes
     // 73 microsconds.
     std::this_thread::sleep_for(std::chrono::microseconds(73));

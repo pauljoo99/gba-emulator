@@ -37,6 +37,6 @@ Gba Logging Tool. When the code aborts, logs of the last 1024\*1024 instructions
 
 ```
 make log_reader_bin
-./build/log_reader_bin log -1 5
-./build/log_reader_bin mem -1 5
+./build/log_reader_bin 5
+./build/log_reader_bin 5
 ```
