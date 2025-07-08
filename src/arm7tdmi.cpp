@@ -15,9 +15,33 @@ namespace Emulator::Arm {
 
 using namespace BitUtils;
 
-#define MOV(registers, rd, value)                                              \
-  Emulator::DispatchLogger::LOG_MOV(rd, value);                                \
-  registers->r[rd] = value;
+inline U32 LoadWordWithLogging(const Memory::Memory &memory,
+                               U32 address) noexcept {
+  U32 value = Emulator::Memory::ReadWordFromGBAMemory(memory, address);
+  Emulator::DispatchLogger::LOG_LOAD(address, value);
+  return value;
+}
+
+inline U16 LoadHalfWordWithLogging(const Memory::Memory &memory,
+                                   U32 address) noexcept {
+  U16 value = Emulator::Memory::ReadHalfWordFromGBAMemory(memory, address);
+  Emulator::DispatchLogger::LOG_LOAD(address, value);
+  return value;
+}
+
+inline U8 LoadByteWithLogging(const Memory::Memory &memory,
+                              U32 address) noexcept {
+  U8 value = Emulator::Memory::ReadByteFromGBAMemory(memory, address);
+  Emulator::DispatchLogger::LOG_LOAD(address, value);
+  return value;
+}
+
+#define MOV(registers, rd, value_expr)                                         \
+  do {                                                                         \
+    U32 _mov_val = value_expr;                                                 \
+    Emulator::DispatchLogger::LOG_MOV(rd, _mov_val);                           \
+    registers->r[rd] = _mov_val;                                               \
+  } while (0)
 
 #define STORE_WORD(memory, address, value)                                     \
   Emulator::DispatchLogger::LOG_STORE(address, value);                         \
@@ -30,6 +54,12 @@ using namespace BitUtils;
 #define STORE_BYTE(memory, address, value)                                     \
   Emulator::DispatchLogger::LOG_STORE(address, value);                         \
   WriteByteToGBAMemory(memory, address, value);
+
+#define LOAD_WORD(memory, address) LoadWordWithLogging(memory, address)
+
+#define LOAD_HALFWORD(memory, address) LoadHalfWordWithLogging(memory, address)
+
+#define LOAD_BYTE(memory, address) LoadByteWithLogging(memory, address)
 
 ShifterOperandResult CPU::ShifterOperand(DataProcessingInstr instr) noexcept {
   if (instr.fields.i) {
@@ -782,7 +812,7 @@ CPU::LoadAndStoreMultipleAddr(U32 instr_) noexcept {
         return false;
       }
     } else {
-      MOV(registers, PC, registers->r[PC] + 2)
+      MOV(registers, PC, registers->r[PC] + 2);
     }
   } else {
     U32 instr = ReadWordFromGBAMemory(memory, registers->r[PC]);
@@ -800,7 +830,7 @@ CPU::LoadAndStoreMultipleAddr(U32 instr_) noexcept {
         return false;
       }
     } else {
-      MOV(registers, PC, registers->r[PC] + 4)
+      MOV(registers, PC, registers->r[PC] + 4);
     }
   }
   dispatch_num++;
@@ -826,9 +856,10 @@ CPU::LoadAndStoreMultipleAddr(U32 instr_) noexcept {
     MOV(registers, PC, registers->r[PC] + 4);
     return true;
   }
-  registers->r[PC] = (I32)registers->r[PC] +
-                     SignExtend(ConcatBits(instr.fields.offset, 0, 2), 26);
-  registers->r[14] = pipeline.execute_addr + 4;
+  MOV(registers, PC,
+      static_cast<I32>(registers->r[PC]) +
+          SignExtend(ConcatBits(instr.fields.offset, 0b00, 2), 26));
+  MOV(registers, 14, pipeline.execute_addr + 4);
   ClearPipeline();
   return true;
 }
@@ -1005,7 +1036,7 @@ CPU::LoadAndStoreMultipleAddr(U32 instr_) noexcept {
   const SingleDataTransferInstr instr{instr_};
   if (EvaluateCondition(ConditionCode(instr.fields.cond), registers->CPSR)) {
     U32 address = LoadAndStoreWordOrByteAddr(instr);
-    MOV(registers, instr.fields.rd, ReadByteFromGBAMemory(memory, address));
+    MOV(registers, instr.fields.rd, LOAD_BYTE(memory, address));
   }
   MOV(registers, PC, registers->r[PC] + 4);
   return true;
@@ -1016,8 +1047,7 @@ CPU::LoadAndStoreMultipleAddr(U32 instr_) noexcept {
   const SingleDataTransferInstr instr{instr_};
   if (EvaluateCondition(ConditionCode(instr.fields.cond), registers->CPSR)) {
     U32 address = LoadAndStoreMiscAddr(instr);
-    MOV(registers, instr.fields.rd,
-        SignExtend(ReadByteFromGBAMemory(memory, address), 8));
+    MOV(registers, instr.fields.rd, SignExtend(LOAD_BYTE(memory, address), 8));
   }
   MOV(registers, PC, registers->r[PC] + 4);
   return true;
@@ -1029,8 +1059,7 @@ CPU::LoadAndStoreMultipleAddr(U32 instr_) noexcept {
   if (EvaluateCondition(ConditionCode(instr.fields.cond), registers->CPSR)) {
     U32 address = LoadAndStoreMiscAddr(instr);
     if ((address & 0b1) == 0) {
-      MOV(registers, instr.fields.rd,
-          ReadHalfWordFromGBAMemory(memory, address));
+      MOV(registers, instr.fields.rd, LOAD_HALFWORD(memory, address));
     } else {
       ABORT("Bad address: 0x%04X", address);
     }
@@ -1046,7 +1075,7 @@ CPU::LoadAndStoreMultipleAddr(U32 instr_) noexcept {
     U32 address = LoadAndStoreMiscAddr(instr);
     if ((address & 0b1) == 0) {
       MOV(registers, instr.fields.rd,
-          SignExtend(ReadHalfWordFromGBAMemory(memory, address), 16));
+          SignExtend(LOAD_HALFWORD(memory, address), 16));
     } else {
       ABORT("Bad address: 0x%04X", address);
     }
@@ -1069,15 +1098,15 @@ CPU::LoadAndStoreMultipleAddr(U32 instr_) noexcept {
 
     U32 value;
     if (GetBitsInRange(address, 0, 2) == 0b00) {
-      value = ReadWordFromGBAMemory(memory, address);
+      value = LOAD_WORD(memory, address);
     } else if (GetBitsInRange(address, 0, 2) == 0b01) {
-      value = ReadWordFromGBAMemory(memory, address);
+      value = LOAD_WORD(memory, address);
       value = RotateRight(value, 8);
     } else if (GetBitsInRange(address, 0, 2) == 0b10) {
-      value = ReadWordFromGBAMemory(memory, address);
+      value = LOAD_WORD(memory, address);
       value = RotateRight(value, 16);
     } else if (GetBitsInRange(address, 0, 2) == 0b11) {
-      value = ReadWordFromGBAMemory(memory, address);
+      value = LOAD_WORD(memory, address);
       value = RotateRight(value, 24);
     } else {
       value = 0;
@@ -1215,12 +1244,12 @@ bool CPU::Dispatch_LDM(U32 instr_, const Memory::Memory &memory) noexcept {
       U32 address = addr.start_addr;
       for (U32 i = 0; i < 15; ++i) {
         if (GetBit(instr.fields.register_list, i) == 1) {
-          MOV(registers, i, ReadWordFromGBAMemory(memory, address));
+          MOV(registers, i, LOAD_WORD(memory, address));
           address += 4;
         }
       }
       if (GetBit(instr.fields.register_list, 15) == 1) {
-        U32 value = ReadWordFromGBAMemory(memory, address);
+        U32 value = LOAD_WORD(memory, address);
         MOV(registers, PC, value & 0xFFFFFFFC);
         ClearPipeline();
       } else {
@@ -1235,7 +1264,7 @@ bool CPU::Dispatch_LDM(U32 instr_, const Memory::Memory &memory) noexcept {
         U32 address = addr.start_addr;
         for (U32 i = 0; i < 15; ++i) {
           if (GetBit(instr.fields.register_list, i) == 1) {
-            MOV((&user_registers), i, ReadWordFromGBAMemory(memory, address));
+            MOV((&user_registers), i, LOAD_WORD(memory, address));
             address += 4;
           }
         }
@@ -1248,12 +1277,12 @@ bool CPU::Dispatch_LDM(U32 instr_, const Memory::Memory &memory) noexcept {
         U32 address = addr.start_addr;
         for (U32 i = 0; i < 15; ++i) {
           if (GetBit(instr.fields.register_list, i) == 1) {
-            MOV(registers, i, ReadWordFromGBAMemory(memory, address));
+            MOV(registers, i, LOAD_WORD(memory, address));
             address += 4;
           }
         }
         registers->CPSR = U32(registers->SPRS);
-        U32 value = ReadWordFromGBAMemory(memory, address);
+        U32 value = LOAD_WORD(memory, address);
 
         CPSR_Register cpsr(registers->CPSR);
         if (cpsr.bits.T == 1) {
@@ -1413,7 +1442,7 @@ bool CPU::Dispatch_ADC(U32 instr_) noexcept {
   if (EvaluateCondition(ConditionCode(instr.fields.cond), registers->CPSR)) {
     ShifterOperandResult shifter = ShifterOperand(instr);
     MOV(registers, instr.fields.rd,
-        registers->r[instr.fields.rn] + shifter.shifter_operand + cpsr.bits.C)
+        registers->r[instr.fields.rn] + shifter.shifter_operand + cpsr.bits.C);
 
     if (instr.fields.s == 1 && instr.fields.rd == PC) {
       registers->CPSR = U32(registers->SPRS);
@@ -1947,7 +1976,7 @@ bool CPU::Dispatch_Thumb_LDR1(U16 instr,
   U32 immed_5 = GetBitsInRange(instr, 6, 11);
   U32 address = registers->r[rn] + (immed_5 * 4);
   if (GetBitsInRange(address, 0, 2) == 0b00) {
-    MOV(registers, rd, ReadWordFromGBAMemory(memory, address));
+    MOV(registers, rd, LOAD_WORD(memory, address));
   } else {
     ABORT("Bad address: 0x%04X", address);
   }
@@ -1962,7 +1991,7 @@ bool CPU::Dispatch_Thumb_LDR2(U16 instr,
   U32 rm = GetBitsInRange(instr, 6, 9);
   U32 address = registers->r[rn] + registers->r[rm];
   if (GetBitsInRange(address, 0, 2) == 0b00) {
-    MOV(registers, rd, ReadWordFromGBAMemory(memory, address));
+    MOV(registers, rd, LOAD_WORD(memory, address));
   } else {
     ABORT("Bad address: 0x%04X", address);
   }
@@ -1975,7 +2004,7 @@ bool CPU::Dispatch_Thumb_LDR3(U16 instr,
   U32 immed_8 = GetBitsInRange(instr, 0, 8);
   U32 rd = GetBitsInRange(instr, 8, 11);
   U32 address = (GetBitsInRange(registers->r[PC], 2, 32) << 2) + immed_8 * 4;
-  MOV(registers, rd, ReadWordFromGBAMemory(memory, address));
+  MOV(registers, rd, LOAD_WORD(memory, address));
   MOV(registers, PC, registers->r[PC] + 2);
   return true;
 }
@@ -1986,7 +2015,7 @@ bool CPU::Dispatch_Thumb_LDR4(U16 instr,
   U32 immed_8 = GetBitsInRange(instr, 0, 8);
   U32 address = registers->r[SP] + (immed_8 * 4);
   if (GetBitsInRange(address, 0, 2) == 0b00) {
-    MOV(registers, rd, ReadWordFromGBAMemory(memory, address));
+    MOV(registers, rd, LOAD_WORD(memory, address));
   } else {
     ABORT("Bad address: 0x%04X", address);
   }
@@ -2001,7 +2030,7 @@ bool CPU::Dispatch_Thumb_LDRB1(U16 instr,
   U32 immed_5 = GetBitsInRange(instr, 6, 11);
   U32 address = registers->r[rn] + immed_5;
 
-  MOV(registers, rd, ReadByteFromGBAMemory(memory, address));
+  MOV(registers, rd, LOAD_BYTE(memory, address));
   MOV(registers, PC, registers->r[PC] + 2);
   return true;
 }
@@ -2013,7 +2042,7 @@ bool CPU::Dispatch_Thumb_LDRB2(U16 instr,
   U32 rm = GetBitsInRange(instr, 6, 9);
   U32 address = registers->r[rn] + registers->r[rm];
 
-  MOV(registers, rd, ReadByteFromGBAMemory(memory, address));
+  MOV(registers, rd, LOAD_BYTE(memory, address));
   MOV(registers, PC, registers->r[PC] + 2);
   return true;
 }
@@ -2025,7 +2054,7 @@ bool CPU::Dispatch_Thumb_LDRSB(U16 instr,
   U32 rm = GetBitsInRange(instr, 6, 9);
   U32 address = registers->r[rn] + registers->r[rm];
 
-  MOV(registers, rd, SignExtend(ReadByteFromGBAMemory(memory, address), 8));
+  MOV(registers, rd, SignExtend(LOAD_BYTE(memory, address), 8));
   MOV(registers, PC, registers->r[PC] + 2);
   return true;
 }
@@ -2038,7 +2067,7 @@ bool CPU::Dispatch_Thumb_LDRH1(U16 instr,
   U32 address = registers->r[rn] + immed_5 * 2;
   U16 data;
   if ((address & 0b1) == 0) {
-    data = ReadHalfWordFromGBAMemory(memory, address);
+    data = LOAD_HALFWORD(memory, address);
   } else {
     ABORT("Unpredictable");
   }
@@ -2055,7 +2084,7 @@ bool CPU::Dispatch_Thumb_LDRH2(U16 instr,
   U32 address = registers->r[rn] + registers->r[rm];
   U16 data;
   if ((address & 0b1) == 0) {
-    data = ReadHalfWordFromGBAMemory(memory, address);
+    data = LOAD_HALFWORD(memory, address);
   } else {
     ABORT("Unpredictable");
   }
@@ -2072,7 +2101,7 @@ bool CPU::Dispatch_Thumb_LDRSH(U16 instr,
   U32 address = registers->r[rn] + registers->r[rm];
   U16 data;
   if ((address & 0b1) == 0) {
-    data = ReadHalfWordFromGBAMemory(memory, address);
+    data = LOAD_HALFWORD(memory, address);
   } else {
     ABORT("Unpredictable");
   }
@@ -2092,7 +2121,7 @@ bool CPU::Dispatch_Thumb_LDMIA(U16 instr,
 
   for (U32 i = 0; i < 8; ++i) {
     if (GetBit(register_list, i) == 1) {
-      registers->r[i] = ReadWordFromGBAMemory(memory, address);
+      registers->r[i] = LOAD_WORD(memory, address);
       address += 4;
     }
   }
@@ -2141,12 +2170,12 @@ bool CPU::Dispatch_Thumb_POP(U16 instr, const Memory::Memory &memory) noexcept {
   U32 address = start_address;
   for (U32 i = 0; i < 8; ++i) {
     if (GetBit(register_list, i) == 1) {
-      MOV(registers, i, ReadWordFromGBAMemory(memory, address));
+      MOV(registers, i, LOAD_WORD(memory, address));
       address += 4;
     }
   }
   if (include_pc == 1) {
-    U32 value = ReadWordFromGBAMemory(memory, address);
+    U32 value = LOAD_WORD(memory, address);
     MOV(registers, PC, value & 0xFFFFFFFE);
     ClearPipeline();
     address += 4;

@@ -26,6 +26,13 @@ void LOG_STORE(U32 addr, U32 value) {
   Logger.log_type_end_idx = (Logger.log_type_end_idx + 1) % kMaxLogs;
 }
 
+void LOG_LOAD(U32 addr, U32 value) {
+  Logger.log_type[Logger.log_type_end_idx] = LogType::LOAD;
+  *(Ld *)(&Logger.raw_data[Logger.log_type_end_idx * sizeof(Context)]) =
+      Ld{.addr = addr, .val = value};
+  Logger.log_type_end_idx = (Logger.log_type_end_idx + 1) % kMaxLogs;
+}
+
 void LOG_MOV(U32 rd, U32 value) {
   Logger.log_type[Logger.log_type_end_idx] = LogType::MOV;
   *(Mov *)(&Logger.raw_data[Logger.log_type_end_idx * sizeof(Context)]) =

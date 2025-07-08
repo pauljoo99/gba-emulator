@@ -74,6 +74,11 @@ int emit_logs(int argc, char *argv[]) {
       printf("Move: rd=%u, value=0x%04x\n", mov.rd, mov.val);
       break;
     }
+    case LogType::LOAD: {
+      auto &ld = *(Ld *)(&Logger.raw_data[log_idx * sizeof(Context)]);
+      printf("Load: addr=0x%04x, value=0x%04x\n", ld.addr, ld.val);
+      break;
+    }
     }
     if (log_idx == 0) {
       log_idx = kMaxLogs;
