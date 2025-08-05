@@ -1,3 +1,15 @@
+### GBA Emulator
+
+This is a GBA emulator written with a C++ backend and a Metal frontend I've been working on for fun!
+
+### Demo
+
+Short demo of the bootup screen so far.
+
+<video controls>
+  <source src="gba_bootup.mov" type="video/mp4">
+</video>
+
 ### How to Run
 
 Run by
